@@ -1,0 +1,40 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <!-- https://rsdn.org/forum/tools/8565420.1 -->
+    <!-- https://devblogs.microsoft.com/cppblog/broken-warnings-theory/ -->
+    <!-- https://learn.microsoft.com/en-us/cpp/build/reference/compiler-option-warning-level?view=msvc-170 -->
+    <!-- /wd4115;4127;4214;4200
+         warning C4505: 'function': unreferenced function with internal linkage has been removed
+         warning C4514: 'function': unreferenced inline function has been removed
+         warning C4820: 'struct': '4' bytes padding added after data member
+         warning C4464: relative include path contains '..'
+         warning C4435: 'class1': Object layout under /vd2 will change due to virtual base 'class2'
+         warning C5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+         warning C5027: 'class': move assignment operator was implicitly defined as deleted
+         warning C4626: 'class': assignment operator was implicitly defined as deleted
+         warning C4866: compiler may not enforce left-to-right evaluation order for call to
+         warning C4710: '__cdecl std::bad_array_new_length::bad_array_new_length(void) __ptr64': function not inlined
+         warning C4711: function 'void * __ptr64 __cdecl std::_Allocate_manually_vector_aligned<struct std::_Default_allocate_traits>(unsigned __int64)' selected for automatic inline expansion
+         warning C4868: compiler may not enforce left-to-right evaluation order in braced initializer list
+         warning C4738: storing 32-bit float result in memory, possible loss of performance
+      -->
+    <UMBA_DISABLE_WARNS>4738;4868;4710;4711;4505;4514;4820;4464;4435;5045;5027;4626;4866</UMBA_DISABLE_WARNS>
+    <!--
+    <UMBA_EXTERNAL_SRC_WARNS_MODE>/external:anglebrackets /external:W0</UMBA_EXTERNAL_SRC_WARNS_MODE>
+    <UMBA_WARN_OPTS>$(UMBA_DISABLE_WARNS)</UMBA_WARN_OPTS>
+    -->
+    <!-- $(UMBA_EXTERNAL_SRC_WARNS_MODE) -->
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <DisableSpecificWarnings>$(UMBA_DISABLE_WARNS);%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+</Project>
