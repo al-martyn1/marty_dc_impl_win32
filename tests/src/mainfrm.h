@@ -12,7 +12,7 @@
 #define POPUP_MENU_POSITION    0
 
 LPCTSTR g_lpcstrMRURegKey = _T("Software\\Microsoft\\WTL Samples\\BmpView");
-LPCTSTR g_lpcstrApp = _T("BmpView");
+LPCTSTR g_lpcstrApp = _T("TestDrawContext");
 
 
 class CMainFrame : public CFrameWindowImpl<CMainFrame>
