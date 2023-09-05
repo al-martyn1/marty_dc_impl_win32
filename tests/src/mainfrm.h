@@ -11,7 +11,7 @@
 #define RECENT_MENU_POSITION    6
 #define POPUP_MENU_POSITION    0
 
-LPCTSTR g_lpcstrMRURegKey = _T("Software\\Microsoft\\WTL Samples\\BmpView");
+LPCTSTR g_lpcstrMRURegKey = _T("Software\\Microsoft\\WTL Samples\\TestDrawContext");
 LPCTSTR g_lpcstrApp = _T("TestDrawContext");
 
 

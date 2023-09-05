@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
-// Used by BmpView.rc
+// Used by TestDrawContext.rc
 //
 #define IDD_ABOUTBOX                    100
 #define IDR_MAINFRAME                   128

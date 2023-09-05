@@ -195,28 +195,6 @@ public:
         marty_draw_context::FontParamsA genericFontParamsH20 = genericFontParamsH8; genericFontParamsH20.height = 20;
 
         
-        //  
-        //     // Выбираем из масштабной сетки (подсмотрел в гугл хроме)
-        //  
-        //     std::array<unsigned, 14> scales = { 500, 250, 175, 150, 125, 110, 100, 90, 80, 75, 67, 50, 33, 25 };
-        //  
-        //     textoutTestFontParams.height = 2.7; // 6; // 2.7
-        //  
-        //     for(auto scale : scales)
-        //     {
-        //         auto tmpFontParams = textoutTestFontParams;
-        //         tmpFontParams.height = scale*textoutTestFontParams.height / 100;
-        //  
-        //         std::string text;
-        //         umba::StringRefCharWriter writter = text;
-        //         umba::SimpleFormatter uss(&writter);
-        //  
-        //         uss << textoutTestFontParams.fontFace << ": " << scale; // textoutTestFontParams.height;
-        //  
-        //         int fontId = pDc->selectNewFont( tmpFontParams );
-        //         pDc->textOut( textoutTestPos, fontId, ColorRef{32,32,32}, text );
-        //         textoutTestPos.y += tmpFontParams.height;
-        //     }
 
 
         auto arialFontId   = pDc->createFont( genericFontParamsH8, "Arial"          );

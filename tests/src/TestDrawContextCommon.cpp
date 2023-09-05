@@ -1,7 +1,7 @@
 /*! \file
     \brief TestWinDrawContextXX tests family - entry point for GUI/drawing tests
 */
-// BmpView.cpp : main source file for BmpView.exe
+// TestDrawContext.cpp : main source file for TestDrawContextXXX.exe
 //
 
 #include "stdafx.h"
