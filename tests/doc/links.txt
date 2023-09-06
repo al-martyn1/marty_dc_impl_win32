@@ -1,0 +1,10 @@
+https://www.google.com/search?q=win32+GDI+%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%B0+%D1%81+%D1%80%D0%B5%D0%B3%D0%B8%D0%BE%D0%BD%D0%B0%D0%BC%D0%B8&oq=win32+GDI+%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%B0+%D1%81+%D1%80%D0%B5%D0%B3%D0%B8%D0%BE%D0%BD%D0%B0%D0%BC%D0%B8&aqs=chrome..69i57j33i160.10951j0j7&sourceid=chrome&ie=UTF-8
+
+Работа с регионами (GDI) - https://rsdn.org/article/gdi/regions.xml
+Работа с регионами (GDI) - http://www.codenet.ru/progr/delphi/stat/regions/
+GDI (wiki) - https://ru.wikipedia.org/wiki/GDI
+Работа с регионами (статья) - https://delphi-hlp.ru/index.php/tform/formy-nestandartnogo-vida/rabota-s-regionami-statya.html
+Работа с графическими регионами через Windows API в Delphi - http://digimedia.ru/articles/igry-i-programmy/po/rabota-s-graficheskimi-regionami-cherez-windows-api-v-delphi/
+
+
+GDI+ - регионы всё те же GDIшные вроде как
