@@ -7,11 +7,11 @@
 #include "stdafx.h"
 
 #include <atlframe.h>
+#include <atlmisc.h>
 #include <atlctrls.h>
 #include <atlctrlw.h>
 #include <atldlgs.h>
 #include <atlscrl.h>
-#include <atlmisc.h>
 #include <atlprint.h>
 #include <atlcrack.h>
 
