@@ -32,3 +32,4 @@ git clone %PREFIX%/marty_draw_context.git      %~dp0\marty_draw_context
 git clone %PREFIX%/umba_mm_mod_sfmt.git        %~dp0\sfmt
 git clone %PREFIX%/umba_mm_mod_umba.git        %~dp0\umba
 
+git clone --recurse-submodules %PREFIX%/simplesquirrel.git          %~dp0\simplesquirrel
