@@ -25,9 +25,6 @@
 #include <stdexcept>
 #include <functional>
 
-#include "marty_fs_adapters/simple_file_api.h"
-#include "marty_fs_adapters/rcfs_file_api.h"
-
 
 #include <simplesquirrel/simplesquirrel.hpp>
 
