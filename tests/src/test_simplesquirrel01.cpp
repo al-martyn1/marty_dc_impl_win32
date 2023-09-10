@@ -25,11 +25,14 @@
 #include <stdexcept>
 #include <functional>
 
+#include "marty_fs_adapters/simple_file_api.h"
+#include "marty_fs_adapters/rcfs_file_api.h"
+
 
 #include <simplesquirrel/simplesquirrel.hpp>
 
 
-// #define TEST_CLASS_BIND
+#define TEST_CLASS_BIND
 
 const wchar_t *sqSrc1 = L"\
 local arr = [ 1234, \"Test\" ];\n\
@@ -55,7 +58,7 @@ function printContents(){\n\
 \n\
 "
 #if defined(TEST_CLASS_BIND)
-"
+L"\n\
 function classHandler(cppClass){\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
     cppClass.setMessage(\"New Msg\");\n\
@@ -104,14 +107,28 @@ public:
                               , false // dont release
                               );
 
-        cls.addFunc(_SC("setMessage"), &CppClass::setMessage);
-        cls.addFunc(_SC("getMessage"), &CppClass::getMessage);
+        // Не работает
+        // cls.addFunc(_SC("setMessage"), &CppClass::setMessage);
+        // cls.addFunc(_SC("getMessage"), &CppClass::getMessage);
+
+        // Это тоже - тут какая-то рекурсия возникает
+        // cls.addFunc(_SC("getMessageLowerCase"), [](CppClass* self) -> ssq::sqstring {
+        //     ssq::sqstring data = self->message;
+        //     //std::transform(data.begin(), data.end(), data.begin(), ::tolower);
+        //     return data;
+        // });
+
+
+        // Сопли от примеров симпсквирела
         // cls.addFunc("getInteger", &CppClass::getInteger);
         // cls.addFunc("getMessageLowerCase", [](CppClass* self) -> std::string {
         //     std::string data = self->message;
         //     std::transform(data.begin(), data.end(), data.begin(), ::tolower);
         //     return data;
         // });
+
+
+
         cls.addVar(_SC("message"), &CppClass::message);
         // cls.addConstVar("integer", &CppClass::integer);
 
