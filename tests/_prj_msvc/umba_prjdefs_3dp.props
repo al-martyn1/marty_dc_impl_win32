@@ -1,0 +1,17 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project=".\props\umba_stdcpp17.props" />
+  <!--Import Project=".\props\umba_stdcpp20.props" /-->
+  
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\_libs\simplesquirrel\include;$(ProjectDir)\..\_libs\simplesquirrel\libs\squirrel\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+
+</Project>

@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6DE78A45-B642-42FA-A469-EA8474162724}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project=".\props\umba_project_configurations.props" />
+  <Import Project=".\props\umba_msvcver.props" />
+  <Import Project=".\props\umba_target_lib_static.props" />
+  <Import Project=".\props\umba_config_matrix_common.props" />
+  <!--Import Project=".\umba_config_matrix_qt.props" /-->
+  <Import Project=".\umba_prjdirs.props" />
+  <Import Project=".\umba_prjdefs_3dp.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <!--Import Project=".\props\umba_runtime_dll.props" /-->
+  <!--Import Project=".\props\umba_runtime_for_uwp.props" /-->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqapi.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqbaselib.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqclass.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqcompiler.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqdebug.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqfuncstate.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqlexer.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqmem.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqobject.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqstate.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqtable.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\squirrel\sqvm.cpp" />
+    
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\sqstdlib\sqstdaux.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\sqstdlib\sqstdblob.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\sqstdlib\sqstdio.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\sqstdlib\sqstdmath.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\sqstdlib\sqstdrex.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\sqstdlib\sqstdstream.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\sqstdlib\sqstdstring.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\libs\squirrel\sqstdlib\sqstdsystem.cpp" />
+    
+    <ClCompile Include="..\_libs\simplesquirrel\source\args.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\source\array.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\source\class.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\source\enum.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\source\function.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\source\instance.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\source\object.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\source\script.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\source\table.cpp" />
+    <ClCompile Include="..\_libs\simplesquirrel\source\vm.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
