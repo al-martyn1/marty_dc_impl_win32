@@ -72,7 +72,11 @@ function classHandler(cppClass){\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
     cppClass.setMessage(\"New Msg\");\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
-    printDrawColor(Draw.Color());\n\
+\n\
+    local dc   = DrawContext;\n\
+    local Draw = DrawContext;\n\
+\n\
+    printDrawColor(dc.Color());\n\
     local tmpClr = Draw.Color();\n\
     tmpClr.r     = 3;\n\
     tmpClr.g     = 2;\n\
@@ -203,7 +207,7 @@ int main( int argc, char* argv[] )
 
 
         ssq::Table tDraw = 
-        vm.addTable(_SC("Draw"));
+        vm.addTable(_SC("DrawContext"));
         marty_draw_context::simplesquirrel::DrawColor::expose(tDraw /*vm*/, _SC("Color"));
         marty_draw_context::simplesquirrel::DrawCoords::expose(tDraw /*vm*/, _SC("Coords"));
         
