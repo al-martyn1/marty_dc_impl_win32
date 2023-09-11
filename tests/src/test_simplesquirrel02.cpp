@@ -72,8 +72,8 @@ function classHandler(cppClass){\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
     cppClass.setMessage(\"New Msg\");\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
-    printDrawColor(DrawColor());\n\
-    local tmpClr = DrawColor();\n\
+    printDrawColor(Draw.Color());\n\
+    local tmpClr = Draw.Color();\n\
     tmpClr.r     = 3;\n\
     tmpClr.g     = 2;\n\
     tmpClr.b     = 1;\n\
@@ -82,15 +82,15 @@ function classHandler(cppClass){\n\
     tmpClr.g     = 131;\n\
     tmpClr.b     = 132;\n\
     printDrawColor(tmpClr);\n\
-    printDrawColor(DrawColor.fromUnsigned(255));\n\
-    printDrawColor(DrawColor.fromString(\"red\"));\n\
-    printDrawColor(DrawColor.fromString(\"green\"));\n\
-    printDrawColor(DrawColor.fromString(\"blue\"));\n\
+    printDrawColor(Draw.Color.fromUnsigned(255));\n\
+    printDrawColor(Draw.Color.fromString(\"red\"));\n\
+    printDrawColor(Draw.Color.fromString(\"green\"));\n\
+    printDrawColor(Draw.Color.fromString(\"blue\"));\n\
 \n\
-    printDrawCoords(DrawCoords(1,2));\n\
-    printDrawCoords(DrawCoords(1.2,3.4));\n\
-    printDrawCoords(DrawCoords(\"5.6\",\"7.8\"));\n\
-    // printDrawCoords(DrawCoords(\"AA\",\"Bbb\"));\n\
+    printDrawCoords(Draw.Coords(1,2));\n\
+    printDrawCoords(Draw.Coords(1.2,3.4));\n\
+    printDrawCoords(Draw.Coords(\"5.6\",\"7.8\"));\n\
+    // printDrawCoords(Draw.Coords(\"AA\",\"Bbb\"));\n\
 }\n\
 \n\
 \n\
@@ -202,8 +202,10 @@ int main( int argc, char* argv[] )
         CppClass::expose(vm);
 
 
-        marty_draw_context::simplesquirrel::DrawColor::expose(vm, _SC("DrawColor"));
-        marty_draw_context::simplesquirrel::DrawCoords::expose(vm, _SC("DrawCoords"));
+        ssq::Table tDraw = 
+        vm.addTable(_SC("Draw"));
+        marty_draw_context::simplesquirrel::DrawColor::expose(tDraw /*vm*/, _SC("Color"));
+        marty_draw_context::simplesquirrel::DrawCoords::expose(tDraw /*vm*/, _SC("Coords"));
         
 
         #endif
