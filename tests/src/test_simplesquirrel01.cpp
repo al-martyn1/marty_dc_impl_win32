@@ -60,6 +60,7 @@ function classHandler(cppClass){\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
     cppClass.setMessage(\"New Msg\");\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
+    print(\"cppClass.getMessageLowerCase: \" + cppClass.getMessageLowerCase());\n\
 }\n\
 \n\
 \n\
@@ -105,15 +106,15 @@ public:
                               );
 
         // Не работает
-        // cls.addFunc(_SC("setMessage"), &CppClass::setMessage);
-        // cls.addFunc(_SC("getMessage"), &CppClass::getMessage);
+        cls.addFunc(_SC("setMessage"), &CppClass::setMessage);
+        cls.addFunc(_SC("getMessage"), &CppClass::getMessage);
 
         // Это тоже - тут какая-то рекурсия возникает
-        // cls.addFunc(_SC("getMessageLowerCase"), [](CppClass* self) -> ssq::sqstring {
-        //     ssq::sqstring data = self->message;
-        //     //std::transform(data.begin(), data.end(), data.begin(), ::tolower);
-        //     return data;
-        // });
+        cls.addFunc(_SC("getMessageLowerCase"), [](CppClass* self) -> ssq::sqstring {
+            ssq::sqstring data = self->message;
+            //std::transform(data.begin(), data.end(), data.begin(), ::tolower);
+            return _SC("DATA"); // data;
+        });
 
 
         // Сопли от примеров симпсквирела
