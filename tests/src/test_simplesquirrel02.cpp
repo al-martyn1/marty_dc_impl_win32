@@ -145,6 +145,9 @@ function classHandler(cppClass)\n\
 \n\
     print(\"---\");\n\
 \n\
+    // print(\"dc.HorAlign.Center : \" + dc.HorAlign.Center);\n\
+    // print(\"dc.HorAlign.Center : \" + dc.HorAlign.toString(dc.HorAlign.Center));\n\
+\n\
     print(\"Stuff.first : \" + Stuff.first);\n\
     //print(\"TestEnumG.One : \" + TestEnumG.One);                         // !!!\n\
     //print(\"dc.TestEnum.One : \" + DrawContext.TestEnum.One);            // !!!\n\
@@ -266,8 +269,11 @@ int main( int argc, char* argv[] )
 
         ssq::Table tDraw = 
         vm.addTable(_SC("DrawContext"));
-        marty_draw_context::simplesquirrel::DrawColor::expose(tDraw /*vm*/, _SC("Color"));
+        marty_draw_context::simplesquirrel::DrawColor ::expose(tDraw /*vm*/, _SC("Color"));
         marty_draw_context::simplesquirrel::DrawCoords::expose(tDraw /*vm*/, _SC("Coords"));
+        marty_draw_context::simplesquirrel::HorAlign  ::expose(tDraw /*vm*/, _SC("HorAlign"));
+
+        
 
 
         ssq::Enum testEnumG = vm.addEnum(_SC("TestEnumG"));
