@@ -117,6 +117,8 @@ function classHandler(cppClass)\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
     cppClass.setMessage(\"New Msg\");\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
+    print(\"cppClass.integer: \" + cppClass.integer);\n\
+    // cppClass.integer = 3; // !!! Cause error - Runtime error at (classHandler) buffer:67: Variable not found\n\
 \n\
     local dc   = DrawContext;\n\
     local Draw = DrawContext;\n\
@@ -225,7 +227,7 @@ public:
         // });
 
         cls.addVar(_SC("message"), &CppClass::message);
-        // cls.addConstVar("integer", &CppClass::integer);
+        cls.addConstVar(_SC("integer"), &CppClass::integer);
 
         return cls;
     }
@@ -233,7 +235,7 @@ public:
     // We will leave them public so Squirrel 
     // can access them for the purpose of this example
     ssq::sqstring message;
-    // const int integer;
+    const int integer = 42;
 };
 #endif
 
