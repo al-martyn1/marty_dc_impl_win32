@@ -1,5 +1,5 @@
 /*! \file
-    \brief Squirrel binding test for DrawColor and DrawCoords C++ types 
+    \brief Squirrel binding test for DrawColor and DrawCoords C++ types, and DrawContext enumerations
 */
 
 #include "umba/umba.h"
@@ -41,6 +41,12 @@
 #define TEST_CLASS_BIND
 
 const wchar_t *sqSrc1 = L"\
+enum Stuff {\n\
+  first = 10\n\
+  second = 11\n\
+  third = 1.2\n\
+}\n\
+\n\
 local arr = [ 1234, \"Test\" ];\n\
 \n\
 function set(val) {\n\
@@ -66,9 +72,43 @@ function printContents(){\n\
 "
 /* 21 lines */
 
+// type(obj)
+
 #if defined(TEST_CLASS_BIND)
 L"\n\
-function classHandler(cppClass){\n\
+\n\
+function printTableDump(tbl, indent)\n\
+{\n\
+    foreach(key,val in tbl) \n\
+    {\n\
+        local strTypeofKey  = typeof key;\n\
+        local strTypeKeyRaw = type(key);\n\
+        local strTypeofVal  = typeof val;\n\
+        local strTypeValRaw = type(val);\n\
+\n\
+        print( indent + \"'\" + key + \"' (\" + strTypeofKey + \"/\" + strTypeKeyRaw + \") -> '\" + val + \"' (\" + strTypeofVal + \"/\" + strTypeValRaw + \")\");\n\
+        if (strTypeValRaw==\"table\")\n\
+        {\n\
+            printTableDump(val, indent+\"  \");\n\
+        }\n\
+\n\
+    }\n\
+}\n\
+\n\
+\n\
+\n\
+function classHandler(cppClass)\n\
+{\n\
+\n\
+    print(\"--- Root table\");\n\
+    printTableDump(getroottable(), \"\");\n\
+    print(\"--- Const table\");\n\
+    printTableDump(getconsttable(), \"\");\n\
+    print(\"--- Continue\");\n\
+    print(type(type(\"String\")));\n\
+    print(\"--- Continue\");\n\
+\n\
+\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
     cppClass.setMessage(\"New Msg\");\n\
     print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
@@ -95,6 +135,12 @@ function classHandler(cppClass){\n\
     printDrawCoords(Draw.Coords(1.2,3.4));\n\
     printDrawCoords(Draw.Coords(\"5.6\",\"7.8\"));\n\
     // printDrawCoords(Draw.Coords(\"AA\",\"Bbb\"));\n\
+\n\
+    print(\"---\");\n\
+\n\
+    print(\"Stuff.first : \" + Stuff.first);\n\
+    //print(\"TestEnumG.One : \" + TestEnumG.One);                         // !!!\n\
+    //print(\"dc.TestEnum.One : \" + DrawContext.TestEnum.One);            // !!!\n\
 }\n\
 \n\
 \n\
@@ -117,6 +163,11 @@ function printDrawCoords(c){\n\
 "
 #endif
 ;
+
+
+const wchar_t *sqSrc2 = L"\
+";
+
 
 ssq::sqstring myCppFunc(int a, int b)
 {
@@ -210,6 +261,20 @@ int main( int argc, char* argv[] )
         vm.addTable(_SC("DrawContext"));
         marty_draw_context::simplesquirrel::DrawColor::expose(tDraw /*vm*/, _SC("Color"));
         marty_draw_context::simplesquirrel::DrawCoords::expose(tDraw /*vm*/, _SC("Coords"));
+
+
+        ssq::Enum testEnumG = vm.addEnum(_SC("TestEnumG"));
+        testEnumG.addSlot(_SC("One")   , 1);
+        testEnumG.addSlot(_SC("Two")   , 2);
+        testEnumG.addSlot(_SC("Three") , 3);
+
+        ssq::Enum testEnumT = tDraw.addEnumGlobal(_SC("TestEnumT"));
+        testEnumT.addSlot(_SC("One")   , 4);
+        testEnumT.addSlot(_SC("Two")   , 5);
+        testEnumT.addSlot(_SC("Three") , 6);
+
+        // template<typename T> void setConst(const char* name, const T& value) {
+
         
 
         #endif
