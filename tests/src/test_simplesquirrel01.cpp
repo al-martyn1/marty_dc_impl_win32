@@ -28,6 +28,11 @@
 
 #include <simplesquirrel/simplesquirrel.hpp>
 
+#ifdef _MSC_VER
+#pragma comment(lib, "_squirrel.lib")
+#pragma comment(lib, "_simplesquirrel.lib")
+#endif
+
 
 #define TEST_CLASS_BIND
 

@@ -11,10 +11,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_squirrel", "_prj_msvc\_squ
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_simplesquirrel01", "_prj_msvc\test_simplesquirrel01.vcxproj", "{0F79745C-B125-4074-90E7-AF7A93A48937}"
 	ProjectSection(ProjectDependencies) = postProject
-		{6DE78A45-B642-42FA-A469-EA8474162724} = {6DE78A45-B642-42FA-A469-EA8474162724}
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308} = {CD833BDE-D6AB-4112-99D2-35130F0A8308}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_simplesquirrel02", "_prj_msvc\test_simplesquirrel02.vcxproj", "{7DC06FAD-9B7E-4D64-B301-2E49B83640D5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308} = {CD833BDE-D6AB-4112-99D2-35130F0A8308}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_simplesquirrel", "_prj_msvc\_simplesquirrel.vcxproj", "{CD833BDE-D6AB-4112-99D2-35130F0A8308}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6DE78A45-B642-42FA-A469-EA8474162724} = {6DE78A45-B642-42FA-A469-EA8474162724}
 	EndProjectSection
@@ -101,6 +106,20 @@ Global
 		{7DC06FAD-9B7E-4D64-B301-2E49B83640D5}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|Win32
 		{7DC06FAD-9B7E-4D64-B301-2E49B83640D5}.RelWithDebInfo|x86.ActiveCfg = RelWithDebInfo|Win32
 		{7DC06FAD-9B7E-4D64-B301-2E49B83640D5}.RelWithDebInfo|x86.Build.0 = RelWithDebInfo|Win32
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.Debug|x64.ActiveCfg = Debug|x64
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.Debug|x64.Build.0 = Debug|x64
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.Debug|x86.ActiveCfg = Debug|Win32
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.Debug|x86.Build.0 = Debug|Win32
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.MinSizeRel|x64.ActiveCfg = MinSizeRel|x64
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.MinSizeRel|x64.Build.0 = MinSizeRel|x64
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.MinSizeRel|x86.ActiveCfg = MinSizeRel|x64
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.Release|x64.ActiveCfg = Release|x64
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.Release|x64.Build.0 = Release|x64
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.Release|x86.ActiveCfg = Release|Win32
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.Release|x86.Build.0 = Release|Win32
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|Win32
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.RelWithDebInfo|x86.ActiveCfg = RelWithDebInfo|Win32
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308}.RelWithDebInfo|x86.Build.0 = RelWithDebInfo|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
