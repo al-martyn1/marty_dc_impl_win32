@@ -64,9 +64,10 @@ protected:
     {
         switch(style)
         {
-            case marty_draw_context::LineEndcapStyle::round : return PS_ENDCAP_ROUND;
-            case marty_draw_context::LineEndcapStyle::square: return PS_ENDCAP_SQUARE;
-            case marty_draw_context::LineEndcapStyle::flat  : [[fallthrough]];
+            case marty_draw_context::LineEndcapStyle::round  : return PS_ENDCAP_ROUND;
+            case marty_draw_context::LineEndcapStyle::square : return PS_ENDCAP_SQUARE;
+            case marty_draw_context::LineEndcapStyle::flat   : [[fallthrough]];
+            case marty_draw_context::LineEndcapStyle::invalid: [[fallthrough]];
 
             default:                                          return PS_ENDCAP_FLAT;
         }
@@ -76,9 +77,10 @@ protected:
     {
         switch(style)
         {
-            case marty_draw_context::LineJoinStyle::mitter: return PS_JOIN_MITER;
-            case marty_draw_context::LineJoinStyle::round : return PS_JOIN_ROUND;
-            case marty_draw_context::LineJoinStyle::bevel : [[fallthrough]];
+            case marty_draw_context::LineJoinStyle::mitter : return PS_JOIN_MITER;
+            case marty_draw_context::LineJoinStyle::round  : return PS_JOIN_ROUND;
+            case marty_draw_context::LineJoinStyle::bevel  : [[fallthrough]];
+            case marty_draw_context::LineJoinStyle::invalid: [[fallthrough]];
             default:                                        return PS_JOIN_BEVEL;
         };
     }

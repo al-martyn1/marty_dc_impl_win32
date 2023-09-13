@@ -60,7 +60,7 @@ marty_draw_context::DebugStreamImplBase& operator<<(marty_draw_context::DebugStr
 
 namespace marty_draw_context {
 
-
+/*
 typedef marty_draw_context::DrawCoord                         DrawCoord                 ;
 typedef marty_draw_context::DrawSize                          DrawSize                  ;
 typedef marty_draw_context::DrawScale                         DrawScale                 ;
@@ -79,7 +79,7 @@ typedef marty_draw_context::HorAlign                          HorAlign          
 typedef marty_draw_context::FontStyleFlags                    FontStyleFlags            ;
 typedef marty_draw_context::FontParamsA                       FontParamsA               ;
 typedef marty_draw_context::FontWeight                        FontWeight                ;
-
+*/
 using marty_draw_context::floatToInt;
 using marty_draw_context::floatToFloat;
 using marty_draw_context::floatToDouble;

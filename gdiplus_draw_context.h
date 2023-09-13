@@ -86,9 +86,10 @@ protected:
         // https://docs.microsoft.com/en-us/windows/win32/api/gdiplusenums/ne-gdiplusenums-linecap
         switch(style)
         {
-            case marty_draw_context::LineEndcapStyle::round : return Gdiplus::LineCapRound;
-            case marty_draw_context::LineEndcapStyle::square: return Gdiplus::LineCapSquare;
-            case marty_draw_context::LineEndcapStyle::flat  : [[fallthrough]];
+            case marty_draw_context::LineEndcapStyle::round  : return Gdiplus::LineCapRound;
+            case marty_draw_context::LineEndcapStyle::square : return Gdiplus::LineCapSquare;
+            case marty_draw_context::LineEndcapStyle::flat   : [[fallthrough]];
+            case marty_draw_context::LineEndcapStyle::invalid: [[fallthrough]];
             default:                                          return Gdiplus::LineCapFlat;
         }
     }
@@ -97,9 +98,10 @@ protected:
     {
         switch(style)
         {
-            case marty_draw_context::LineJoinStyle::round : return Gdiplus::LineJoinRound;
-            case marty_draw_context::LineJoinStyle::bevel : return Gdiplus::LineJoinBevel;
-            case marty_draw_context::LineJoinStyle::mitter: [[fallthrough]];
+            case marty_draw_context::LineJoinStyle::round  : return Gdiplus::LineJoinRound;
+            case marty_draw_context::LineJoinStyle::bevel  : return Gdiplus::LineJoinBevel;
+            case marty_draw_context::LineJoinStyle::mitter : [[fallthrough]];
+            case marty_draw_context::LineJoinStyle::invalid: [[fallthrough]];
             default:                                        return Gdiplus::LineJoinMiter;
         };
     }
