@@ -24,6 +24,7 @@
 #include <exception>
 #include <stdexcept>
 #include <functional>
+#include <utility>
 
 
 // #pragma warning(disable:4717)
@@ -43,6 +44,8 @@
 
 
 
+
+
 #define TEST_CLASS_BIND
 
 const wchar_t *sqSrc1 = L"\
@@ -51,6 +54,15 @@ enum Stuff {\n\
   second = 11\n\
   third = 1.2\n\
 }\n\
+\n\
+function getThirdDay(){\n\
+    return WeekDay.WEDNESDAY;\n\
+}\n\
+\n\
+function isWednesday(day){\n\
+    return day == WeekDay.WEDNESDAY;\n\
+}\n\
+\n\
 \n\
 local arr = [ 1234, \"Test\" ];\n\
 \n\
@@ -81,6 +93,11 @@ function printContents(){\n\
 
 #if defined(TEST_CLASS_BIND)
 L"\n\
+class Foo {\n\
+    static classname = \"The class name is foo\";\n\
+};\n\
+\n\
+local fooVar = Foo();\n\
 \n\
 function printTableDump(tbl, indent)\n\
 {\n\
@@ -114,43 +131,45 @@ function classHandler(cppClass)\n\
     print(\"--- Continue\");\n\
 \n\
 \n\
-    print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
-    cppClass.setMessage(\"New Msg\");\n\
-    print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
-    print(\"cppClass.integer: \" + cppClass.integer);\n\
-    // cppClass.integer = 3; // !!! Cause error - Runtime error at (classHandler) buffer:67: Variable not found\n\
+    // print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
+    // cppClass.setMessage(\"New Msg\");\n\
+    // print(\"cppClass.getMessage: \" + cppClass.getMessage());\n\
+    // print(\"cppClass.integer: \" + cppClass.integer);\n\
+    // // cppClass.integer = 3; // !!! Cause error - Runtime error at (classHandler) buffer:67: Variable not found\n\
 \n\
     local dc   = DrawContext;\n\
     local Draw = DrawContext;\n\
 \n\
-    printDrawColor(dc.Color());\n\
-    local tmpClr = Draw.Color();\n\
-    tmpClr.r     = 3;\n\
-    tmpClr.g     = 2;\n\
-    tmpClr.b     = 1;\n\
-    printDrawColor(tmpClr);\n\
-    tmpClr.r     = 130;\n\
-    tmpClr.g     = 131;\n\
-    tmpClr.b     = 132;\n\
-    printDrawColor(tmpClr);\n\
-    printDrawColor(Draw.Color.fromUnsigned(255));\n\
-    printDrawColor(Draw.Color.fromString(\"red\"));\n\
-    printDrawColor(Draw.Color.fromString(\"green\"));\n\
-    printDrawColor(Draw.Color.fromString(\"blue\"));\n\
+    // printDrawColor(dc.Color());\n\
+    // local tmpClr = Draw.Color();\n\
+    // tmpClr.r     = 3;\n\
+    // tmpClr.g     = 2;\n\
+    // tmpClr.b     = 1;\n\
+    // printDrawColor(tmpClr);\n\
+    // tmpClr.r     = 130;\n\
+    // tmpClr.g     = 131;\n\
+    // tmpClr.b     = 132;\n\
+    // printDrawColor(tmpClr);\n\
+    // printDrawColor(Draw.Color.fromUnsigned(255));\n\
+    // printDrawColor(Draw.Color.fromString(\"red\"));\n\
+    // printDrawColor(Draw.Color.fromString(\"green\"));\n\
+    // printDrawColor(Draw.Color.fromString(\"blue\"));\n\
 \n\
-    printDrawCoords(Draw.Coords(1,2));\n\
-    printDrawCoords(Draw.Coords(1.2,3.4));\n\
-    printDrawCoords(Draw.Coords(\"5.6\",\"7.8\"));\n\
-    // printDrawCoords(Draw.Coords(\"AA\",\"Bbb\"));\n\
+    // printDrawCoords(Draw.Coords(1,2));\n\
+    // printDrawCoords(Draw.Coords(1.2,3.4));\n\
+    // printDrawCoords(Draw.Coords(\"5.6\",\"7.8\"));\n\
+    // // printDrawCoords(Draw.Coords(\"AA\",\"Bbb\"));\n\
 \n\
     print(\"---\");\n\
 \n\
     // print(\"dc.HorAlign.Center : \" + dc.HorAlign.Center);\n\
     // print(\"dc.HorAlign.Center : \" + dc.HorAlign.toString(dc.HorAlign.Center));\n\
 \n\
+    print(\"DrawContextHorAlign.Left : \" + DrawContextHorAlign.Left);\n\
     print(\"Stuff.first : \" + Stuff.first);\n\
-    //print(\"TestEnumG.One : \" + TestEnumG.One);                         // !!!\n\
+    // print(\"TestEnumG.One : \" + TestEnumG.One);                         // !!!\n\
     //print(\"dc.TestEnum.One : \" + DrawContext.TestEnum.One);            // !!!\n\
+    //print(\"DrawContextEnums.TestEnumL.One : \" + DrawContextEnums.TestEnumL.One);            // !!!\n\
 }\n\
 \n\
 \n\
@@ -248,47 +267,96 @@ int main( int argc, char* argv[] )
     UMBA_USED(argc);
     UMBA_USED(argv);
 
+    // static const Flag NONE = 0x0000;
+    // static const Flag IO = 0x0001;
+    // static const Flag BLOB = 0x0002;
+    // static const Flag MATH = 0x0004;
+    // static const Flag SYSTEM = 0x0008;
+    // static const Flag STRING = 0x0010;
+    // static const Flag ALL = 0xFFFF;
+
     //ssq::VM vm(1024, ssq::Libs::STRING | ssq::Libs::IO | ssq::Libs::MATH);
-    ssq::VM vm(1024, ssq::Libs::ALL);
+    ssq::VM vm(1024, ssq::Libs::MATH | ssq::Libs::SYSTEM | ssq::Libs::STRING);
 
     try
     {
+        // !!! Тут мы генерим скрипт, который создаёт enum'ы, и добавляем его (одной строкой) в самое начало рабочего скрипта
+        auto exposeEnumsScript = marty_draw_context::simplesquirrel::enumsExposeMakeScript(' ', ';', "DrawContext");
+        std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(exposeEnumsScript) << "\n"; // Тут проверяем, что там нагенерировалось
 
-        ssq::Script script1 = vm.compileSource(sqSrc1);
-        // ssq::Script scriptB = vm.compileFile(/* path to source file */);
-    
-        // ssq::Script script = vm.compileFile("example_arrays.nut");
+        ssq::Script script1 = vm.compileSource((exposeEnumsScript + sqSrc1).c_str());
+
 
         vm.addFunc(_SC("myCppFunc1"), myCppFunc);
         vm.addFunc(_SC("myCppFunc" ), std::function<ssq::sqstring(int, int)>(myCppFunc));
 
+        // // std::vector< std::pair<ssq::sqstring, int> >
+        // auto enumValsVec = makeEnumValuesVector(marty_draw_context::HorAlign::left, marty_draw_context::HorAlign::center, marty_draw_context::HorAlign::right);
+        // std::cout << "enumValsVec:\n";
+        // for(auto p: enumValsVec)
+        // {
+        //     std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(p.first) << ": " << p.second << "\n";
+        // }
+
+
+        // !!!
+        // Почему-то добавление enum'ов через API не работает - новые enum'ы имеются в const таблице, но почему-то не работает
+        // Тут я попытался сгенерировать отдельный скрипт, скомпилировать его и запустить - тоже не работает
+        // Но работает задание enum прямо в скрипте - см. enum Stuff в начале
+        // marty_draw_context::simplesquirrel::exposeEnums(vm, "DrawContext");
+
+
         #if defined(TEST_CLASS_BIND)
-
-        CppClass::expose(vm);
-
 
         ssq::Table tDraw = 
         vm.addTable(_SC("DrawContext"));
-        marty_draw_context::simplesquirrel::DrawColor ::expose(tDraw /*vm*/, _SC("Color"));
-        marty_draw_context::simplesquirrel::DrawCoords::expose(tDraw /*vm*/, _SC("Coords"));
-        marty_draw_context::simplesquirrel::HorAlign  ::expose(tDraw /*vm*/, _SC("HorAlign"));
+        // marty_draw_context::simplesquirrel::HorAlignEnumStruct::expose(tDraw /*vm*/, _SC("HorAlign")); // !!! Не работает
+        marty_draw_context::simplesquirrel::DrawColor         ::expose(tDraw /*vm*/, _SC("Color"));
+        marty_draw_context::simplesquirrel::DrawCoords        ::expose(tDraw /*vm*/, _SC("Coords"));
 
-        
+        // !!! Скопировал это из примера simplesquirrel, тоже не работает
+        // ssq::Table tDrawConst = 
+        // vm.addConstTable(_SC("DrawContextEnums"));
+        // ssq::Enum testEnumL = tDrawConst.addEnumLocal(_SC("TestEnumL"));
+        // testEnumL.addSlot(_SC("One")   , 1);
+        // testEnumL.addSlot(_SC("Two")   , 2);
+        // testEnumL.addSlot(_SC("Three") , 3);
 
+        // enum WeekDay {
+        //     MONDAY,
+        //     TUESDAY,
+        //     WEDNESDAY,
+        //     THURSDAY,
+        //     FRIDAY,
+        //     SATURDAY,
+        //     SUNDAY,
+        // };
+        //  
+        // ssq::Enum enm = vm.addEnum(_SC("WeekDay"));
+        // enm.addSlot(_SC("MONDAY"), (int)WeekDay::MONDAY);
+        // enm.addSlot(_SC("TUESDAY"), (int)WeekDay::TUESDAY);
+        // enm.addSlot(_SC("WEDNESDAY"), (int)WeekDay::WEDNESDAY);
+        // enm.addSlot(_SC("THURSDAY"), (int)WeekDay::THURSDAY);
+        // enm.addSlot(_SC("FRIDAY"), (int)WeekDay::FRIDAY);
+        // enm.addSlot(_SC("SATURDAY"), (int)WeekDay::SATURDAY);
+        // enm.addSlot(_SC("SUNDAY"), (int)WeekDay::SUNDAY);
 
+        // !!! Это не работает
         ssq::Enum testEnumG = vm.addEnum(_SC("TestEnumG"));
-        testEnumG.addSlot(_SC("One")   , 1);
-        testEnumG.addSlot(_SC("Two")   , 2);
-        testEnumG.addSlot(_SC("Three") , 3);
+        testEnumG.addSlot(_SC("One")   , (int)1);
+        testEnumG.addSlot(_SC("Two")   , (int)2);
+        testEnumG.addSlot(_SC("Three") , (int)3);
 
-        ssq::Enum testEnumT = tDraw.addEnumGlobal(_SC("TestEnumT"));
-        testEnumT.addSlot(_SC("One")   , 4);
-        testEnumT.addSlot(_SC("Two")   , 5);
-        testEnumT.addSlot(_SC("Three") , 6);
+        // ssq::Enum testEnumT = tDraw.addEnumGlobal(_SC("TestEnumT"));
+        // testEnumT.addSlot(_SC("One")   , 4);
+        // testEnumT.addSlot(_SC("Two")   , 5);
+        // testEnumT.addSlot(_SC("Three") , 6);
 
         // template<typename T> void setConst(const char* name, const T& value) {
 
         
+        CppClass::expose(vm);
+
 
         #endif
     
@@ -296,6 +364,17 @@ int main( int argc, char* argv[] )
     
         ssq::Function funcPrintContents = vm.findFunc(_SC("printContents"));
         vm.callFunc(funcPrintContents, vm);
+
+        // ssq::Function getThirdDay = vm.findFunc(_SC("getThirdDay"));
+        // ssq::Object firstDay = vm.callFunc(getThirdDay, vm);
+        //  
+        // // Prints true
+        // std::cout << "getThirdDay " << (firstDay.toInt() == (int)WeekDay::WEDNESDAY ? "true" : "false") << std::endl;
+        //  
+        // ssq::Function isWednesday = vm.findFunc(_SC("isWednesday"));
+        // //bool ret = 
+        // vm.callFunc(isWednesday, vm, (int)WeekDay::WEDNESDAY).toBool();
+
 
 
         #if defined(TEST_CLASS_BIND)

@@ -17,7 +17,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\..\;$(ProjectDir)\..\_libs\simplesquirrel\include;$(ProjectDir)\..\_libs\simplesquirrel\libs\squirrel\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\_libs\simplesquirrel\include;$(ProjectDir)\..\_libs\simplesquirrel\libs\squirrel\include;%(AdditionalIncludeDirectories);$(ProjectDir)\..\..\..\</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
 
