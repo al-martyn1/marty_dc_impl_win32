@@ -166,6 +166,9 @@ function classHandler(cppClass)\n\
     // print(\"dc.HorAlign.Center : \" + dc.HorAlign.toString(dc.HorAlign.Center));\n\
 \n\
     print(\"DrawContextHorAlign.Left : \" + DrawContextHorAlign.Left);\n\
+    print(\"DrawContext HorAlign.Right : \" + DrawContext.HorAlign.Right);\n\
+    print(\"dc HorAlign.Center : \" + dc.HorAlign.Center);\n\
+    print(\"dc.FontWeight.Bold : \" + dc.FontWeight.Bold); // Here we can see replacement in string literal, source is \"dc dot FontWeight.Bold\"\n\
     print(\"Stuff.first : \" + Stuff.first);\n\
     // print(\"TestEnumG.One : \" + TestEnumG.One);                         // !!!\n\
     //print(\"dc.TestEnum.One : \" + DrawContext.TestEnum.One);            // !!!\n\
@@ -280,13 +283,31 @@ int main( int argc, char* argv[] )
 
     try
     {
-        // !!! Тут мы генерим скрипт, который создаёт enum'ы, и добавляем его (одной строкой) в самое начало рабочего скрипта
-        auto exposeEnumsScript = marty_draw_context::simplesquirrel::enumsExposeMakeScript(' ', ';', "DrawContext");
-        std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(exposeEnumsScript) << "\n"; // Тут проверяем, что там нагенерировалось
+        {
+            ssq::sqstring srcScript = _SC(".HorAlign.Left\nlocal dc = DrawContext\nlocal center = .HorAlign.Center\nlocal center =HorAlign.Center\nlocal left = DrawContext.HorAlign.Left\nlocal right = dc.HorAlign.Right\nlocal fwBold = DrawContext.FontWeight.Bold\nlocal fwNormal = dc.FontWeight.Normal\n");
+            ssq::sqstring substRes  = marty_draw_context::simplesquirrel::prepareScriptEnums(srcScript, "DrawContext", false);
 
-        ssq::Script script1 = vm.compileSource((exposeEnumsScript + sqSrc1).c_str());
+            std::cout << "--- Script (input):\n";
+            std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(srcScript);
+
+            std::cout << "--- Script (processed):\n";
+            std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(substRes);
+            std::cout << "\n";
+        }
 
 
+        // !!! Тут мы генерим скрипт, который создаёт enum'ы
+        {
+            std::cout << "--- Script enums prefix:\n";
+            auto exposeEnumsScript = marty_draw_context::simplesquirrel::enumsExposeMakeScript(' ', ';', 0, "DrawContext");
+            std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(exposeEnumsScript) << "\n"; // Тут проверяем, что там нагенерировалось
+        }
+
+        // добавляем описание enum'ов в самое начало рабочего скрипта и заменяем enum'ы в тексте скрипта 
+        ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::prepareScriptEnums(sqSrc1, "DrawContext", true);
+        ssq::Script script1 = vm.compileSource(preparedScriptText1.c_str());
+
+        std::cout << "---\n";
         vm.addFunc(_SC("myCppFunc1"), myCppFunc);
         vm.addFunc(_SC("myCppFunc" ), std::function<ssq::sqstring(int, int)>(myCppFunc));
 
