@@ -1,5 +1,5 @@
 /*! \file
-    \brief Squirrel binding test for DrawColor and DrawCoords C++ types, and DrawContext enumerations
+    \brief Squirrel binding test for DrawingColor and DrawingCoords C++ types, and DrawContext enumerations
 */
 
 #include "umba/umba.h"
@@ -137,8 +137,8 @@ function classHandler(cppClass)\n\
     // print(\"cppClass.integer: \" + cppClass.integer);\n\
     // // cppClass.integer = 3; // !!! Cause error - Runtime error at (classHandler) buffer:67: Variable not found\n\
 \n\
-    local dc   = DrawContext;\n\
-    local Draw = DrawContext;\n\
+    local dc   = Drawing;\n\
+    local Draw = Drawing;\n\
 \n\
     // printDrawColor(dc.Color());\n\
     // local tmpClr = Draw.Color();\n\
@@ -166,12 +166,12 @@ function classHandler(cppClass)\n\
     // print(\"dc.HorAlign.Center : \" + dc.HorAlign.toString(dc.HorAlign.Center));\n\
 \n\
     print(\"DrawContextHorAlign.Left : \" + DrawContextHorAlign.Left);\n\
-    print(\"DrawContext HorAlign.Right : \" + DrawContext.HorAlign.Right);\n\
+    print(\"Drawing HorAlign.Right : \" + Drawing.HorAlign.Right);\n\
     print(\"dc HorAlign.Center : \" + dc.HorAlign.Center);\n\
     print(\"dc.FontWeight.Bold : \" + dc.FontWeight.Bold); // Here we can see replacement in string literal, source is \"dc dot FontWeight.Bold\"\n\
     print(\"Stuff.first : \" + Stuff.first);\n\
     // print(\"TestEnumG.One : \" + TestEnumG.One);                         // !!!\n\
-    //print(\"dc.TestEnum.One : \" + DrawContext.TestEnum.One);            // !!!\n\
+    //print(\"dc.TestEnum.One : \" + Drawing.TestEnum.One);            // !!!\n\
     //print(\"DrawContextEnums.TestEnumL.One : \" + DrawContextEnums.TestEnumL.One);            // !!!\n\
 }\n\
 \n\
@@ -284,8 +284,8 @@ int main( int argc, char* argv[] )
     try
     {
         {
-            ssq::sqstring srcScript = _SC(".HorAlign.Left\nlocal dc = DrawContext\nlocal center = .HorAlign.Center\nlocal center =HorAlign.Center\nlocal left = DrawContext.HorAlign.Left\nlocal right = dc.HorAlign.Right\nlocal fwBold = DrawContext.FontWeight.Bold\nlocal fwNormal = dc.FontWeight.Normal\n");
-            ssq::sqstring substRes  = marty_draw_context::simplesquirrel::prepareScriptEnums(srcScript, "DrawContext", false);
+            ssq::sqstring srcScript = _SC(".HorAlign.Left\nlocal dc = Drawing\nlocal center = .HorAlign.Center\nlocal center =HorAlign.Center\nlocal left = Drawing.HorAlign.Left\nlocal right = dc.HorAlign.Right\nlocal fwBold = Drawing.FontWeight.Bold\nlocal fwNormal = dc.FontWeight.Normal\n");
+            ssq::sqstring substRes  = marty_draw_context::simplesquirrel::prepareScriptEnums(srcScript, "Drawing", false);
 
             std::cout << "--- Script (input):\n";
             std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(srcScript);
@@ -299,12 +299,12 @@ int main( int argc, char* argv[] )
         // !!! Тут мы генерим скрипт, который создаёт enum'ы
         {
             std::cout << "--- Script enums prefix:\n";
-            auto exposeEnumsScript = marty_draw_context::simplesquirrel::enumsExposeMakeScript(' ', ';', 0, "DrawContext");
+            auto exposeEnumsScript = marty_draw_context::simplesquirrel::enumsExposeMakeScript(' ', ';', 0, "Drawing");
             std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(exposeEnumsScript) << "\n"; // Тут проверяем, что там нагенерировалось
         }
 
         // добавляем описание enum'ов в самое начало рабочего скрипта и заменяем enum'ы в тексте скрипта 
-        ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::prepareScriptEnums(sqSrc1, "DrawContext", true);
+        ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::prepareScriptEnums(sqSrc1, "Drawing", true);
         ssq::Script script1 = vm.compileSource(preparedScriptText1.c_str());
 
         std::cout << "---\n";
@@ -324,16 +324,22 @@ int main( int argc, char* argv[] )
         // Почему-то добавление enum'ов через API не работает - новые enum'ы имеются в const таблице, но почему-то не работает
         // Тут я попытался сгенерировать отдельный скрипт, скомпилировать его и запустить - тоже не работает
         // Но работает задание enum прямо в скрипте - см. enum Stuff в начале
-        // marty_draw_context::simplesquirrel::exposeEnums(vm, "DrawContext");
+        // marty_draw_context::simplesquirrel::exposeEnums(vm, "Drawing");
 
 
         #if defined(TEST_CLASS_BIND)
 
         ssq::Table tDraw = 
-        vm.addTable(_SC("DrawContext"));
+        vm.addTable(_SC("Drawing"));
         // marty_draw_context::simplesquirrel::HorAlignEnumStruct::expose(tDraw /*vm*/, _SC("HorAlign")); // !!! Не работает
-        marty_draw_context::simplesquirrel::DrawColor         ::expose(tDraw /*vm*/, _SC("Color"));
-        marty_draw_context::simplesquirrel::DrawCoords        ::expose(tDraw /*vm*/, _SC("Coords"));
+        marty_draw_context::simplesquirrel::DrawingColor           ::expose(tDraw /*vm*/, _SC("Color"));
+        marty_draw_context::simplesquirrel::DrawingCoords          ::expose(tDraw /*vm*/, _SC("Coords"));
+        marty_draw_context::simplesquirrel::DrawingFontParams      ::expose(tDraw /*vm*/, _SC("FontParams"));
+        marty_draw_context::simplesquirrel::DrawingGradientParams  ::expose(tDraw /*vm*/, _SC("GradientParams"));
+        marty_draw_context::simplesquirrel::DrawingPenParams       ::expose(tDraw /*vm*/, _SC("PenParams"));
+        marty_draw_context::simplesquirrel::DrawingContext         ::expose(tDraw /*vm*/, _SC("Context"));
+        
+
 
         // !!! Скопировал это из примера simplesquirrel, тоже не работает
         // ssq::Table tDrawConst = 

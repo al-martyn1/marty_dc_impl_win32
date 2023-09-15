@@ -1,8 +1,8 @@
 /*! \file
-    \brief Общий тест основных методов IDrawContext
+    \brief тесты биндинга сквирела
 */
 
-#define TESTWINDRAWCONTEXT 1
+#define TESTWINDRAWCONTEXT 2
 
 #include "TestDrawContextCommon.cpp"
 
