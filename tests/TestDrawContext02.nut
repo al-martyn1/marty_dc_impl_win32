@@ -6,6 +6,7 @@ function onPaint(drawingContext)
     local dc = drawingContext; // short alias for Drawing.Context object
 
     local greenPen = dc.createSolidPen(D.PenParams(3, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromString("green"));
+    //local greenPen = dc.createSolidPen(D.PenParams(3, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Green);
     dc.selectPen(greenPen);
 
     dc.moveTo(Drawing.Coords(10,10));

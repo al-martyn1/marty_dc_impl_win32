@@ -146,6 +146,10 @@ public:
         try
         {
             ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::prepareScriptEnums(sqScript, "Drawing", true);
+
+            lout << encoding::toUtf8(preparedScriptText1);
+            lout << "\n----------\n\n";
+
             ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
 
             ssq::Table tDraw = 
