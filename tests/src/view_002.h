@@ -145,12 +145,11 @@ public:
 
         try
         {
+            Sleep(300);
             ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::prepareScriptEnums(sqScript, "Drawing", true);
 
             lout << encoding::toUtf8(preparedScriptText1);
             lout << "\n----------\n\n";
-
-            ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
 
             ssq::Table tDraw = 
             vm.addTable(_SC("Drawing"));
@@ -160,6 +159,8 @@ public:
             marty_draw_context::simplesquirrel::DrawingGradientParams  ::expose(tDraw /*vm*/, _SC("GradientParams"));
             marty_draw_context::simplesquirrel::DrawingPenParams       ::expose(tDraw /*vm*/, _SC("PenParams"));
             marty_draw_context::simplesquirrel::DrawingContext         ::expose(tDraw /*vm*/, _SC("Context"));
+
+            ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
 
             vm.run(script);
             
