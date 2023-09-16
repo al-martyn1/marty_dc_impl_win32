@@ -248,17 +248,17 @@ public:
         GdiDrawContext     idc = dc;
         #endif
 
-        //auto scale = 1.4;
-        //auto scale = 8;
-        auto scale = 6;
-        //idc.setScale(DrawScale(30,30));
-        //idc.setScale(DrawScale(10,10));
+        // //auto scale = 1.4;
+        // //auto scale = 8;
+        // auto scale = 6;
+        // //idc.setScale(DrawScale(30,30));
+        // //idc.setScale(DrawScale(10,10));
 
         IDrawContext *pDc = &idc;
 
-        pDc->setOffset(DrawScale(1.4,1.4));
-        pDc->setScale(DrawScale(scale,scale));
-        pDc->setPenScale(scale);
+        // //pDc->setOffset(DrawScale(1.4,1.4));
+        // //pDc->setScale(DrawScale(scale,scale));
+        // //pDc->setPenScale(scale);
 
         DoPaintImpl(pDc);
 
