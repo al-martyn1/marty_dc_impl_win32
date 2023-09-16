@@ -42,11 +42,12 @@ function onPaint(drawingContext)
     dc.setPenScale(scale);
 
     local genericFontParamsH8  = D.FontParams(8, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
-    local genericFontParamsH20 = clone genericFontParamsH8;
-    genericFontParamsH20.height = 20; // Type error bad cast expected: FLOAT got: INTEGER
+    //local genericFontParamsH20 = clone genericFontParamsH8;
+    //genericFontParamsH20.height = 20; // Type error bad cast expected: FLOAT got: INTEGER
     //genericFontParamsH20.height = 20.0; // : Access violation writing location 0x0000000000000000.
 
-
+    local genericFontParamsH20 = D.FontParams(20, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
+    genericFontParamsH20.height = 20.0;
 
 
 
