@@ -9,21 +9,13 @@
 
 #include "umba/umba.h"
 #include "umba/simple_formatter.h"
-
+#include "umba/time_service.h"
 
 
 #include "marty_dc_impl_win32/gdi_draw_context.h"
 #include "marty_dc_impl_win32/gdiplus_draw_context.h"
 
 #include "test_drawings.h"
-//#include "../keyboard_geometry/keyboard_drawing.h"
-//#include "../keyboard_geometry/keyboard_geometry.h"
-//#include "../configs/colors_config.h"
-
-//#include "drawing/icons_drawing.h"
-//#include "drawing/hand_icons_drawing.h"
-
-//#include "marty_fs_adapters/simple_file_api.h"
 
 #include <array>
 
@@ -141,6 +133,8 @@ public:
     void DoPaint(CDCHandle dc)
     {
         using namespace underwood;
+        using umba::lout;
+        using namespace umba::omanip;
 
         #ifdef TEST_DC_USE_GDIPLUS
         GdiPlusDrawContext idc = dc;
@@ -160,7 +154,13 @@ public:
         pDc->setScale(DrawScale(scale,scale));
         pDc->setPenScale(scale);
 
+        auto startTick = umba::time_service::getCurTimeMs();
+
         DoPaintImpl(pDc);
+
+        auto endTick = umba::time_service::getCurTimeMs();
+
+        lout << "OnPaint times: " << (endTick-startTick) << "\n";
 
     }
 
@@ -373,7 +373,7 @@ public:
 
             #ifdef TEST_DC_GRADIENT_RECT
             {
-                DC_LOG()<<"\n*** TEST_DC_GRADIENT_RECT (1)\ngradientSamplePos.x: " << gradientSamplePos.x << "\ngradientSamplePos.y: " << gradientSamplePos.y << "\n";
+                // DC_LOG()<<"\n*** TEST_DC_GRADIENT_RECT (1)\ngradientSamplePos.x: " << gradientSamplePos.x << "\ngradientSamplePos.y: " << gradientSamplePos.y << "\n";
 
                 // DrawCoord
                 // gradientSamplePos = DrawCoord{ (DrawCoord::value_type)2, iconBottomCurrentPos };
@@ -385,7 +385,7 @@ public:
     
     
                 gradientSamplePos.y += 4 + 2*iconInterval;
-                DC_LOG()<<"\n*** TEST_DC_GRADIENT_RECT (2)\ngradientSamplePos.x: " << gradientSamplePos.x << "\ngradientSamplePos.y: " << gradientSamplePos.y << "\n";
+                // DC_LOG()<<"\n*** TEST_DC_GRADIENT_RECT (2)\ngradientSamplePos.x: " << gradientSamplePos.x << "\ngradientSamplePos.y: " << gradientSamplePos.y << "\n";
     
                 pDc->fillGradientRect( gradientSamplePos  , gradientSamplePos + DrawCoord{ gradientRectSizeX, gradientRectSizeY/2 }
                                      , gradientParams, GradientType::horizontal
@@ -507,7 +507,7 @@ public:
 
             auto circleR = 1.6*gradientRectSizeY;
 
-            DC_LOG()<<"\n*** TEST_DC_GRADIENT_CIRCLE\ncircleR: " << circleR << "\n";
+            // DC_LOG()<<"\n*** TEST_DC_GRADIENT_CIRCLE\ncircleR: " << circleR << "\n";
         
             pDc->fillGradientCircle(gradientCircleSamplePos, circleR, gradientParams, true);
         

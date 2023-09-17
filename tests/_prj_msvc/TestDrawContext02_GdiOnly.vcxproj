@@ -32,6 +32,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\TestDrawContext02.cpp" />
     <ClCompile Include="..\_libs\sfmt\umba_lout.cpp" />
+    <ClCompile Include="..\_libs\umba\time_service.cpp" />
     <ClCompile Include="..\src\stdafx.cpp" />
     <ClCompile Include="..\_libs\encoding\encoding.cpp" />
     <ClCompile Include="..\_libs\encoding\compact_enc_det\compact_enc_det.cc" />

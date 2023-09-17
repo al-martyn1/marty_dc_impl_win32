@@ -546,7 +546,7 @@ public:
     virtual bool textOut( const DrawCoord &pos, const std::wstring &text ) override
     {
         auto scaledPos = getScaledPos(pos);
-        DC_LOG()<<"textOut at "<<scaledPos<<"\n";
+        //DC_LOG()<<"textOut at "<<scaledPos<<"\n";
         return TextOutW(m_hdc, int(floatToInt(scaledPos.x)), int(floatToInt(scaledPos.y)), text.data(), (int)text.size() ) ? true : false;
     }
 

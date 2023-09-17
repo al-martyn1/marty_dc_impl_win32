@@ -675,7 +675,7 @@ public:
         Gdiplus::SolidBrush textBrush = Gdiplus::SolidBrush(Gdiplus::Color(m_textColor.r,m_textColor.g,m_textColor.b));
 
         auto scaledPos = getScaledPos(pos);
-        DC_LOG()<<"textOut at "<<scaledPos<<"\n";
+        //DC_LOG()<<"textOut at "<<scaledPos<<"\n";
         Gdiplus::PointF posF = Gdiplus::PointF(floatToFloat(scaledPos.x),floatToFloat(scaledPos.y));
 
         // Gdiplus::StringFormat stringFormat = Gdiplus::StringFormat(0,0);

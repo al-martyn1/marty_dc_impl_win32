@@ -11,11 +11,12 @@
 #include "umba/simple_formatter.h"
 #include "umba/cmd_line.h"
 #include "umba/filename.h"
-
+#include "umba/time_service.h"
 
 
 #include "marty_dc_impl_win32/gdi_draw_context.h"
 #include "marty_dc_impl_win32/gdiplus_draw_context.h"
+
 
 #include "test_drawings.h"
 
@@ -271,11 +272,13 @@ public:
 
         ssq::Function sqOnPaint = vm.findFunc(_SC("onPaint"));
 
+        auto startTick = umba::time_service::getCurTimeMs();
+
         if (!(sqOnPaint.isEmpty() || sqOnPaint.isNull()))
         {
             try{
 
-                lout << "DoPaintImpl: call onPaint from script\n";
+                //lout << "DoPaintImpl: call onPaint from script\n";
                 marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(pDc);
                 vm.callFunc(sqOnPaint, vm, &sqDc);
                 //vm.callFunc(sqOnPaint, vm, sqDc);
@@ -295,6 +298,11 @@ public:
             }
 
         }
+
+        auto endTick = umba::time_service::getCurTimeMs();
+
+        lout << "OnPaint times: " << (endTick-startTick) << "\n";
+
     }
 
 };
