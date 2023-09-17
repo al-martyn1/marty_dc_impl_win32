@@ -280,6 +280,16 @@ public:
 
                 //lout << "DoPaintImpl: call onPaint from script\n";
                 marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(pDc);
+
+                RECT clientRect{0,0};
+                ::GetClientRect(m_hWnd, &clientRect);
+
+                auto cx = clientRect.right  - clientRect.left;
+                auto cy = clientRect.bottom - clientRect.top ;
+                // lout << "OnPaint: cx: " << cx << ", cy: " << cy <<"\n";
+                sqDc.ctxSizeX = (int)(cx);
+                sqDc.ctxSizeY = (int)(cy);
+
                 vm.callFunc(sqOnPaint, vm, &sqDc);
                 //vm.callFunc(sqOnPaint, vm, sqDc);
 

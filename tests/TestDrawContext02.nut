@@ -256,6 +256,7 @@ function onPaint(drawingContext)
     dc.setScale(D.Scale(scale,scale));
     dc.setPenScale(scale);
 
+    local genericFontParamsH4  = D.FontParams(4, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
     local genericFontParamsH8  = D.FontParams(8, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
     //local genericFontParamsH20 = clone genericFontParamsH8;
     //genericFontParamsH20.height = 20; // Type error bad cast expected: FLOAT got: INTEGER
@@ -264,6 +265,7 @@ function onPaint(drawingContext)
     local genericFontParamsH20 = D.FontParams(20, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
     genericFontParamsH20.height = 20.0;
 
+    local infoFontId     = dc.createFontWithFace( genericFontParamsH4 , "Arial"          );
     local arialFontId    = dc.createFontWithFace( genericFontParamsH8 , "Arial"          );
     local timesFontId    = dc.createFontWithFace( genericFontParamsH8 , "Times New Roman");
     local courierFontId  = dc.createFontWithFace( genericFontParamsH8 , "Courier New"    );
@@ -495,6 +497,28 @@ function onPaint(drawingContext)
         dc.endPath(true,false);
     }
 
+
+    // dc.textOutWithFontAndColor( D.Coords( 76,14), arialFontId  , D.Color.fromRgb(128,0,0)  , "Arial A"   );
+    // dc.textOutWithFontAndColor( D.Coords( 94,28), timesFontId  , D.Color.fromRgb(128,128,0), "Times T"   );
+    // //dc.textOutWithFontAndColor( D.Coords(112,42), courierFontId, D.Color.fromRgb(0,128,128), "Courier C" );
+    // dc.textOutWithFontAndColor( D.Coords(112,42), courierFontId, D.Colors.Magenta, "Courier C" );
+
+    // infoFontId
+
+    // print draw context size on left top and right bottom positions
+
+    local ltLtPos = D.Coords(1,1);
+
+    local dcSize  = dc.getSize();
+
+    local dcSizeStr = "X: " + dcSize.x.tostring() + ",  Y: " + dcSize.y.tostring();
+
+    dc.textOutWithFontAndColor( ltLtPos, infoFontId, D.Color.fromRgb(0,0,0), dcSizeStr );
+
+    local ltRbPos = dcSize - D.Coords(50,10);
+    // local ltRbPos = D.Coords(15,10);
+
+    dc.textOutWithFontAndColor( ltRbPos, infoFontId, D.Color.fromRgb(0,0,0), dcSizeStr );
 
 }
 
