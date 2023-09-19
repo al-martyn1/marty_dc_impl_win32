@@ -156,6 +156,23 @@ protected:
         brushesByParams.clear();
     }
 
+    virtual DcOffsetScale getOffsetScale() override
+    {
+        DcOffsetScale dcOs;
+        dcOs.offset   = m_offset  ;
+        dcOs.scale    = m_scale   ;
+        dcOs.penScale = m_penScale;
+        return dcOs;
+    }
+
+    virtual void restoreOffsetScale(const DcOffsetScale &dcOs) override
+    {
+        m_offset   = dcOs.offset  ;
+        m_scale    = dcOs.scale   ;
+        m_penScale = dcOs.penScale;
+        updateScaledOffset();
+    }
+
     virtual marty_draw_context::ColorRef getPenColor(int penId) override
     {
         std::map<int, marty_draw_context::PenParamsWithColor>::const_iterator pit = pensParamsById.find(penId);

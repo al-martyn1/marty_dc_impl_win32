@@ -264,6 +264,78 @@ public:
 
     }
 
+
+    virtual DcResourcesState getResourcesState() override
+    {
+        DcResourcesState rcState;
+
+        rcState.nPens     = (int)m_hPens.size();
+        rcState.penId     = (int)m_curPenId;
+        rcState.nBrushes  = (int)m_hBrushes.size();
+        rcState.brushId   = (int)m_curBrushId;
+        rcState.nFonts    = (int)m_hFonts.size();
+        rcState.fontId    = (int)m_curFontId;
+
+        rcState.textColor = m_textColor  ;
+        rcState.bkColor   = m_textBkColor;
+
+        return rcState;
+    }
+
+    virtual void restoreResourcesState(const DcResourcesState &rcState) override
+    {
+        std::size_t nPens     = (std::size_t)rcState.nPens;
+        std::size_t nBrushes  = (std::size_t)rcState.nBrushes;
+        std::size_t nFonts    = (std::size_t)rcState.nFonts;
+
+        if (nPens<m_hPens.size())
+        {
+            m_hPens.resize(nPens);
+        }
+
+        if (nBrushes<m_hBrushes.size())
+        {
+            m_hBrushes.resize(nBrushes);
+        }
+
+        if (nFonts<m_hFonts.size())
+        {
+            m_hFonts.resize(nFonts);
+        }
+
+        if (((std::size_t)rcState.penId)<m_hPens.size())
+        {
+            m_curPenId = rcState.penId;
+        }
+        else
+        {
+            m_curPenId = -1;
+        }
+
+        if (((std::size_t)rcState.brushId)<m_hBrushes.size())
+        {
+            m_curBrushId = rcState.brushId;
+        }
+        else
+        {
+            m_curBrushId = -1;
+        }
+
+        if (((std::size_t)rcState.fontId)<m_hFonts.size())
+        {
+            m_curFontId = rcState.fontId;
+        }
+        else
+        {
+            m_curFontId = -1;
+        }
+
+        m_textColor   = rcState.textColor;
+        m_textBkColor = rcState.bkColor  ;
+
+    }
+
+
     virtual DrawSize calcDrawnTextSizeExact (int   fontId         , const char*    text, std::size_t nChars) override
     {
         std::string  strText  = (nChars==(std::size_t)-1) ? std::string(text) : std::string(text,nChars);
@@ -729,6 +801,11 @@ public:
         return setBkColor( rgb.r, rgb.g, rgb.b );
     }
 
+    virtual ColorRef getBkColor() override
+    {
+        return m_textBkColor;
+    }
+
     virtual marty_draw_context::BkMode setBkMode(marty_draw_context::BkMode mode ) override
     {
         MARTY_ARG_USED(mode);
@@ -736,10 +813,11 @@ public:
         return marty_draw_context::BkMode::transparent;
     }
 
-    // virtual BkMode getBkMode( ) override
-    // {
-    //     return BkMode::transparent;
-    // }
+    virtual BkMode getBkMode( ) override
+    {
+        return BkMode::transparent;
+    }
+
 
 
     virtual DrawCoord getCurPos( ) override

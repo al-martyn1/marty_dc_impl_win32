@@ -223,6 +223,85 @@ public:
         init();
     }
 
+    virtual DcResourcesState getResourcesState() override
+    {
+        DcResourcesState rcState;
+
+        rcState.nPens     = (int)m_hPens.size();
+        rcState.penId     = (int)m_curPenId;
+        rcState.nBrushes  = (int)m_hBrushes.size();
+        rcState.brushId   = (int)m_curBrushId;
+        rcState.nFonts    = (int)m_hFonts.size();
+        rcState.fontId    = (int)m_curFontId;
+
+        rcState.textColor = getTextColor();
+        rcState.bkColor   = getBkColor();
+
+        return rcState;
+    }
+
+    virtual void restoreResourcesState(const DcResourcesState &rcState) override
+    {
+        std::size_t nPens     = (std::size_t)rcState.nPens;
+        std::size_t nBrushes  = (std::size_t)rcState.nBrushes;
+        std::size_t nFonts    = (std::size_t)rcState.nFonts;
+
+        if (nPens<m_hPens.size())
+        {
+            for(std::size_t i=nPens; i!=m_hPens.size(); ++i)
+                DeleteObject((HGDIOBJ)m_hPens[i]);
+
+            m_hPens.resize(nPens);
+        }
+
+        if (nBrushes<m_hBrushes.size())
+        {
+            for(std::size_t i=nBrushes; i!=m_hBrushes.size(); ++i)
+                DeleteObject((HGDIOBJ)m_hBrushes[i]);
+
+            m_hBrushes.resize(nBrushes);
+        }
+
+        if (nFonts<m_hFonts.size())
+        {
+            for(std::size_t i=nFonts; i!=m_hFonts.size(); ++i)
+                DeleteObject((HGDIOBJ)m_hFonts[i]);
+
+            m_hFonts.resize(nFonts);
+        }
+
+        if (((std::size_t)rcState.penId)<m_hPens.size())
+        {
+            m_curPenId = rcState.penId;
+        }
+        else
+        {
+            m_curPenId = -1;
+        }
+
+        if (((std::size_t)rcState.brushId)<m_hBrushes.size())
+        {
+            m_curBrushId = rcState.brushId;
+        }
+        else
+        {
+            m_curBrushId = -1;
+        }
+
+        if (((std::size_t)rcState.fontId)<m_hFonts.size())
+        {
+            m_curFontId = rcState.fontId;
+        }
+        else
+        {
+            m_curFontId = -1;
+        }
+
+        setTextColor(rcState.textColor);
+        setBkColor(rcState.bkColor);
+    }
+
+
     virtual DrawSize calcDrawnTextSizeExact (int   fontId         , const char*    text, std::size_t nChars) override
     {
         std::string  strText  = (nChars==(std::size_t)-1) ? std::string(text) : std::string(text,nChars);
@@ -550,7 +629,6 @@ public:
         return TextOutW(m_hdc, int(floatToInt(scaledPos.x)), int(floatToInt(scaledPos.y)), text.data(), (int)text.size() ) ? true : false;
     }
 
-
     virtual marty_draw_context::ColorRef setTextColor( std::uint8_t r, std::uint8_t g, std::uint8_t b ) override
     {
         auto prevColor = SetTextColor(m_hdc, RGB(r,g,b) );
@@ -573,6 +651,13 @@ public:
         return setBkColor( rgb.r, rgb.g, rgb.b );
     }
 
+    virtual ColorRef getBkColor() override
+    {
+        auto prevColor = SetBkColor(m_hdc, RGB(0,0,0) );
+        SetBkColor(m_hdc, prevColor );
+        return marty_draw_context::ColorRef{GetRValue(prevColor), GetGValue(prevColor), GetBValue(prevColor)};
+    }
+
     virtual marty_draw_context::ColorRef getTextColor( ) override
     {
         auto prevColor = SetTextColor(m_hdc, RGB(0,0,0) ); // get prev color
@@ -584,7 +669,16 @@ public:
 
     virtual marty_draw_context::BkMode setBkMode(marty_draw_context::BkMode mode ) override
     {
-        return (SetBkMode(m_hdc, mode== marty_draw_context::BkMode::opaque ? OPAQUE : TRANSPARENT )==OPAQUE) ? marty_draw_context::BkMode::opaque : marty_draw_context::BkMode::transparent;
+        return (SetBkMode(m_hdc, mode== marty_draw_context::BkMode::opaque ? OPAQUE : TRANSPARENT )==OPAQUE) 
+             ? marty_draw_context::BkMode::opaque 
+             : marty_draw_context::BkMode::transparent;
+    }
+
+    virtual marty_draw_context::BkMode getBkMode() override
+    {
+        auto mode = SetBkMode(m_hdc, TRANSPARENT);
+        SetBkMode(m_hdc, mode);
+        return mode==OPAQUE ? marty_draw_context::BkMode::opaque : marty_draw_context::BkMode::transparent;
     }
 
 
