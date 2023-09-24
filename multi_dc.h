@@ -14,10 +14,101 @@
 namespace marty_draw_context {
 
 
-inline
-MultiDrawContext makeMultiDrawContext(HDC hdc, bool prefferGdiPlus = false)
+struct MultiDrawContextGdi : public MultiDrawContext
 {
-    MultiDrawContext mdc;
+
+protected:
+
+    HDC                 m_hdc; // m_dc.m_hDC
+    HdcReleaseMode      m_hdcReleaseMode = HdcReleaseMode::doNothing;
+    HWND                m_hwnd;
+
+
+    static
+    HDC hdcRelease( HDC hdc
+                  , HdcReleaseMode   releaseMode
+                  , HWND             hwnd          = 0
+                  , LPPAINTSTRUCT    lpPaintStruct = 0
+                  )
+    {
+        switch(releaseMode)
+        {
+            case HdcReleaseMode::endPaint    : 
+            {
+                ATLASSERT(hwnd!=0);
+                ATLASSERT(lpPaintStruct!=0);
+
+                if (hwnd==0)
+                {
+                    throw std::runtime_error("hdcRelease(HdcReleaseMode::endPaint): hwnd==0");
+                }
+
+                if (lpPaintStruct==0)
+                {
+                    throw std::runtime_error("hdcRelease(HdcReleaseMode::endPaint): lpPaintStruct==0");
+                }
+
+                ::EndPaint(hwnd, lpPaintStruct);
+
+                break;
+            }
+
+            case HdcReleaseMode::releaseDc   :
+            {
+                ATLASSERT(hwnd!=0);
+
+                if (hwnd==0)
+                {
+                    throw std::runtime_error("hdcRelease(HdcReleaseMode::endPaint): hwnd==0");
+                }
+
+                ::ReleaseDC(hwnd, hdc);
+
+                break;
+            }
+
+            case HdcReleaseMode::deleteDc    :
+            {
+                ::DeleteDC(hdc);
+
+                break;
+            }
+
+            case HdcReleaseMode::doNothing   :
+            case HdcReleaseMode::invalid:    [[fallthrough]];
+
+            default: {}
+        }
+
+        return (HDC)0;
+    }
+    
+public:
+
+    
+
+    MultiDrawContextGdi(HDC hdc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
+    : MultiDrawContext()
+    , m_hdc(hdc)
+    , m_hdcReleaseMode(hdcReleaseMode)
+    , m_hwnd(hwnd)
+    {
+    }
+
+    ~MultiDrawContextGdi()
+    {
+        m_hdc = hdcRelease(m_hdc, m_hdcReleaseMode, m_hwnd /* , lpPaintStruct */ );
+    }
+
+}; // struct MultiDrawContextGdi
+
+
+
+
+inline
+MultiDrawContext makeMultiDrawContext(HDC hdc, bool prefferGdiPlus = false, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
+{
+    MultiDrawContextGdi mdc = MultiDrawContextGdi(hdc, hdcReleaseMode, hwnd);
 
     std::shared_ptr<IDrawContext> gdiDc   = std::make_shared<GdiDrawContext>(hdc);
 
@@ -54,9 +145,9 @@ MultiDrawContext makeMultiDrawContext(HDC hdc, bool prefferGdiPlus = false)
 
 
 inline
-std::shared_ptr<IDrawContext> makeSharedMultiDrawContext(HDC hdc, bool prefferGdiPlus = false)
+std::shared_ptr<IDrawContext> makeSharedMultiDrawContext(HDC hdc, bool prefferGdiPlus = false, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
 {
-    std::shared_ptr<MultiDrawContext> mdc = std::make_shared<MultiDrawContext>();
+    std::shared_ptr<MultiDrawContextGdi> mdc = std::make_shared<MultiDrawContextGdi>(hdc, hdcReleaseMode, hwnd);
 
     std::shared_ptr<IDrawContext> gdiDc   = std::make_shared<GdiDrawContext>(hdc);
 

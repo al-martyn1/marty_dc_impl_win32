@@ -37,7 +37,9 @@ public:
 protected:
 
     // CDCHandle m_dc; // non-managed GDI Handle class object
-    HDC       m_hdc; // m_dc.m_hDC
+    HDC                 m_hdc; // m_dc.m_hDC
+    HdcReleaseMode      m_hdcReleaseMode = HdcReleaseMode::doNothing;
+    HWND                m_hwnd;
 
     bool      m_pathStarted;
 
@@ -123,9 +125,11 @@ public:
 
 // HDC       m_hdc; // m_dc.m_hDC
 
-    GdiDrawContext(CDCHandle dc)
+    GdiDrawContext(CDCHandle dc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
     : DrawContextImplBase()
     , m_hdc(dc.m_hDC)
+    , m_hdcReleaseMode(hdcReleaseMode)
+    , m_hwnd(hwnd)
     , m_pathStarted(false)
     , m_curPos()
     , m_hPens()
@@ -141,9 +145,11 @@ public:
         init();
     }
 
-    GdiDrawContext(HDC hdc)
+    GdiDrawContext(HDC hdc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
     : DrawContextImplBase()
     , m_hdc(hdc)
+    , m_hdcReleaseMode(hdcReleaseMode)
+    , m_hwnd(hwnd)
     , m_pathStarted(false)
     , m_curPos()
     , m_hPens()
@@ -163,6 +169,9 @@ public:
 
     ~GdiDrawContext()
     {
+
+        m_hdc = hdcRelease(m_hdc, m_hdcReleaseMode, m_hwnd /* , lpPaintStruct */ );
+
         #if 0
 
         SelectObject(m_hdc, (HGDIOBJ)m_defPen);

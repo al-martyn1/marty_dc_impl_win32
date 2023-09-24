@@ -49,6 +49,8 @@ protected:
 
     // CDCHandle           m_dc; // non-managed GDI Handle class object
     HDC                 m_hdc;
+    HdcReleaseMode      m_hdcReleaseMode = HdcReleaseMode::doNothing;
+    HWND                m_hwnd;
     Gdiplus::Graphics   m_g;
 
     // bool      m_pathStarted;
@@ -185,9 +187,11 @@ protected:
 
 public:
 
-    GdiPlusDrawContext(CDCHandle dc)
+    GdiPlusDrawContext(CDCHandle dc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
     : DrawContextImplBase()
     , m_hdc(dc.m_hDC)
+    , m_hdcReleaseMode(hdcReleaseMode)
+    , m_hwnd(hwnd)
     , m_g(dc.m_hDC)
     //, m_pathStarted(false)
     , m_curPath()     // https://docs.microsoft.com/en-us/windows/win32/api/gdipluspath/nf-gdipluspath-graphicspath-graphicspath(fillmode)
@@ -205,9 +209,11 @@ public:
         init();
     }
 
-    GdiPlusDrawContext(HDC hdc)
+    GdiPlusDrawContext(HDC hdc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
     : DrawContextImplBase()
     , m_hdc(hdc)
+    , m_hdcReleaseMode(hdcReleaseMode)
+    , m_hwnd(hwnd)
     , m_g(hdc)
     //, m_pathStarted(false)
     , m_curPath()     // https://docs.microsoft.com/en-us/windows/win32/api/gdipluspath/nf-gdipluspath-graphicspath-graphicspath(fillmode)
@@ -225,8 +231,14 @@ public:
         init();
     }
 
+
     ~GdiPlusDrawContext()
     {
+
+        m_g.Flush(Gdiplus::FlushIntentionSync);
+
+        m_hdc = hdcRelease(m_hdc, m_hdcReleaseMode, m_hwnd /* , lpPaintStruct */ );
+
         /*
         SelectObject(m_dc.m_hDC, (HGDIOBJ)m_defPen);
 

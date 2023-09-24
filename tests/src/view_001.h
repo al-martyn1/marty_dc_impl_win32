@@ -261,15 +261,15 @@ public:
             test_drawFishTail_5_10(pDc, fishTailPos);
             #endif
            
-            #if defined(TEST_DC_ROUND_SQUARE)
-            test_drawRoundSquare(pDc,DrawCoord(90,10), DrawCoord(30, 20), 4);
-            #endif
-           
             #if defined(TEST_DC_SNAKE)
             test_drawSnake_10_60(pDc, DrawCoord(115,0), 4 /* 0.8 */  /* 0.5 */ );
             #endif
            
             pDc->endPath( true, true );
+
+            #if defined(TEST_DC_ROUND_SQUARE)
+            test_drawRoundSquare(pDc,DrawCoord(90,10), DrawCoord(30, 20), 4);
+            #endif
 
         #endif
 

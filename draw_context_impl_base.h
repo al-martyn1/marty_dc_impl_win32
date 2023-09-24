@@ -17,6 +17,7 @@
 
 #include <cmath>
 #include "mathHelpers.h"
+#include "dc_win32_enums.h"
 
 
 #define DC_LOG()    UW_LOG_DBGOUT()
@@ -75,6 +76,67 @@ public:
 
 
 protected:
+
+    static
+    HDC hdcRelease( HDC hdc
+                  , HdcReleaseMode   releaseMode
+                  , HWND             hwnd          = 0
+                  , LPPAINTSTRUCT    lpPaintStruct = 0
+                  )
+    {
+        switch(releaseMode)
+        {
+            case HdcReleaseMode::endPaint    : 
+            {
+                ATLASSERT(hwnd!=0);
+                ATLASSERT(lpPaintStruct!=0);
+
+                if (hwnd==0)
+                {
+                    throw std::runtime_error("hdcRelease(HdcReleaseMode::endPaint): hwnd==0");
+                }
+
+                if (lpPaintStruct==0)
+                {
+                    throw std::runtime_error("hdcRelease(HdcReleaseMode::endPaint): lpPaintStruct==0");
+                }
+
+                ::EndPaint(hwnd, lpPaintStruct);
+
+                break;
+            }
+
+            case HdcReleaseMode::releaseDc   :
+            {
+                ATLASSERT(hwnd!=0);
+
+                if (hwnd==0)
+                {
+                    throw std::runtime_error("hdcRelease(HdcReleaseMode::endPaint): hwnd==0");
+                }
+
+                ::ReleaseDC(hwnd, hdc);
+
+                break;
+            }
+
+            case HdcReleaseMode::deleteDc    :
+            {
+                ::DeleteDC(hdc);
+
+                break;
+            }
+
+            case HdcReleaseMode::doNothing   :
+            case HdcReleaseMode::invalid:    [[fallthrough]];
+
+            default: {}
+        }
+
+        return (HDC)0;
+    }
+
+
 
     struct MarkerInfo
     {
