@@ -16,6 +16,7 @@
 
 #include "marty_dc_impl_win32/gdi_draw_context.h"
 #include "marty_dc_impl_win32/gdiplus_draw_context.h"
+#include "marty_dc_impl_win32/multi_dc.h"
 
 
 #include "test_drawings.h"
@@ -115,7 +116,7 @@ public:
 
         while(true)
         {
-            fullScriptFileName = umba::filename::appendPath(path, std::string("TestDrawContext02.nut"));
+            fullScriptFileName = umba::filename::appendPath(path, std::string("TestDrawContext03.nut"));
 
             strScript = fsApi.readFile(fullScriptFileName);
             if (!strScript.empty())
@@ -147,21 +148,27 @@ public:
         try
         {
             Sleep(300);
-            ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::prepareScriptEnums(sqScript, "Drawing", true);
 
+            ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::performBinding(vm, sqScript, "Drawing");
             lout << encoding::toUtf8(preparedScriptText1);
             lout << "\n----------\n\n";
 
-            ssq::Table tDraw = 
-            vm.addTable(_SC("Drawing"));
-            marty_draw_context::simplesquirrel::DrawingColor           ::expose(tDraw /*vm*/, _SC("Color"));
-            marty_draw_context::simplesquirrel::DrawingCoords          ::expose(tDraw /*vm*/, _SC("Coords"));
-            marty_draw_context::simplesquirrel::DrawingCoords          ::expose(tDraw /*vm*/, _SC("Scale"));
-            //marty_draw_context::simplesquirrel::DrawingCoords          ::expose(tDraw /*vm*/, _SC(""));
-            marty_draw_context::simplesquirrel::DrawingFontParams      ::expose(tDraw /*vm*/, _SC("FontParams"));
-            marty_draw_context::simplesquirrel::DrawingGradientParams  ::expose(tDraw /*vm*/, _SC("GradientParams"));
-            marty_draw_context::simplesquirrel::DrawingPenParams       ::expose(tDraw /*vm*/, _SC("PenParams"));
-            marty_draw_context::simplesquirrel::DrawingContext         ::expose(tDraw /*vm*/, _SC("Context"));
+
+            // ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::prepareScriptEnums(sqScript, "Drawing", true);
+            //  
+            // lout << encoding::toUtf8(preparedScriptText1);
+            // lout << "\n----------\n\n";
+            //  
+            // ssq::Table tDraw = 
+            // vm.addTable(_SC("Drawing"));
+            // marty_draw_context::simplesquirrel::DrawingColor           ::expose(tDraw /*vm*/, _SC("Color"));
+            // marty_draw_context::simplesquirrel::DrawingCoords          ::expose(tDraw /*vm*/, _SC("Coords"));
+            // marty_draw_context::simplesquirrel::DrawingCoords          ::expose(tDraw /*vm*/, _SC("Scale"));
+            // //marty_draw_context::simplesquirrel::DrawingCoords          ::expose(tDraw /*vm*/, _SC(""));
+            // marty_draw_context::simplesquirrel::DrawingFontParams      ::expose(tDraw /*vm*/, _SC("FontParams"));
+            // marty_draw_context::simplesquirrel::DrawingGradientParams  ::expose(tDraw /*vm*/, _SC("GradientParams"));
+            // marty_draw_context::simplesquirrel::DrawingPenParams       ::expose(tDraw /*vm*/, _SC("PenParams"));
+            // marty_draw_context::simplesquirrel::DrawingContext         ::expose(tDraw /*vm*/, _SC("Context"));
 
             ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
 
@@ -244,23 +251,12 @@ public:
         using namespace underwood;
 
         #ifdef TEST_DC_USE_GDIPLUS
-        GdiPlusDrawContext idc = dc;
+            auto idc = marty_draw_context::makeMultiDrawContext(dc, true  /* prefferGdiPlus */);
         #else
-        GdiDrawContext     idc = dc;
+            auto idc = marty_draw_context::makeMultiDrawContext(dc, false /* prefferGdiPlus */);
         #endif
 
-        // //auto scale = 1.4;
-        // //auto scale = 8;
-        // auto scale = 6;
-        // //idc.setScale(DrawScale(30,30));
-        // //idc.setScale(DrawScale(10,10));
-
         IDrawContext *pDc = &idc;
-
-        // //pDc->setOffset(DrawScale(1.4,1.4));
-        // //pDc->setScale(DrawScale(scale,scale));
-        // //pDc->setPenScale(scale);
-
         DoPaintImpl(pDc);
 
     }

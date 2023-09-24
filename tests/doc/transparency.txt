@@ -1,0 +1,4 @@
+https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-drawing-with-opaque-and-semitransparent-brushes-use
+https://stackoverflow.com/questions/10966008/draw-slightly-transparent-blue-rectangle-in-native-win32-gdi
+https://www.codeproject.com/Articles/286/Using-the-AlphaBlend-function
+https://learn.microsoft.com/en-us/windows/win32/gdi/using-rectangles

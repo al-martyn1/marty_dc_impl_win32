@@ -1,0 +1,37 @@
+Изучить
+https://learn.microsoft.com/en-us/troubleshoot/windows/win32/mix-gdi-and-gdi-plus-drawing#using-gdi-on-a-gdi-graphics-object-backed-by-the-screen
+https://learn.microsoft.com/en-us/troubleshoot/windows/win32/mix-gdi-and-gdi-plus-drawing#using-gdi-on-a-gdi-hdc
+
+
+MultiDC
+Default mode
+Pixel Precise mode
+Text Precize mode
+Smoothing (Quality?) mode
+
+Нужно сделать делегирующую реализацию.
+Все pen, brush и fonts создаём во всех интерфейсах, если указатели не равны вefault DrawContext.
+Все указатели - shared_ptr, делетеры для них создаются разные в зависимости от того, OnPaint или 
+что-то сами решили порисовать
+
+Заодно начнём создавать DrawContext'ы в динамической памяти, и надо решать, что делать с 
+низлежащим HDC.
+
+WM_PAINT - BeginPaint/EndPaint
+Порисовать, когда захотелось - GetDC-GetWindowDC/ReleaseDC
+  GetDC - клиентская область
+  GetWindowDC - всё окно, с заголовком и прочим
+  GetWindowDC(0) - весь экран (for the primary display monitor)
+
+Печать, например - CreateDC/DeleteDC
+
+CreateCompatibleDC/DeleteDC
+
+
+HDC GetDC(  [in] HWND hWnd);
+
+BeginPaint(hwnd, &ps);
+
+            // All painting occurs here, between BeginPaint and EndPaint.
+            FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW+1));
+            EndPaint(hwnd, &ps);

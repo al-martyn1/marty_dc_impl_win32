@@ -43,7 +43,8 @@
 #include "marty_draw_context/bindings/simplesquirrel.h"
 
 
-
+//#include "delegation_test.h"
+#include "delegation_test2.h"
 
 
 #define TEST_CLASS_BIND
@@ -269,6 +270,17 @@ int main( int argc, char* argv[] )
 {
     UMBA_USED(argc);
     UMBA_USED(argv);
+
+    std::shared_ptr<IDelegationTest> pDelegator = makeDelegator();
+
+    pDelegator->getter();
+    pDelegator->setter(true);
+    pDelegator->jobImpl(false, 3);
+    pDelegator->jobImpl(false, 4, "str");
+    pDelegator->jobImpl2(true, 5);
+    //pDelegator->jobImpl2(true, "str");
+    pDelegator->jobImpl2(true, 6);
+
 
     // static const Flag NONE = 0x0000;
     // static const Flag IO = 0x0001;

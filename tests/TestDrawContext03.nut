@@ -1,4 +1,8 @@
-// TestDrawContext02.nut - OnPaint handler test
+// TestDrawContext03.nut - OnPaint handler test with NultiDC
+
+
+local drawingPrecise = Drawing.DrawingPrecise.DefPrecise;
+
 
 function coordsSum(c1, c2)
 {
@@ -123,6 +127,7 @@ function test_drawRect_10_20(dc, offs)
     dc.closeFigure();
 }
 
+
 function test_drawRects(dc, offs)
 {
     dc.roundRect    (1, offs+Drawing.Coords( 0,0), offs+Drawing.Coords( 8, 8));
@@ -130,6 +135,7 @@ function test_drawRects(dc, offs)
     dc.rect         (   offs+Drawing.Coords(20,0), offs+Drawing.Coords(28, 8));
     dc.fillRect     (   offs+Drawing.Coords(30,0), offs+Drawing.Coords(38, 8));
 }
+
 
 function test_drawFishTail_5_10(dc, offs )
 {
@@ -301,30 +307,34 @@ function onPaint(drawingContext)
     // Fishtail
 
     local fishTailPos = Drawing.Coords(65,0);
-   
+
     dc.beginPath();
-   
+    
         test_drawRect_10_20(dc, fishTailPos);
        
         test_drawFishTail_5_10(dc, fishTailPos);
        
         test_drawSnake_10_60(dc, D.Coords(115,0), 4 /* 0.8 */  /* 0.5 */ );
-   
     dc.endPath( true, true );
 
     // test_drawRoundSquare(dc, offs, sz, cornersR )
+    drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.SmoothingPrecise);
     test_drawRoundSquare(dc, D.Coords(90,10), Drawing.Coords(30, 20), 4 );
+    drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
     test_drawRects(dc, D.Coords(80,1));
 
-
     // Text output
+    drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.TextPrecise);
+    // Меняем обратно на то, что было - проверка, будет ли работать - оказалось - не будет, и всё потому, что я просто забыл забиндить set/getDrawingPrecise
+    //drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
     dc.textOutWithFontAndColor( D.Coords( 76,14), arialFontId  , D.Color.fromRgb(128,0,0)  , "Arial A"   );
     dc.textOutWithFontAndColor( D.Coords( 94,28), timesFontId  , D.Color.fromRgb(128,128,0), "Times T"   );
     //dc.textOutWithFontAndColor( D.Coords(112,42), courierFontId, D.Color.fromRgb(0,128,128), "Courier C" );
     dc.textOutWithFontAndColor( D.Coords(112,42), courierFontId, D.Colors.Magenta, "Courier C" );
 
+    drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
     local normalKeySize = D.Coords( normalKeySize1, normalKeySize1 );
 
@@ -347,14 +357,17 @@ function onPaint(drawingContext)
     // Test LineJoinStyle triangle
     local orgPen = dc.selectPen( blueThickPen );
     dc.beginPath();
-        dc.moveTo(D.Coords(114, 75)); // 125
-        dc.lineTo(D.Coords(124, 60)); // 105
-        dc.lineTo(D.Coords(134, 75)); // 125
-        //pDc->lineTo(Drawing.Coords(15,120));
-        dc.closeFigure();
+    dc.moveTo(D.Coords(114, 75)); // 125
+    dc.lineTo(D.Coords(124, 60)); // 105
+    dc.lineTo(D.Coords(134, 75)); // 125
+    //pDc->lineTo(Drawing.Coords(15,120));
+    dc.closeFigure();
     dc.endPath( true, false );
 
+    // Rect with pixel precise
+    drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.PixelPrecise);
     dc.rect(D.Coords(5,32), D.Coords(50,45));
+    drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
     dc.selectPen( orgPen );
 
@@ -520,6 +533,8 @@ function onPaint(drawingContext)
 
     // print draw context size on left top and right bottom positions
 
+    drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.TextPrecise);
+
     local ltLtPos = D.Coords(1,1);
 
     local dcSize  = dc.getSize();
@@ -532,6 +547,8 @@ function onPaint(drawingContext)
     // local ltRbPos = D.Coords(15,10);
 
     dc.textOutWithFontAndColor( ltRbPos, infoFontId, D.Color.fromRgb(0,0,0), dcSizeStr );
+
+    drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
 }
 

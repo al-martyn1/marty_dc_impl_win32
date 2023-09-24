@@ -828,26 +828,6 @@ public:
         return false;
     }
 
-    virtual bool roundRect( const DrawCoord::value_type &cornersR
-                          , const DrawCoord             &leftTop
-                          , const DrawCoord             &rightBottom
-                          ) override
-    {
-        DrawCoord::value_type dblR = cornersR*2;
-
-        auto leftTopScaled     = getScaledPos(leftTop    );
-        auto rightBottomScaled = getScaledPos(rightBottom);
-        auto rScaled           = getScaledSize(DrawCoord{dblR,dblR});
-
-        // https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-rectangle
-
-        return RoundRect(m_hdc, int(floatToInt(leftTopScaled.x    )), int(floatToInt(leftTopScaled.y    ))
-                             , int(floatToInt(rightBottomScaled.x)), int(floatToInt(rightBottomScaled.y))
-                             , int(floatToInt(rScaled.x))          , int(floatToInt(rScaled.y))
-                             ) ? true : false;
-    }
-
-
     virtual bool ellipticArcTo( const DrawCoord &leftTop
                               , const DrawCoord &rightBottom
                               , const DrawCoord &arcStartRefPoint
@@ -888,40 +868,110 @@ public:
         return true;
     }
 
+    // У RoundRect'ов очень плохо с симетричностью
+    // Тут про GDI+ - https://www.codeproject.com/Articles/27228/A-class-for-creating-round-rectangles-in-GDI-with
+
+    virtual bool fillRoundRect( const DrawCoord::value_type &cornersR
+                          , const DrawCoord             &leftTop
+                          , const DrawCoord             &rightBottom
+                          ) override
+    {
+        auto ltScaled = getScaledPos(leftTop    );
+        auto rbScaled = getScaledPos(rightBottom);
+
+        DrawCoord::value_type r2 = 2*cornersR;
+        auto rEllipse = getScaledPos(DrawCoord{r2,r2});
+
+        auto res = RoundRect(m_hdc, floatToInt(ltScaled.x), floatToInt(ltScaled.y), floatToInt(rbScaled.x), floatToInt(rbScaled.y), floatToInt(rEllipse.x), floatToInt(rEllipse.y)) ? true : false;
+
+        return res;
+    }
+
+    // virtual bool roundRect( const DrawCoord::value_type &cornersR
+    //                       , const DrawCoord             &leftTop
+    //                       , const DrawCoord             &rightBottom
+    //                       ) override
+    // {
+    //     DrawCoord::value_type dblR = cornersR*2;
+    //  
+    //     auto leftTopScaled     = getScaledPos(leftTop    );
+    //     auto rightBottomScaled = getScaledPos(rightBottom);
+    //     auto rScaled           = getScaledSize(DrawCoord{dblR,dblR});
+    //  
+    //     // https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-rectangle
+    //  
+    //     return RoundRect(m_hdc, int(floatToInt(leftTopScaled.x    )), int(floatToInt(leftTopScaled.y    ))
+    //                          , int(floatToInt(rightBottomScaled.x)), int(floatToInt(rightBottomScaled.y))
+    //                          , int(floatToInt(rScaled.x))          , int(floatToInt(rScaled.y))
+    //                          ) ? true : false;
+    // }
+
+    virtual bool roundRect( const DrawCoord::value_type &cornersR
+                          , const DrawCoord             &leftTop
+                          , const DrawCoord             &rightBottom
+                          ) override
+    {
+        auto ltScaled = getScaledPos(leftTop    );
+        auto rbScaled = getScaledPos(rightBottom);
+     
+        DrawCoord::value_type r2 = 2*cornersR;
+        auto rEllipse = getScaledPos(DrawCoord{r2,r2});
+     
+        HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
+        HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
+        auto res = RoundRect(m_hdc, floatToInt(ltScaled.x), floatToInt(ltScaled.y), floatToInt(rbScaled.x), floatToInt(rbScaled.y), floatToInt(rEllipse.x), floatToInt(rEllipse.y)) ? true : false;
+        SelectObject( m_hdc, (HGDIOBJ)prevBrush);
+     
+        return res;
+    }
+
     virtual bool rect( const DrawCoord             &leftTop
                      , const DrawCoord             &rightBottom
                      ) override
     {
-        if (!moveTo(leftTop)) return false;
-        if (!lineTo(DrawCoord(rightBottom.x, leftTop.y))) return false;
-        if (!lineTo(rightBottom)) return false;
-        if (!lineTo(DrawCoord(leftTop.x   , rightBottom.y))) return false;
-        if (!lineTo(leftTop)) return false;
+        // if (!moveTo(leftTop)) return false;
+        // if (!lineTo(DrawCoord(rightBottom.x, leftTop.y))) return false;
+        // if (!lineTo(rightBottom)) return false;
+        // if (!lineTo(DrawCoord(leftTop.x   , rightBottom.y))) return false;
+        // if (!lineTo(leftTop)) return false;
+
+        auto leftTopSc     = getScaledPos(leftTop    );
+        auto rightBottomSc = getScaledPos(rightBottom);
+
+        HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
+        HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
+        ::Rectangle(m_hdc, floatToInt(leftTopSc.x), floatToInt(leftTopSc.y), floatToInt(rightBottomSc.x), floatToInt(rightBottomSc.y));
+        SelectObject( m_hdc, (HGDIOBJ)prevBrush);
+
         return true;
     }
 
+    // У RoundRect'ов очень плохо с симетричностью
+    // Тут про GDI+ - https://www.codeproject.com/Articles/27228/A-class-for-creating-round-rectangles-in-GDI-with
 
     virtual  bool fillRect( const DrawCoord             &leftTop
                      , const DrawCoord             &rightBottom
                      ) override
     {
-        if (m_curBrushId<0)
-            return false;
+        // if (m_curBrushId<0)
+        //     return false;
+        //  
+        // if (m_curBrushId>=(int)m_hBrushes.size())
+        //     return false;
 
-        if (m_curBrushId>=(int)m_hBrushes.size())
-            return false;
+        DrawCoord leftTopSc     = getScaledPos(leftTop         );
+        DrawCoord rightBottomSc = getScaledPos(rightBottom     );
 
-        DrawCoord leftTopSc           = getScaledPos(leftTop         );
-        DrawCoord rightBottomSc       = getScaledPos(rightBottom     );
+        //  
+        // RECT r;
+        // r.left   = (LONG)(int)leftTopSc.x;
+        // r.top    = (LONG)(int)leftTopSc.y;
+        // r.right  = (LONG)(int)rightBottomSc.x;
+        // r.bottom = (LONG)(int)rightBottomSc.y;
 
-
-        RECT r;
-        r.left   = (LONG)(int)leftTopSc.x;
-        r.top    = (LONG)(int)leftTopSc.y;
-        r.right  = (LONG)(int)rightBottomSc.x;
-        r.bottom = (LONG)(int)rightBottomSc.y;
-
-        return ::FillRect(m_hdc, &r, m_hBrushes[(std::size_t)m_curBrushId]) ? true : false;
+        // return ::FillRect(m_hdc, &r, m_hBrushes[(std::size_t)m_curBrushId]) ? true : false;
+        ::Rectangle(m_hdc, floatToInt(leftTopSc.x), floatToInt(leftTopSc.y), floatToInt(rightBottomSc.x), floatToInt(rightBottomSc.y));
+        return true;
     }
 
 

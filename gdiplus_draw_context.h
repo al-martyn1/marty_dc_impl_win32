@@ -825,14 +825,6 @@ public:
         return m_curPos;
     }
 
-    virtual bool beginPath()                                override
-    {
-        ATLASSERT(!m_curPath);
-
-        m_curPath = std::make_unique< Gdiplus::GraphicsPath >( Gdiplus::FillModeWinding );
-
-        return true;
-    }
 
 //---
 #if 0
@@ -907,16 +899,79 @@ public:
 
     }
 
+    // У RoundRect'ов очень плохо с симетричностью
+    // Тут про GDI+ - https://www.codeproject.com/Articles/27228/A-class-for-creating-round-rectangles-in-GDI-with
+
+    virtual bool fillRoundRect( const DrawCoord::value_type &cornersR
+                          , const DrawCoord             &leftTop
+                          , const DrawCoord             &rightBottom
+                          ) override
+    {
+        if (!isPathStarted())
+        {
+            beginPath();
+        }
+         
+        DrawCoord coords[4] = { leftTop
+                              , { rightBottom.x, leftTop.y } // rightTop
+                              , rightBottom
+                              , { leftTop.x, rightBottom.y } // leftBottom
+                              };
+         
+        auto res = roundRectFigure( cornersR, sizeof(coords)/sizeof(coords[0]), &coords[0] );
+        MARTY_IDC_ARG_USED(res);
+
+        //if (isPathStarted())
+        {
+            endPath( true /* bStroke */ , true /* bFill */ );
+        }
+
+        return true;
+    }
+
+    virtual bool roundRect( const DrawCoord::value_type &cornersR
+                          , const DrawCoord             &leftTop
+                          , const DrawCoord             &rightBottom
+                          ) override
+    {
+        if (!isPathStarted())
+        {
+            beginPath();
+        }
+         
+        DrawCoord coords[4] = { leftTop
+                              , { rightBottom.x, leftTop.y } // rightTop
+                              , rightBottom
+                              , { leftTop.x, rightBottom.y } // leftBottom
+                              };
+         
+        auto res = roundRectFigure( cornersR, sizeof(coords)/sizeof(coords[0]), &coords[0] );
+        MARTY_IDC_ARG_USED(res);
+
+        //if (isPathStarted())
+        {
+            endPath( true /* bStroke */ , false /* bFill */ );
+        }
+        return true;
+    }
+
     virtual bool rect( const DrawCoord             &leftTop
                      , const DrawCoord             &rightBottom
                      ) override
     {
         // https://docs.microsoft.com/en-us/windows/win32/api/gdiplusgraphics/nf-gdiplusgraphics-graphics-drawrectangle(constpen_real_real_real_real)
-        if (!moveTo(leftTop)) return false;
-        if (!lineTo(DrawCoord(rightBottom.x, leftTop.y))) return false;
-        if (!lineTo(rightBottom)) return false;
-        if (!lineTo(DrawCoord(leftTop.x   , rightBottom.y))) return false;
-        if (!lineTo(leftTop)) return false;
+
+        DrawCoord leftTopSc           = getScaledPos(leftTop         );
+        DrawCoord rightBottomSc       = getScaledPos(rightBottom     );
+        DrawCoord whSc = DrawCoord{ rightBottomSc.x-leftTopSc.x+1, rightBottomSc.y-leftTopSc.y+1 };
+
+        m_g.DrawRectangle( m_hPens[(std::size_t)m_curPenId].get()
+                         , floatToInt(leftTopSc.x)
+                         , floatToInt(leftTopSc.y)
+                         , floatToInt(whSc.x)
+                         , floatToInt(whSc.y)
+                         );
+
         return true;
     }
 
@@ -952,6 +1007,14 @@ public:
         return moveTo(to);
     }
 
+    virtual bool beginPath()                                override
+    {
+        ATLASSERT(!m_curPath);
+
+        m_curPath = std::make_unique< Gdiplus::GraphicsPath >( Gdiplus::FillModeWinding );
+
+        return true;
+    }
 
     virtual bool endPath( bool bStroke = true, bool bFill = false ) override
     {

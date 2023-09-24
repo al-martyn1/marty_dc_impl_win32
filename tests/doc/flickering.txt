@@ -1,0 +1,1 @@
+https://stackoverflow.com/questions/197948/reduce-flicker-with-gdi-and-c

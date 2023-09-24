@@ -60,29 +60,6 @@ marty_draw_context::DebugStreamImplBase& operator<<(marty_draw_context::DebugStr
 
 namespace marty_draw_context {
 
-/*
-typedef marty_draw_context::DrawCoord                         DrawCoord                 ;
-typedef marty_draw_context::DrawSize                          DrawSize                  ;
-typedef marty_draw_context::DrawScale                         DrawScale                 ;
-typedef marty_draw_context::GradientParams                    GradientParams            ;
-typedef marty_draw_context::ColorRef                          ColorRef                  ;
-typedef marty_draw_context::GradientType                      GradientType              ;
-typedef marty_draw_context::GradientRoundRectFillFlags        GradientRoundRectFillFlags;
-typedef marty_draw_context::SmoothingMode                     SmoothingMode             ;
-typedef marty_draw_context::BkMode                            BkMode                    ;
-typedef marty_draw_context::LineEndcapStyle                   LineEndcapStyle           ;
-typedef marty_draw_context::LineJoinStyle                     LineJoinStyle             ;
-typedef marty_draw_context::ColorRef                          ColorRef                  ;
-typedef marty_draw_context::PenParamsWithColor                PenParamsWithColor        ;
-typedef marty_draw_context::IDrawContext                      IDrawContext              ;
-typedef marty_draw_context::HorAlign                          HorAlign                  ;
-typedef marty_draw_context::FontStyleFlags                    FontStyleFlags            ;
-typedef marty_draw_context::FontParamsA                       FontParamsA               ;
-typedef marty_draw_context::FontWeight                        FontWeight                ;
-*/
-using marty_draw_context::floatToInt;
-using marty_draw_context::floatToFloat;
-using marty_draw_context::floatToDouble;
 
 
 class DrawContextImplBase : public marty_draw_context::IDrawContext
@@ -154,6 +131,17 @@ protected:
         pensParamsById.clear();
 
         brushesByParams.clear();
+    }
+
+    virtual DrawingPrecise setDrawingPrecise(DrawingPrecise p) override
+    {
+        MARTY_IDC_ARG_USED(p);
+        return DrawingPrecise::defPrecise;
+    }
+
+    virtual DrawingPrecise getDrawingPrecise() override
+    {
+        return DrawingPrecise::defPrecise;
     }
 
     virtual DcOffsetScale getOffsetScale() override
@@ -1351,28 +1339,28 @@ protected:
     }
 
     //! Implemented offten with serios of the lineTo and ellipticArcTo calls
-    virtual bool roundRect( const DrawCoord::value_type &cornersR
-                          , const DrawCoord             &leftTop
-                          , const DrawCoord             &rightBottom
-                          ) override
-    {
-        IDC_ARG_USED(cornersR);
-
-        DrawCoord coords[4] = { leftTop
-                              , { rightBottom.x, leftTop.y } // rightTop
-                              , rightBottom
-                              , { leftTop.x, rightBottom.y } // leftBottom
-                              };
-
-        auto res = roundRectFigure( cornersR, sizeof(coords)/sizeof(coords[0]), &coords[0] );
-        IDC_ARG_USED(res);
-        if (isPathStarted())
-        {
-            if (!closeFigure())
-                return false;
-        }
-        return true;
-    }
+    // virtual bool roundRect( const DrawCoord::value_type &cornersR
+    //                       , const DrawCoord             &leftTop
+    //                       , const DrawCoord             &rightBottom
+    //                       ) override
+    // {
+    //     MARTY_IDC_ARG_USED(cornersR);
+    //  
+    //     DrawCoord coords[4] = { leftTop
+    //                           , { rightBottom.x, leftTop.y } // rightTop
+    //                           , rightBottom
+    //                           , { leftTop.x, rightBottom.y } // leftBottom
+    //                           };
+    //  
+    //     auto res = roundRectFigure( cornersR, sizeof(coords)/sizeof(coords[0]), &coords[0] );
+    //     MARTY_IDC_ARG_USED(res);
+    //     if (isPathStarted())
+    //     {
+    //         if (!closeFigure())
+    //             return false;
+    //     }
+    //     return true;
+    // }
 
     template<typename StringType>
     bool drawTextFitHeighExImpl(marty_draw_context::FontParamsT<StringType>      fp
