@@ -1,13 +1,27 @@
-// TestDrawContext03.nut - OnPaint handler test with NultiDC
+// TestDrawContext03.nut - OnPaint handler test with MultiDC
+
+const fTestDrawSimpleRect   = true;
+const fTestDrawFishTail     = true;
+const fTestDrawSnake        = true;
+const fTestDrawRoundSquare  = true;
+const fTestDrawRects        = true;
 
 
 local drawingPrecise = Drawing.DrawingPrecise.DefPrecise;
 
 
-function coordsSum(c1, c2)
+
+function test_drawRects(dc, offs)
 {
-    return c1+c2;
+    dc.roundRect    (1, offs+Drawing.Coords( 0,0), offs+Drawing.Coords( 8, 8));
+    dc.fillRoundRect(1, offs+Drawing.Coords(10,0), offs+Drawing.Coords(18, 8), false);
+    dc.fillRoundRect(1, offs+Drawing.Coords(20,0), offs+Drawing.Coords(28, 8), true );
+
+    dc.rect         (   offs+Drawing.Coords(30,0), offs+Drawing.Coords(38, 8));
+    dc.fillRect     (   offs+Drawing.Coords(40,0), offs+Drawing.Coords(48, 8), false);
+    dc.fillRect     (   offs+Drawing.Coords(50,0), offs+Drawing.Coords(58, 8), true );
 }
+
 
 function test_drawSpider_drawGrid(dc, pos, sz, penId )
 {
@@ -128,15 +142,6 @@ function test_drawRect_10_20(dc, offs)
 }
 
 
-function test_drawRects(dc, offs)
-{
-    dc.roundRect    (1, offs+Drawing.Coords( 0,0), offs+Drawing.Coords( 8, 8));
-    dc.fillRoundRect(1, offs+Drawing.Coords(10,0), offs+Drawing.Coords(18, 8));
-    dc.rect         (   offs+Drawing.Coords(20,0), offs+Drawing.Coords(28, 8));
-    dc.fillRect     (   offs+Drawing.Coords(30,0), offs+Drawing.Coords(38, 8));
-}
-
-
 function test_drawFishTail_5_10(dc, offs )
 {
     dc.moveTo(offs+Drawing.Coords( 5,10));
@@ -150,7 +155,7 @@ function test_drawRoundSquare(dc, offs, sz, cornersR )
 {
     dc.roundRect( cornersR.tofloat()
                 , offs //+DrawCoord(10,10) // leftTop
-                , coordsSum(offs,sz) //+DrawCoord(20,20) // rightBottom
+                , offs+sz //+DrawCoord(20,20) // rightBottom
                 );
 }
 
@@ -309,20 +314,36 @@ function onPaint(drawingContext)
     local fishTailPos = Drawing.Coords(65,0);
 
     dc.beginPath();
-    
-        test_drawRect_10_20(dc, fishTailPos);
+   
+        if (fTestDrawSimpleRect)
+        {
+            test_drawRect_10_20(dc, fishTailPos);
+        }
        
-        test_drawFishTail_5_10(dc, fishTailPos);
-       
-        test_drawSnake_10_60(dc, D.Coords(115,0), 4 /* 0.8 */  /* 0.5 */ );
+        if (fTestDrawFishTail)
+        {
+            test_drawFishTail_5_10(dc, fishTailPos);
+        }
+
+        if (fTestDrawSnake)
+        {
+            test_drawSnake_10_60(dc, D.Coords(115,0), 4 /* 0.8 */  /* 0.5 */ );
+        }
+
     dc.endPath( true, true );
 
     // test_drawRoundSquare(dc, offs, sz, cornersR )
     drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.SmoothingPrecise);
-    test_drawRoundSquare(dc, D.Coords(90,10), Drawing.Coords(30, 20), 4 );
+    if (fTestDrawRoundSquare)
+    {
+        test_drawRoundSquare(dc, D.Coords(90,10), Drawing.Coords(30, 20), 4 );
+    }
     drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
-    test_drawRects(dc, D.Coords(80,1));
+    if (fTestDrawRects)
+    {
+        test_drawRects(dc, D.Coords(80,1));
+    }
 
     // Text output
     drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.TextPrecise);

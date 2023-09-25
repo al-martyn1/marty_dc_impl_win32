@@ -260,6 +260,11 @@ public:
         */
     }
 
+    virtual void flushBits() override
+    {
+        m_g.Flush(Gdiplus::FlushIntentionSync);
+    }
+
     virtual void freeAllocatedRc() override
     {
         DrawContextImplBase::freeAllocatedRc();
@@ -917,8 +922,11 @@ public:
     virtual bool fillRoundRect( const DrawCoord::value_type &cornersR
                           , const DrawCoord             &leftTop
                           , const DrawCoord             &rightBottom
+                          , bool                         drawFrame
                           ) override
     {
+        MARTY_ARG_USED(drawFrame);
+
         if (!isPathStarted())
         {
             beginPath();
@@ -935,7 +943,7 @@ public:
 
         //if (isPathStarted())
         {
-            endPath( true /* bStroke */ , true /* bFill */ );
+            endPath( drawFrame /* true */  /* bStroke */ , true /* bFill */ );
         }
 
         return true;
@@ -989,8 +997,11 @@ public:
 
     virtual  bool fillRect( const DrawCoord             &leftTop
                      , const DrawCoord             &rightBottom
+                     , bool                         drawFrame
                      ) override
     {
+        MARTY_ARG_USED(drawFrame);
+
         if (m_curBrushId<0)
             return false;
 
@@ -1002,12 +1013,18 @@ public:
 
         DrawCoord whSc = DrawCoord{ rightBottomSc.x-leftTopSc.x+1, rightBottomSc.y-leftTopSc.y+1 };
 
-        return m_g.FillRectangle( m_hBrushes[(std::size_t)m_curBrushId].get()
+        auto res = m_g.FillRectangle( m_hBrushes[(std::size_t)m_curBrushId].get()
                                 , floatToFloat(leftTopSc.x)
                                 , floatToFloat(leftTopSc.y)
                                 , floatToFloat(whSc.x)
                                 , floatToFloat(whSc.y)
                                 )==Gdiplus::Ok ? true : false;
+        if (drawFrame)
+        {
+            rect(leftTop, rightBottom);
+        }
+
+        return res;
     }
 
     // https://docs.microsoft.com/en-us/windows/win32/api/gdipluspath/nl-gdipluspath-graphicspath

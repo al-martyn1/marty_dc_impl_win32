@@ -199,6 +199,10 @@ public:
         #endif
     }
 
+    virtual void flushBits() override
+    {
+    }
+
     virtual void freeAllocatedRc() override
     {
         DrawContextImplBase::freeAllocatedRc();
@@ -883,15 +887,28 @@ public:
     virtual bool fillRoundRect( const DrawCoord::value_type &cornersR
                           , const DrawCoord             &leftTop
                           , const DrawCoord             &rightBottom
+                          , bool                         drawFrame
                           ) override
     {
+        MARTY_ARG_USED(drawFrame);
+
         auto ltScaled = getScaledPos(leftTop    );
         auto rbScaled = getScaledPos(rightBottom);
 
         DrawCoord::value_type r2 = 2*cornersR;
         auto rEllipse = getScaledPos(DrawCoord{r2,r2});
 
-        auto res = RoundRect(m_hdc, floatToInt(ltScaled.x), floatToInt(ltScaled.y), floatToInt(rbScaled.x), floatToInt(rbScaled.y), floatToInt(rEllipse.x), floatToInt(rEllipse.y)) ? true : false;
+        HPEN prevPen = 0;
+        if (!drawFrame)
+        {
+            HPEN transperrantPen = (HPEN)::GetStockObject(NULL_PEN);
+            prevPen         = (HPEN)SelectObject( m_hdc, (HGDIOBJ)transperrantPen);
+        }
+        auto res = ::RoundRect(m_hdc, floatToInt(ltScaled.x), floatToInt(ltScaled.y), floatToInt(rbScaled.x), floatToInt(rbScaled.y), floatToInt(rEllipse.x), floatToInt(rEllipse.y)) ? true : false;
+        if (!drawFrame)
+        {
+            SelectObject( m_hdc, (HGDIOBJ)prevPen);
+        }
 
         return res;
     }
@@ -960,8 +977,11 @@ public:
 
     virtual  bool fillRect( const DrawCoord             &leftTop
                      , const DrawCoord             &rightBottom
+                     , bool                         drawFrame
                      ) override
     {
+        MARTY_ARG_USED(drawFrame);
+
         // if (m_curBrushId<0)
         //     return false;
         //  
@@ -979,7 +999,18 @@ public:
         // r.bottom = (LONG)(int)rightBottomSc.y;
 
         // return ::FillRect(m_hdc, &r, m_hBrushes[(std::size_t)m_curBrushId]) ? true : false;
+        HPEN prevPen = 0;
+        if (!drawFrame)
+        {
+            HPEN transperrantPen = (HPEN)::GetStockObject(NULL_PEN);
+            prevPen         = (HPEN)SelectObject( m_hdc, (HGDIOBJ)transperrantPen);
+        }
         ::Rectangle(m_hdc, floatToInt(leftTopSc.x), floatToInt(leftTopSc.y), floatToInt(rightBottomSc.x), floatToInt(rightBottomSc.y));
+        if (!drawFrame)
+        {
+            SelectObject( m_hdc, (HGDIOBJ)prevPen);
+        }
+
         return true;
     }
 
