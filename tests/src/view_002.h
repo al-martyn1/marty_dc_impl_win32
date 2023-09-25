@@ -33,6 +33,7 @@
 
 #include "marty_fs_adapters/simple_file_api.h"
 
+#include "nutHelpers.h"
 
 
 typedef marty_draw_context::DrawCoord                         DrawCoord                 ;
@@ -103,34 +104,10 @@ public:
         using umba::lout;
         using namespace umba::omanip;
 
-        std::string exeFullName = umba::program_location::getExeName<std::string>();
-
-        std::string path = umba::filename::getPath(exeFullName);
-
-        // SimpleFileApi
-        marty_fs_adapters::SimpleFileApi<std::string> fsApi;
-
         std::string strScript;
         std::string fullScriptFileName;
+        nut_helpers::findNut( strScript, fullScriptFileName );
 
-        while(true)
-        {
-            fullScriptFileName = umba::filename::appendPath(path, std::string("TestDrawContext02.nut"));
-
-            strScript = fsApi.readFile(fullScriptFileName);
-            if (!strScript.empty())
-            {
-                break;
-            }
-
-            std::string newPath = umba::filename::getPath(path);
-            if (newPath==path)
-            {
-                break;
-            }
-
-            path = newPath;
-        }
 
         #if defined(UNICODE) || defined(_UNICODE)
 
