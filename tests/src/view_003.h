@@ -18,9 +18,6 @@
 #include "marty_dc_impl_win32/gdiplus_draw_context.h"
 #include "marty_dc_impl_win32/multi_dc.h"
 
-
-#include "test_drawings.h"
-
 #include <array>
 
 #include <simplesquirrel/simplesquirrel.hpp>
@@ -226,8 +223,6 @@ public:
 
     void DoPaint(CDCHandle dc)
     {
-        using namespace underwood;
-
         #ifdef TEST_DC_USE_GDIPLUS
             auto idc = marty_draw_context::makeMultiDrawContext(dc, true  /* prefferGdiPlus */);
         #else

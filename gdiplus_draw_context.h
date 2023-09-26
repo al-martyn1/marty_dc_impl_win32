@@ -931,6 +931,10 @@ public:
         {
             beginPath();
         }
+        else
+        {
+            return false;
+        }
          
         DrawCoord coords[4] = { leftTop
                               , { rightBottom.x, leftTop.y } // rightTop
@@ -957,6 +961,10 @@ public:
         if (!isPathStarted())
         {
             beginPath();
+        }
+        else
+        {
+            return false;
         }
          
         DrawCoord coords[4] = { leftTop

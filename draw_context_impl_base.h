@@ -2442,60 +2442,53 @@ protected:
 
     }
 
+    virtual bool circle    (const DrawCoord &centerPos, const DrawCoord::value_type &r) override
+    {
+        if (!isPathStarted())
+        {
+            beginPath();
+        }
+        else
+        {
+            return false;
+        }
 
+        auto leftPos  = centerPos - DrawCoord(r, (DrawCoord::value_type)0);
+        auto rightPos = centerPos + DrawCoord(r, (DrawCoord::value_type)0);
 
-    // virtual bool fillGradientRect( const DrawCoord             &leftTop
-    //                              , const DrawCoord             &rightBottom
-    //                              , const ColorRef              &gradientColorBegin
-    //                              , const ColorRef              &gradientColorMid
-    //                              , const ColorRef              &gradientColorEnd
-    //                              , const DrawCoord::value_type &gradientMidPoint
-    //                              , GradientType                gradientType
-    //                              , bool                        excludeFrame
-    //                  ) = 0;
-    //  
-    // virtual bool fillGradientRoundRect( DrawCoord::value_type  cornersR
-    //                              , const DrawCoord             &leftTop
-    //                              , const DrawCoord             &rightBottom
-    //                              , const ColorRef              &gradientColorBegin
-    //                              , const ColorRef              &gradientColorMid
-    //                              , const ColorRef              &gradientColorEnd
-    //                              , const DrawCoord::value_type &gradientMidPoint
-    //                              , GradientType                gradientType
-    //                              , bool                        excludeFrame
-    //                              , DrawCoord::value_type       fillBreakPos
-    //                              , GradientRoundRectFillFlags  fillFlags // = GradientRoundRectFillFlags::roundBoth | GradientRoundRectFillFlags::fillFull
-    //                  ) = 0;
-    //  
-    // virtual bool fillGradientRect( const DrawCoord             &leftTop
-    //                              , const DrawCoord             &rightBottom
-    //                              , const GradientParams        &gradientParams
-    //                              , GradientType                gradientType
-    //                              , bool                        excludeFrame
-    //                  ) = 0;
-    //  
-    // virtual bool fillGradientRoundRect( DrawCoord::value_type  cornersR
-    //                              , const DrawCoord             &leftTop
-    //                              , const DrawCoord             &rightBottom
-    //                              , const GradientParams        &gradientParams
-    //                              , GradientType                gradientType
-    //                              , bool                        excludeFrame
-    //                              , DrawCoord::value_type       fillBreakPos
-    //                              , GradientRoundRectFillFlags  fillFlags // = GradientRoundRectFillFlags::roundBoth | GradientRoundRectFillFlags::fillFull
-    //                  ) = 0;
+        moveTo(leftPos);
+        arcTo (centerPos, rightPos, false);
+        //moveTo(rightPos);
+        arcTo (centerPos, leftPos, false);
 
+        endPath( true /* bStroke */, false /* bFill */ );
 
-// struct GradientParams
-// {
-//     ColorRef                 colorBegin;
-//     ColorRef                 colorMid  ;
-//     ColorRef                 colorEnd  ;
-//  
-//     DrawCoord::value_type    midPoint  = (DrawCoord::value_type)0.5;
-//  
-// }; // struct GradientParams
+        return true;
+    }
 
+    virtual bool fillCircle(const DrawCoord &centerPos, const DrawCoord::value_type &r, bool drawFrame) override
+    {
+        if (!isPathStarted())
+        {
+            beginPath();
+        }
+        else
+        {
+            return false;
+        }
 
+        auto leftPos  = centerPos - DrawCoord(r, (DrawCoord::value_type)0);
+        auto rightPos = centerPos + DrawCoord(r, (DrawCoord::value_type)0);
+
+        moveTo(leftPos);
+        arcTo (centerPos, rightPos, false);
+        //moveTo(rightPos);
+        arcTo (centerPos, leftPos, false);
+
+        endPath( drawFrame /* true */  /* bStroke */ , true /* bFill */ );
+
+        return true;
+    }
 
 
 
