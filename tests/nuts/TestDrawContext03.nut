@@ -290,6 +290,7 @@ function onPaint(drawingContext)
     local courierFontId  = dc.createFontWithFace( genericFontParamsH8 , "Courier New"    );
     local labelsFontId   = dc.createFontWithFace( genericFontParamsH20, "Courier New"    );
 
+    local savedPenId     = -1;
     
     local penId          = dc.selectNewSolidPen( D.PenParams(0.5, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 168, 0) );
     local brushId        = dc.selectNewSolidBrush( D.Color.fromRgb(0, 0, 168) );
@@ -302,6 +303,8 @@ function onPaint(drawingContext)
     local lgrayPenId     = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(160, 160, 160) );
     local llgrayPenId    = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(192, 192, 192) );
     local dgrayPenId     = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(128, 128, 128) );
+    local orangePenId    = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Orange );
+    
 
     local cosmeticPenId  = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 0, 0) );
     local cosmeticPenId2 = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(168, 168, 168) );
@@ -387,7 +390,7 @@ function onPaint(drawingContext)
 
     // Rect with pixel precise
     drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.PixelPrecise);
-    dc.rect(D.Coords(5,32), D.Coords(50,45));
+    dc.rect(D.Coords(5,40), D.Coords(50,55));
     drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
     dc.selectPen( orgPen );
@@ -492,14 +495,39 @@ function onPaint(drawingContext)
     gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
 
 
+    gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
+    dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
+                            , gradientParams, D.GradientType.Horizontal
+                            , true // false // excludeFrame
+                            , gradientDrawBreakPos
+                            , D.GradientRoundRectFillFlags.None
+                            );
+
+    savedPenId     = dc.selectPen(orangePenId);
+    dc.roundRect    (gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2));
+    dc.selectPen(savedPenId);
+    gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
+
+
     // TEST_DC_GRADIENT_CIRCLE
 
     local gradientCircleSamplePos = D.Coords( 4 + gradientRectSizeX + 2*gradientRectSizeY, iconBottomCurrentPos+2*gradientRectSizeY );
 
     local circleR = 1.6*gradientRectSizeY;
+    dc.fillGradientCircle(gradientCircleSamplePos, circleR, gradientParams, true);
+
+    gradientCircleSamplePos.y += 2.2*circleR;
 
     dc.fillGradientCircle(gradientCircleSamplePos, circleR, gradientParams, true);
-    
+    savedPenId     = dc.selectPen(orangePenId);
+    dc.circle(gradientCircleSamplePos, circleR);
+    gradientCircleSamplePos.y += 2.2*circleR;
+    dc.circle(gradientCircleSamplePos, circleR);
+    gradientCircleSamplePos.y += 2.2*circleR;
+    dc.fillCircle(gradientCircleSamplePos, circleR, false);
+    gradientCircleSamplePos.y += 2.2*circleR;
+    dc.fillCircle(gradientCircleSamplePos, circleR, true );
+    dc.selectPen(savedPenId);
 
 
     dc.selectPen(penId);
