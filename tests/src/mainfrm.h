@@ -11,6 +11,12 @@
 #define RECENT_MENU_POSITION    6
 #define POPUP_MENU_POSITION    0
 
+#include "umba/umba.h"
+#include "umba/simple_formatter.h"
+#include "umba/cmd_line.h"
+#include "umba/filename.h"
+
+
 LPCTSTR g_lpcstrMRURegKey = _T("Software\\Microsoft\\WTL Samples\\TestDrawContext");
 LPCTSTR g_lpcstrApp = _T("TestDrawContext");
 
@@ -74,6 +80,10 @@ public:
         ATLASSERT(pLoop != NULL);
         pLoop->AddMessageFilter(this);
         pLoop->AddIdleHandler(this);
+
+        std::string exeFullName = umba::program_location::getExeName<std::string>();
+        std::string exeName     = umba::filename::getName(exeFullName);
+        ::SetWindowTextA(m_hWnd, exeName.c_str());
 
         return 0;
     }

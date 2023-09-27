@@ -14,12 +14,13 @@ enum FindNutFlags
     lookDefault             = 0, // no looking
     lookInBaseFolder        = 1,
     lookInSubFolder         = 2,
+    lookForCommon           = 4,
     stripUnderscoredTail    = 0x10
 };
 
 bool findNut( std::string  &strScript
             , std::string  &fullScriptFileName
-            , FindNutFlags findFlags         = (FindNutFlags)(FindNutFlags::lookInSubFolder | FindNutFlags::stripUnderscoredTail)
+            , FindNutFlags findFlags         = (FindNutFlags)(FindNutFlags::lookInSubFolder | FindNutFlags::stripUnderscoredTail | FindNutFlags::lookForCommon)
             , std::string  nutName           = std::string()
             , std::string  path              = std::string()
             , std::string  nutsSubFolderName = std::string()
@@ -63,24 +64,52 @@ bool findNut( std::string  &strScript
     {
         if (findFlags&FindNutFlags::lookInSubFolder)
         {
-            std::string testFileName = umba::filename::appendPath(umba::filename::appendPath(path, nutsSubFolderName), nutName);
-            strScript = fsApi.readFile(testFileName);
-            if (!strScript.empty())
             {
-                fullScriptFileName = testFileName;
-                return true;
+                std::string testFileName = umba::filename::appendPath(umba::filename::appendPath(path, nutsSubFolderName), nutName);
+                strScript = fsApi.readFile(testFileName);
+                if (!strScript.empty())
+                {
+                    fullScriptFileName = testFileName;
+                    return true;
+                }
             }
+
+            if (findFlags&FindNutFlags::lookForCommon)
+            {
+                std::string testFileName = umba::filename::appendPath(umba::filename::appendPath(path, nutsSubFolderName), std::string("common.nut"));
+                strScript = fsApi.readFile(testFileName);
+                if (!strScript.empty())
+                {
+                    fullScriptFileName = testFileName;
+                    return true;
+                }
+            }
+        
         }
 
         if (findFlags&FindNutFlags::lookInBaseFolder)
         {
-            std::string testFileName = umba::filename::appendPath(path, nutName);
-            strScript = fsApi.readFile(testFileName);
-            if (!strScript.empty())
             {
-                fullScriptFileName = testFileName;
-                return true;
+                std::string testFileName = umba::filename::appendPath(path, nutName);
+                strScript = fsApi.readFile(testFileName);
+                if (!strScript.empty())
+                {
+                    fullScriptFileName = testFileName;
+                    return true;
+                }
             }
+
+            if (findFlags&FindNutFlags::lookForCommon)
+            {
+                std::string testFileName = umba::filename::appendPath(path, std::string("common.nut"));
+                strScript = fsApi.readFile(testFileName);
+                if (!strScript.empty())
+                {
+                    fullScriptFileName = testFileName;
+                    return true;
+                }
+            }
+
         }
 
         std::string newPath = umba::filename::getPath(path);

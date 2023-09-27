@@ -1,10 +1,20 @@
 // TestDrawContext03.nut - OnPaint handler test with MultiDC
 
+// Turn On all tests
 const fTestDrawSimpleRect   = true;
 const fTestDrawFishTail     = true;
 const fTestDrawSnake        = true;
 const fTestDrawRoundSquare  = true;
 const fTestDrawRects        = true;
+const fTestCirclesEllipses  = true;
+
+// Switch off some of tests
+// fTestDrawSimpleRect   = false;
+// fTestDrawFishTail     = false;
+// fTestDrawSnake        = false;
+// fTestDrawRoundSquare  = false;
+// fTestDrawRects        = false;
+// fTestCirclesEllipses  = false;
 
 
 local drawingPrecise = Drawing.DrawingPrecise.DefPrecise;
@@ -20,6 +30,44 @@ function makeEllipseRB(center, r, xScale)
     return Drawing.Coords(center.x+r*xScale, center.y+r);
 }
 
+function drawCirclesEllipses( dc, pos, circleR, nextCircleScale, gradientParams, framePenId, fillBrushId, drawingPrecise)
+{
+    local prevDrawingPrecise = dc.setDrawingPrecise(drawingPrecise);
+    local prevPenId   = dc.selectPen  (framePenId );
+    local prevBrushId = dc.selectBrush(fillBrushId);
+    
+
+    // local gradientCircleSamplePos = D.Coords( 4 + gradientRectSizeX + 2*gradientRectSizeY, iconBottomCurrentPos+1*gradientRectSizeY );
+
+    // local circleR = 1.08*gradientRectSizeY;
+    dc.fillGradientCircle(pos, circleR, gradientParams, true);
+
+    //const nextCircleScale = 2.1;
+    pos.y += nextCircleScale*circleR;
+
+    dc.fillGradientCircle(pos, circleR, gradientParams, true);
+    //savedPenId     = dc.selectPen(orangePenId);
+    dc.circle(pos, circleR);
+    pos.y += nextCircleScale*circleR;
+    dc.circle(pos, circleR);
+    pos.y += nextCircleScale*circleR;
+    dc.fillCircle(pos, circleR, false);
+    pos.y += nextCircleScale*circleR;
+    dc.fillCircle(pos, circleR, true );
+
+    //local ellipseLeftTop     = D.Coords(pos.x-circleR*1.3, pos.y-circleR);
+    //local ellipseRightBottom = D.Coords(pos.x+circleR*1.3, pos.y+circleR);
+    pos.y += nextCircleScale*circleR;
+    dc.ellipse    (makeEllipseLT(pos, circleR, 1.3), makeEllipseRB(pos, circleR, 1.0));
+    pos.y += nextCircleScale*circleR;
+    dc.fillEllipse(makeEllipseLT(pos, circleR, 1.3), makeEllipseRB(pos, circleR, 1.0), false);
+    pos.y += nextCircleScale*circleR;
+    dc.fillEllipse(makeEllipseLT(pos, circleR, 1.3), makeEllipseRB(pos, circleR, 1.0), true );
+
+    dc.selectPen  (prevPenId  );
+    dc.selectBrush(prevBrushId);
+    dc.setDrawingPrecise(prevDrawingPrecise);
+}
 
 
 
@@ -326,7 +374,7 @@ function onPaint(drawingContext)
 
     // Fishtail
 
-    local fishTailPos = Drawing.Coords(65,0);
+    local fishTailPos = Drawing.Coords(50,0);
 
     dc.beginPath();
    
@@ -342,7 +390,7 @@ function onPaint(drawingContext)
 
         if (fTestDrawSnake)
         {
-            test_drawSnake_10_60(dc, D.Coords(115,0), 4 /* 0.8 */  /* 0.5 */ );
+            test_drawSnake_10_60(dc, D.Coords(100,0), 4 /* 0.8 */  /* 0.5 */ );
         }
 
     dc.endPath( true, true );
@@ -351,13 +399,13 @@ function onPaint(drawingContext)
     drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.SmoothingPrecise);
     if (fTestDrawRoundSquare)
     {
-        test_drawRoundSquare(dc, D.Coords(90,10), Drawing.Coords(30, 20), 4 );
+        test_drawRoundSquare(dc, D.Coords(75,10), Drawing.Coords(30, 20), 4 );
     }
     drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
     if (fTestDrawRects)
     {
-        test_drawRects(dc, D.Coords(80,1));
+        test_drawRects(dc, D.Coords(65,1));
     }
 
     // Text output
@@ -365,10 +413,10 @@ function onPaint(drawingContext)
     // Меняем обратно на то, что было - проверка, будет ли работать - оказалось - не будет, и всё потому, что я просто забыл забиндить set/getDrawingPrecise
     //drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
-    dc.textOutWithFontAndColor( D.Coords( 76,14), arialFontId  , D.Color.fromRgb(128,0,0)  , "Arial A"   );
-    dc.textOutWithFontAndColor( D.Coords( 94,28), timesFontId  , D.Color.fromRgb(128,128,0), "Times T"   );
-    //dc.textOutWithFontAndColor( D.Coords(112,42), courierFontId, D.Color.fromRgb(0,128,128), "Courier C" );
-    dc.textOutWithFontAndColor( D.Coords(112,42), courierFontId, D.Colors.Magenta, "Courier C" );
+    dc.textOutWithFontAndColor( D.Coords( 60,14), arialFontId  , D.Color.fromRgb(128,0,0)  , "Arial A"   );
+    dc.textOutWithFontAndColor( D.Coords( 80,28), timesFontId  , D.Color.fromRgb(128,128,0), "Times T"   );
+    //dc.textOutWithFontAndColor( D.Coords(100,42), courierFontId, D.Color.fromRgb(0,128,128), "Courier C" );
+    dc.textOutWithFontAndColor( D.Coords(100,42), courierFontId, D.Colors.Magenta, "Courier C" );
 
     drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
@@ -522,36 +570,11 @@ function onPaint(drawingContext)
 
 
     // TEST_DC_GRADIENT_CIRCLE
-
-    local gradientCircleSamplePos = D.Coords( 4 + gradientRectSizeX + 2*gradientRectSizeY, iconBottomCurrentPos+1*gradientRectSizeY );
-
-    local circleR = 1.08*gradientRectSizeY;
-    dc.fillGradientCircle(gradientCircleSamplePos, circleR, gradientParams, true);
-
-    const nextCircleScale = 2.1;
-    gradientCircleSamplePos.y += nextCircleScale*circleR;
-
-    dc.fillGradientCircle(gradientCircleSamplePos, circleR, gradientParams, true);
-    savedPenId     = dc.selectPen(orangePenId);
-    dc.circle(gradientCircleSamplePos, circleR);
-    gradientCircleSamplePos.y += nextCircleScale*circleR;
-    dc.circle(gradientCircleSamplePos, circleR);
-    gradientCircleSamplePos.y += nextCircleScale*circleR;
-    dc.fillCircle(gradientCircleSamplePos, circleR, false);
-    gradientCircleSamplePos.y += nextCircleScale*circleR;
-    dc.fillCircle(gradientCircleSamplePos, circleR, true );
-
-    //local ellipseLeftTop     = D.Coords(gradientCircleSamplePos.x-circleR*1.3, gradientCircleSamplePos.y-circleR);
-    //local ellipseRightBottom = D.Coords(gradientCircleSamplePos.x+circleR*1.3, gradientCircleSamplePos.y+circleR);
-    gradientCircleSamplePos.y += nextCircleScale*circleR;
-    dc.ellipse    (makeEllipseLT(gradientCircleSamplePos, circleR, 1.3), makeEllipseRB(gradientCircleSamplePos, circleR, 1.0));
-    gradientCircleSamplePos.y += nextCircleScale*circleR;
-    dc.fillEllipse(makeEllipseLT(gradientCircleSamplePos, circleR, 1.3), makeEllipseRB(gradientCircleSamplePos, circleR, 1.0), false);
-    gradientCircleSamplePos.y += nextCircleScale*circleR;
-    dc.fillEllipse(makeEllipseLT(gradientCircleSamplePos, circleR, 1.3), makeEllipseRB(gradientCircleSamplePos, circleR, 1.0), true );
-
-    dc.selectPen(savedPenId);
-
+    if (fTestCirclesEllipses)
+    {
+        local gradientCircleSamplePos = D.Coords( 4 + gradientRectSizeX + 2*gradientRectSizeY, iconBottomCurrentPos+1*gradientRectSizeY );
+        drawCirclesEllipses(dc, gradientCircleSamplePos, 1.08*gradientRectSizeY /*circleR*/, 2.1 /*nextCircleScale*/, gradientParams, orangePenId, brushId, D.DrawingPrecise.SmoothingPrecise);
+    }
 
     dc.selectPen(penId);
 
