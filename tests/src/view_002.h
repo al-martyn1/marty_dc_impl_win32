@@ -96,7 +96,7 @@ public:
     ssq::VM vm; // (1024, ssq::Libs::MATH | ssq::Libs::SYSTEM | ssq::Libs::STRING);
 
 
-    CBitmapView() : vm(1024, ssq::Libs::MATH | ssq::Libs::SYSTEM | ssq::Libs::STRING)
+    void reloadScript()
     {
         using umba::lout;
         using namespace umba::omanip;
@@ -104,7 +104,6 @@ public:
         std::string strScript;
         std::string fullScriptFileName;
         nut_helpers::findNut( strScript, fullScriptFileName );
-
 
         #if defined(UNICODE) || defined(_UNICODE)
 
@@ -118,43 +117,44 @@ public:
 
         #endif
 
-        try
+        if (!sqScript.empty())
         {
-            Sleep(300);
-            ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::prepareScriptEnums(sqScript, "Drawing", true);
-
-            lout << encoding::toUtf8(preparedScriptText1);
-            lout << "\n----------\n\n";
-
-            ssq::Table tDraw = 
-            vm.addTable(_SC("Drawing"));
-            marty_draw_context::simplesquirrel::DrawingColor           ::expose(tDraw /*vm*/, _SC("Color"));
-            marty_draw_context::simplesquirrel::DrawingCoords          ::expose(tDraw /*vm*/, _SC("Coords"));
-            marty_draw_context::simplesquirrel::DrawingCoords          ::expose(tDraw /*vm*/, _SC("Scale"));
-            //marty_draw_context::simplesquirrel::DrawingCoords          ::expose(tDraw /*vm*/, _SC(""));
-            marty_draw_context::simplesquirrel::DrawingFontParams      ::expose(tDraw /*vm*/, _SC("FontParams"));
-            marty_draw_context::simplesquirrel::DrawingGradientParams  ::expose(tDraw /*vm*/, _SC("GradientParams"));
-            marty_draw_context::simplesquirrel::DrawingPenParams       ::expose(tDraw /*vm*/, _SC("PenParams"));
-            marty_draw_context::simplesquirrel::DrawingContext         ::expose(tDraw /*vm*/, _SC("Context"));
-
-            ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
-
-            vm.run(script);
-            
-        } catch (ssq::CompileException& e) {
-            lout << "Failed to run file: " << e.what() << "\n";
-            //return -1;
-        } catch (ssq::TypeException& e) {
-            lout << "Something went wrong passing objects: " << e.what() << "\n";
-            //return -1;
-        } catch (ssq::RuntimeException& e) {
-            lout << "Something went wrong during execution: " << e.what() << "\n";
-            //return -1;
-        } catch (ssq::NotFoundException& e) {
-            lout << e.what() << "\n";
-            //return -1;
+            try
+            {
+                vm = ssq::VM(1024, ssq::Libs::MATH |  /* ssq::Libs::SYSTEM | */  ssq::Libs::STRING);
+    
+                ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::performBinding(vm, sqScript, "Drawing");
+                //lout << encoding::toUtf8(preparedScriptText1);
+                //lout << "\n----------\n\n";
+    
+                ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
+    
+                vm.run(script);
+                
+            } catch (ssq::CompileException& e) {
+                lout << "Failed to run file: " << e.what() << "\n";
+                //return -1;
+            } catch (ssq::TypeException& e) {
+                lout << "Something went wrong passing objects: " << e.what() << "\n";
+                //return -1;
+            } catch (ssq::RuntimeException& e) {
+                lout << "Something went wrong during execution: " << e.what() << "\n";
+                //return -1;
+            } catch (ssq::NotFoundException& e) {
+                lout << e.what() << "\n";
+                //return -1;
+            }
         }
+    }
 
+    CBitmapView() : vm(1024, ssq::Libs::MATH |  /* ssq::Libs::SYSTEM | */  ssq::Libs::STRING)
+    {
+        using umba::lout;
+        using namespace umba::omanip;
+
+        Sleep(300);
+
+        reloadScript();
     }
 
     CBitmapView(const CBitmapView& ) = delete;
@@ -172,8 +172,31 @@ public:
 
     BEGIN_MSG_MAP(CBitmapView)
         MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBackground)
+        MSG_WM_KEYDOWN(OnKeyDown)
+        MSG_WM_KEYUP(OnKeyUp)
         CHAIN_MSG_MAP(CScrollWindowImpl<CBitmapView>);
     END_MSG_MAP()
+
+
+    void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+    {
+        MARTY_ARG_USED(nChar);
+        MARTY_ARG_USED(nRepCnt);
+        MARTY_ARG_USED(nFlags);
+
+        if (nChar==VK_F5)
+        {
+            reloadScript();
+            InvalidateRect(0, TRUE);
+        }
+    }
+
+    void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+    {
+        MARTY_ARG_USED(nChar);
+        MARTY_ARG_USED(nRepCnt);
+        MARTY_ARG_USED(nFlags);
+    }
 
     LRESULT OnEraseBackground(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {

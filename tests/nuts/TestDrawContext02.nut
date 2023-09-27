@@ -10,6 +10,18 @@ const fTestDrawRects        = true;
 local drawingPrecise = Drawing.DrawingPrecise.DefPrecise;
 
 
+function makeEllipseLT(center, r, xScale)
+{
+    return Drawing.Coords(center.x-r*xScale, center.y-r);
+}
+
+function makeEllipseRB(center, r, xScale)
+{
+    return Drawing.Coords(center.x+r*xScale, center.y+r);
+}
+
+
+
 
 function test_drawRects(dc, offs)
 {
@@ -504,22 +516,33 @@ function onPaint(drawingContext)
 
     // TEST_DC_GRADIENT_CIRCLE
 
-    local gradientCircleSamplePos = D.Coords( 4 + gradientRectSizeX + 2*gradientRectSizeY, iconBottomCurrentPos+2*gradientRectSizeY );
+    local gradientCircleSamplePos = D.Coords( 4 + gradientRectSizeX + 2*gradientRectSizeY, iconBottomCurrentPos+1*gradientRectSizeY );
 
-    local circleR = 1.6*gradientRectSizeY;
+    local circleR = 1.8*gradientRectSizeY;
     dc.fillGradientCircle(gradientCircleSamplePos, circleR, gradientParams, true);
 
-    gradientCircleSamplePos.y += 2.2*circleR;
+    const nextCircleScale = 2.1;
+    gradientCircleSamplePos.y += nextCircleScale*circleR;
 
     dc.fillGradientCircle(gradientCircleSamplePos, circleR, gradientParams, true);
     savedPenId     = dc.selectPen(orangePenId);
     dc.circle(gradientCircleSamplePos, circleR);
-    gradientCircleSamplePos.y += 2.2*circleR;
+    gradientCircleSamplePos.y += nextCircleScale*circleR;
     dc.circle(gradientCircleSamplePos, circleR);
-    gradientCircleSamplePos.y += 2.2*circleR;
+    gradientCircleSamplePos.y += nextCircleScale*circleR;
     dc.fillCircle(gradientCircleSamplePos, circleR, false);
-    gradientCircleSamplePos.y += 2.2*circleR;
+    gradientCircleSamplePos.y += nextCircleScale*circleR;
     dc.fillCircle(gradientCircleSamplePos, circleR, true );
+
+    //local ellipseLeftTop     = D.Coords(gradientCircleSamplePos.x-circleR*1.3, gradientCircleSamplePos.y-circleR);
+    //local ellipseRightBottom = D.Coords(gradientCircleSamplePos.x+circleR*1.3, gradientCircleSamplePos.y+circleR);
+    gradientCircleSamplePos.y += nextCircleScale*circleR;
+    dc.ellipse    (makeEllipseLT(gradientCircleSamplePos, circleR, 1.3), makeEllipseRB(gradientCircleSamplePos, circleR, 1.0));
+    gradientCircleSamplePos.y += nextCircleScale*circleR;
+    dc.fillEllipse(makeEllipseLT(gradientCircleSamplePos, circleR, 1.3), makeEllipseRB(gradientCircleSamplePos, circleR, 1.0), false);
+    gradientCircleSamplePos.y += nextCircleScale*circleR;
+    dc.fillEllipse(makeEllipseLT(gradientCircleSamplePos, circleR, 1.3), makeEllipseRB(gradientCircleSamplePos, circleR, 1.0), true );
+
     dc.selectPen(savedPenId);
 
 
