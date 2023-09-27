@@ -916,6 +916,57 @@ public:
 
     }
 
+    virtual bool ellipse    (const DrawCoord &leftTop, const DrawCoord &rightBottom) override
+    {
+        if (m_curPenId<0)
+            return false;
+
+        if (m_curPenId>=(int)m_hPens.size())
+            return false;
+
+
+        DrawCoord leftTopSc           = getScaledPos(leftTop         );
+        DrawCoord rightBottomSc       = getScaledPos(rightBottom     );
+
+        Gdiplus::RectF rect;
+        rect.X       = floatToFloat(leftTopSc.x);
+        rect.Y       = floatToFloat(leftTopSc.y);
+        rect.Width   = floatToFloat(rightBottomSc.x - leftTopSc.x);
+        rect.Height  = floatToFloat(rightBottomSc.y - leftTopSc.y);
+
+        return m_g.DrawEllipse( m_hPens[(std::size_t)m_curPenId].get(), rect )==Gdiplus::Ok;
+    }
+
+    virtual bool fillEllipse(const DrawCoord &leftTop, const DrawCoord &rightBottom, bool drawFrame) override
+    {
+        if (m_curBrushId<0)
+            return false;
+
+        if (m_curBrushId>=(int)m_hBrushes.size())
+            return false;
+
+        //auto res = m_g.FillRectangle( m_hBrushes[(std::size_t)m_curBrushId].get()
+
+        DrawCoord leftTopSc           = getScaledPos(leftTop         );
+        DrawCoord rightBottomSc       = getScaledPos(rightBottom     );
+
+        Gdiplus::RectF rect;
+        rect.X       = floatToFloat(leftTopSc.x);
+        rect.Y       = floatToFloat(leftTopSc.y);
+        rect.Width   = floatToFloat(rightBottomSc.x - leftTopSc.x);
+        rect.Height  = floatToFloat(rightBottomSc.y - leftTopSc.y);
+
+        auto res = m_g.FillEllipse( m_hBrushes[(std::size_t)m_curBrushId].get(), rect )==Gdiplus::Ok;
+
+        if (drawFrame)
+        {
+            ellipse(leftTop, rightBottom);
+        }
+        
+        return res;
+    }
+
+
     // У RoundRect'ов очень плохо с симетричностью
     // Тут про GDI+ - https://www.codeproject.com/Articles/27228/A-class-for-creating-round-rectangles-in-GDI-with
 
@@ -992,6 +1043,12 @@ public:
         DrawCoord leftTopSc           = getScaledPos(leftTop         );
         DrawCoord rightBottomSc       = getScaledPos(rightBottom     );
         DrawCoord whSc = DrawCoord{ rightBottomSc.x-leftTopSc.x+1, rightBottomSc.y-leftTopSc.y+1 };
+
+        if (m_curPenId<0)
+            return false;
+
+        if (m_curPenId>=(int)m_hPens.size())
+            return false;
 
         m_g.DrawRectangle( m_hPens[(std::size_t)m_curPenId].get()
                          , floatToInt(leftTopSc.x)

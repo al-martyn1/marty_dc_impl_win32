@@ -881,6 +881,41 @@ public:
         return true;
     }
 
+    virtual bool ellipse    (const DrawCoord &lt, const DrawCoord &rb) override
+    {
+        auto ltSc = getScaledPos(lt);
+        auto rbSc = getScaledPos(rb);
+
+        HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
+        HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
+        ::Ellipse(m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y));
+        SelectObject( m_hdc, (HGDIOBJ)prevBrush);
+
+        return true;
+    }
+
+    virtual bool fillEllipse(const DrawCoord &lt, const DrawCoord &rb, bool drawFrame) override
+    {
+        auto ltSc = getScaledPos(lt);
+        auto rbSc = getScaledPos(rb);
+
+        HPEN prevPen = 0;
+        if (!drawFrame)
+        {
+            HPEN transperrantPen = (HPEN)::GetStockObject(NULL_PEN);
+            prevPen         = (HPEN)SelectObject( m_hdc, (HGDIOBJ)transperrantPen);
+        }
+
+        ::Ellipse(m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y));
+
+        if (!drawFrame)
+        {
+            SelectObject( m_hdc, (HGDIOBJ)prevPen);
+        }
+
+        return true;
+    }
+
     virtual bool circle    (const DrawCoord &centerPos, const DrawCoord::value_type &r) override
     {
         auto lt   = centerPos - DrawCoord(r,r);
