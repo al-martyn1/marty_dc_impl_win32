@@ -265,45 +265,45 @@ public:
         using umba::lout;
         using namespace umba::omanip;
 
-        ssq::Function sqOnPaint = vm.findFunc(_SC("onPaint"));
-
         auto startTick = umba::time_service::getCurTimeMs();
 
-        if (!(sqOnPaint.isEmpty() || sqOnPaint.isNull()))
-        {
-            try{
+        try{
+    
+            ssq::Function sqOnPaint = vm.findFunc(_SC("onPaint"));
 
-                //lout << "DoPaintImpl: call onPaint from script\n";
-                marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
-
-                RECT clientRect{0,0};
-                ::GetClientRect(m_hWnd, &clientRect);
-
-                auto cx = clientRect.right  - clientRect.left;
-                auto cy = clientRect.bottom - clientRect.top ;
-                // lout << "OnPaint: cx: " << cx << ", cy: " << cy <<"\n";
-                sqDc.ctxSizeX = (int)(cx);
-                sqDc.ctxSizeY = (int)(cy);
-
-                vm.callFunc(sqOnPaint, vm, &sqDc);
-                //vm.callFunc(sqOnPaint, vm, sqDc);
-
-            } catch (ssq::CompileException& e) {
-                lout << "Failed to run file: " << e.what() << "\n";
-                //return -1;
-            } catch (ssq::TypeException& e) {
-                lout << "Something went wrong passing objects: " << e.what() << "\n";
-                //return -1;
-            } catch (ssq::RuntimeException& e) {
-                lout << "Something went wrong during execution: " << e.what() << "\n";
-                //return -1;
-            } catch (ssq::NotFoundException& e) {
-                lout << e.what() << "\n";
-                //return -1;
-            }
-
+            //lout << "DoPaintImpl: call onPaint from script\n";
+            marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
+    
+            RECT clientRect{0,0};
+            ::GetClientRect(m_hWnd, &clientRect);
+    
+            auto cx = clientRect.right  - clientRect.left;
+            auto cy = clientRect.bottom - clientRect.top ;
+            // lout << "OnPaint: cx: " << cx << ", cy: " << cy <<"\n";
+            sqDc.ctxSizeX = (int)(cx);
+            sqDc.ctxSizeY = (int)(cy);
+    
+            vm.callFunc(sqOnPaint, vm, &sqDc);
+            //vm.callFunc(sqOnPaint, vm, sqDc);
+    
+        } catch (ssq::CompileException& e) {
+            lout << "Failed to run file: " << e.what() << "\n";
+            //return -1;
+        } catch (ssq::TypeException& e) {
+            lout << "Something went wrong passing objects: " << e.what() << "\n";
+            //return -1;
+        } catch (ssq::RuntimeException& e) {
+            lout << "Something went wrong during execution: " << e.what() << "\n";
+            //return -1;
+        } catch (ssq::NotFoundException& e) {
+            lout << e.what() << "\n";
+            //return -1;
+        } catch (...) {
+            lout << "Unknown error" << "\n";
+            //return -1;
         }
-
+    
+        
         auto endTick = umba::time_service::getCurTimeMs();
 
         lout << "OnPaint times: " << (endTick-startTick) << "\n";

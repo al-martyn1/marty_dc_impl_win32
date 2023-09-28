@@ -1,22 +1,24 @@
 // TestDrawContext02.nut - OnPaint handler test
 
 // Turn On all tests
-const fTestDrawSimpleRect   = true;
-const fTestDrawFishTail     = true;
-const fTestDrawSnake        = true;
-const fTestDrawRoundSquare  = true;
-const fTestDrawRects        = true;
-const fTestCirclesEllipses  = true;
-const fTestArcTo            = true;
+const fTestDrawSimpleRect                   = false; // true ;
+const fTestDrawFishTail                     = false; // true ;
+const fTestDrawSnake                        = false; // true ;
+const fTestDrawRoundSquare                  = false; // true ;
+const fTestDrawRects                        = false; // true ;
+const fTestCirclesEllipses                  = true ;
+const fTestArcTo                            = false; // true ;
+const fTestSpider                           = false; // true ;
+const fTestTextout                          = false; // true ;
+const fTestLineJoinStyleTriangle            = false; // true ;
+const fTestRectPixelPrecise                 = false; // true ;
+const fTestGradientRects                    = false; // true ;
 
-// Switch off some of tests
-// fTestDrawSimpleRect   = false;
-// fTestDrawFishTail     = false;
-// fTestDrawSnake        = false;
-// fTestDrawRoundSquare  = false;
-// fTestDrawRects        = false;
-// fTestCirclesEllipses  = false;
-// fTestArcTo            = false;
+const fTestCirclesEllipses                  = true ;
+const fTestCirclesEllipsesDefPrecise        = false; // true ;
+const fTestCirclesEllipsesPixelPrecise      = false; // true ;
+const fTestCirclesEllipsesSmoothingPrecise  = true ;
+
 
 
 local drawingPrecise = Drawing.DrawingPrecise.DefPrecise;
@@ -410,15 +412,19 @@ function onPaint(drawingContext)
         test_drawRects(dc, D.Coords(65,1));
     }
 
+
     // Text output
     drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.TextPrecise);
     // Меняем обратно на то, что было - проверка, будет ли работать - оказалось - не будет, и всё потому, что я просто забыл забиндить set/getDrawingPrecise
     //drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
-    dc.textOutWithFontAndColor( D.Coords( 60,14), arialFontId  , D.Color.fromRgb(128,0,0)  , "Arial A"   );
-    dc.textOutWithFontAndColor( D.Coords( 80,28), timesFontId  , D.Color.fromRgb(128,128,0), "Times T"   );
-    //dc.textOutWithFontAndColor( D.Coords(100,42), courierFontId, D.Color.fromRgb(0,128,128), "Courier C" );
-    dc.textOutWithFontAndColor( D.Coords(100,42), courierFontId, D.Colors.Magenta, "Courier C" );
+    if (fTestTextout)
+    {
+        dc.textOutWithFontAndColor( D.Coords( 60,14), arialFontId  , D.Color.fromRgb(128,0,0)  , "Arial A"   );
+        dc.textOutWithFontAndColor( D.Coords( 80,28), timesFontId  , D.Color.fromRgb(128,128,0), "Times T"   );
+        //dc.textOutWithFontAndColor( D.Coords(100,42), courierFontId, D.Color.fromRgb(0,128,128), "Courier C" );
+        dc.textOutWithFontAndColor( D.Coords(100,42), courierFontId, D.Colors.Magenta, "Courier C" );
+    }
 
     drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
 
@@ -427,35 +433,44 @@ function onPaint(drawingContext)
     local spiderBasePos  = D.Coords(14,85);
     local spiderCellSize = 6;
 
-    dc.selectPen(penId);
+    if (fTestSpider)
+    {
+        dc.selectPen(penId);
+    
+        local markersCollectMode = dc.setCollectMarkers(true);
+    
+        test_drawSpider(dc, spiderBasePos+Drawing.Coords( 30*0, 0), spiderCellSize, penId, cosmeticPenId, FlagSpider1   , true, true);
+        test_drawSpider(dc, spiderBasePos+Drawing.Coords( 30*1, 0), spiderCellSize, penId, cosmeticPenId, FlagSpider2   , true, true);
+        test_drawSpider(dc, spiderBasePos+Drawing.Coords( 30*2, 0), spiderCellSize, penId, cosmeticPenId, FlagSpiderBoth, true, true);
+    
+        dc.setCollectMarkers(markersCollectMode);
+    
+        dc.markersDrawEx(markersPenId);
+    }
 
-    local markersCollectMode = dc.setCollectMarkers(true);
 
-    test_drawSpider(dc, spiderBasePos+Drawing.Coords( 30*0, 0), spiderCellSize, penId, cosmeticPenId, FlagSpider1   , true, true);
-    test_drawSpider(dc, spiderBasePos+Drawing.Coords( 30*1, 0), spiderCellSize, penId, cosmeticPenId, FlagSpider2   , true, true);
-    test_drawSpider(dc, spiderBasePos+Drawing.Coords( 30*2, 0), spiderCellSize, penId, cosmeticPenId, FlagSpiderBoth, true, true);
+    if (fTestLineJoinStyleTriangle)
+    {
+        // Test LineJoinStyle triangle
+        local orgPen = dc.selectPen( blueThickPen );
+        dc.beginPath();
+        dc.moveTo(D.Coords(114, 75)); // 125
+        dc.lineTo(D.Coords(124, 60)); // 105
+        dc.lineTo(D.Coords(134, 75)); // 125
+        //pDc->lineTo(Drawing.Coords(15,120));
+        dc.closeFigure();
+        dc.endPath( true, false );
+    }
 
-    dc.setCollectMarkers(markersCollectMode);
-
-    dc.markersDrawEx(markersPenId);
-
-
-    // Test LineJoinStyle triangle
-    local orgPen = dc.selectPen( blueThickPen );
-    dc.beginPath();
-    dc.moveTo(D.Coords(114, 75)); // 125
-    dc.lineTo(D.Coords(124, 60)); // 105
-    dc.lineTo(D.Coords(134, 75)); // 125
-    //pDc->lineTo(Drawing.Coords(15,120));
-    dc.closeFigure();
-    dc.endPath( true, false );
-
-    // Rect with pixel precise
-    drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.PixelPrecise);
-    dc.rect(D.Coords(5,40), D.Coords(50,55));
-    drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
-
-    dc.selectPen( orgPen );
+    if (fTestRectPixelPrecise)
+    {
+        // Rect with pixel precise
+        drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.PixelPrecise);
+        dc.rect(D.Coords(5,40), D.Coords(50,55));
+        drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
+    
+        dc.selectPen( orgPen );
+    }
 
 
     const iconHeight   = 10.0;
@@ -471,107 +486,110 @@ function onPaint(drawingContext)
     local gradientSamplePos = D.Coords(4, iconBottomCurrentPos);
 
 
-
-    // TEST_DC_GRADIENT_RECT
-    dc.fillGradientRect( gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY)
-                       , gradientParams, D.GradientType.Vertical
-                       , true // false // excludeFrame
-                       );
-
-
-    gradientSamplePos.y += 4 + 2*iconInterval;
-
-    dc.fillGradientRect( gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
-                       , gradientParams, D.GradientType.Horizontal
-                       , true // false // excludeFrame
-                       );
-
-    gradientSamplePos.y += 2 + 2*iconInterval;
-
-
-    
-    // TEST_DC_GRADIENT_ROUNDRECT
-
-    local gradientDrawBreakPos  = 0.5;
-    
-    local gradientRectR    = gradientRectSizeY/2;
-    if (gradientRectR<1)
+    if (fTestGradientRects)
     {
-        gradientRectR = 1;
+        // TEST_DC_GRADIENT_RECT
+        dc.fillGradientRect( gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY)
+                           , gradientParams, D.GradientType.Vertical
+                           , true // false // excludeFrame
+                           );
+    
+    
+        gradientSamplePos.y += 4 + 2*iconInterval;
+    
+        dc.fillGradientRect( gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
+                           , gradientParams, D.GradientType.Horizontal
+                           , true // false // excludeFrame
+                           );
+    
+        gradientSamplePos.y += 2 + 2*iconInterval;
+    
+    
+        
+        // TEST_DC_GRADIENT_ROUNDRECT
+    
+        local gradientDrawBreakPos  = 0.5;
+        
+        local gradientRectR    = gradientRectSizeY/2;
+        if (gradientRectR<1)
+        {
+            gradientRectR = 1;
+        }
+    
+    
+        dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY)
+                                , gradientParams, D.GradientType.Vertical
+                                , true // false // excludeFrame
+                                , gradientDrawBreakPos
+                                , D.GradientRoundRectFillFlags.None
+                                );
+        gradientSamplePos.y += gradientRectSizeY + 2*iconInterval;
+    
+    
+        dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY)
+                                , gradientParams, D.GradientType.Vertical
+                                , true // false // excludeFrame
+                                , gradientDrawBreakPos
+                                , D.GradientRoundRectFillFlags.SquareBegin // underwood::GradientRoundRectFillFlags::squareEnd
+                                );
+        gradientSamplePos.y += gradientRectSizeY + 2*iconInterval;
+    
+    
+        dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY)
+                                , gradientParams, D.GradientType.Vertical
+                                , true // false // excludeFrame
+                                , gradientDrawBreakPos
+                                , D.GradientRoundRectFillFlags.SquareEnd
+                                );
+        gradientSamplePos.y += gradientRectSizeY + 2*iconInterval;
+    
+    
+        dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
+                                , gradientParams, D.GradientType.Horizontal
+                                , true // false // excludeFrame
+                                , gradientDrawBreakPos
+                                , D.GradientRoundRectFillFlags.None
+                                );
+        gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
+    
+    
+        dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
+                                , gradientParams, D.GradientType.Horizontal
+                                , true // false // excludeFrame
+                                , gradientDrawBreakPos
+                                , D.GradientRoundRectFillFlags.None
+                                | D.GradientRoundRectFillFlags.NoFillBegin
+                                );
+        gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
+    
+    
+        dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
+                                , gradientParams, D.GradientType.Horizontal
+                                , true // false // excludeFrame
+                                , gradientDrawBreakPos
+                                , D.GradientRoundRectFillFlags.None
+                                | D.GradientRoundRectFillFlags.NoFillEnd
+                                );
+        gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
+    
+    
+        gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
+        dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
+                                , gradientParams, D.GradientType.Horizontal
+                                , true // false // excludeFrame
+                                , gradientDrawBreakPos
+                                , D.GradientRoundRectFillFlags.None
+                                );
+    
+        savedPenId     = dc.selectPen(orangePenId);
+        dc.roundRect    (gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2));
+        dc.selectPen(savedPenId);
+        gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
+    
+    
+        dc.selectPen(penId);
     }
 
-
-    dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY)
-                            , gradientParams, D.GradientType.Vertical
-                            , true // false // excludeFrame
-                            , gradientDrawBreakPos
-                            , D.GradientRoundRectFillFlags.None
-                            );
-    gradientSamplePos.y += gradientRectSizeY + 2*iconInterval;
-
-
-    dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY)
-                            , gradientParams, D.GradientType.Vertical
-                            , true // false // excludeFrame
-                            , gradientDrawBreakPos
-                            , D.GradientRoundRectFillFlags.SquareBegin // underwood::GradientRoundRectFillFlags::squareEnd
-                            );
-    gradientSamplePos.y += gradientRectSizeY + 2*iconInterval;
-
-
-    dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY)
-                            , gradientParams, D.GradientType.Vertical
-                            , true // false // excludeFrame
-                            , gradientDrawBreakPos
-                            , D.GradientRoundRectFillFlags.SquareEnd
-                            );
-    gradientSamplePos.y += gradientRectSizeY + 2*iconInterval;
-
-
-    dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
-                            , gradientParams, D.GradientType.Horizontal
-                            , true // false // excludeFrame
-                            , gradientDrawBreakPos
-                            , D.GradientRoundRectFillFlags.None
-                            );
-    gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
-
-
-    dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
-                            , gradientParams, D.GradientType.Horizontal
-                            , true // false // excludeFrame
-                            , gradientDrawBreakPos
-                            , D.GradientRoundRectFillFlags.None
-                            | D.GradientRoundRectFillFlags.NoFillBegin
-                            );
-    gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
-
-
-    dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
-                            , gradientParams, D.GradientType.Horizontal
-                            , true // false // excludeFrame
-                            , gradientDrawBreakPos
-                            , D.GradientRoundRectFillFlags.None
-                            | D.GradientRoundRectFillFlags.NoFillEnd
-                            );
-    gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
-
-
-    gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
-    dc.fillGradientRoundRect( gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2)
-                            , gradientParams, D.GradientType.Horizontal
-                            , true // false // excludeFrame
-                            , gradientDrawBreakPos
-                            , D.GradientRoundRectFillFlags.None
-                            );
-
-    savedPenId     = dc.selectPen(orangePenId);
-    dc.roundRect    (gradientRectR, gradientSamplePos  , gradientSamplePos + D.Coords(gradientRectSizeX, gradientRectSizeY/2));
-    dc.selectPen(savedPenId);
-    gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
-
-
-    dc.selectPen(penId);
 
     // TEST_DC_ROUND_SQUARE
     local arcCenter = fishTailPos + D.Coords(15, 35);
@@ -623,13 +641,23 @@ function onPaint(drawingContext)
         gradientCircleSamplePos = D.Coords( 170, 6 );
         local circleR = 1.5*gradientRectSizeY;
         local ncs = 2.2; // nextCircleScale
-        drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, D.DrawingPrecise.DefPrecise);
+        if (fTestCirclesEllipsesDefPrecise)
+        {
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, D.DrawingPrecise.DefPrecise);
+        }
 
         gradientCircleSamplePos = D.Coords( 185, 6 );
-        drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, D.DrawingPrecise.PixelPrecise);
+        if (fTestCirclesEllipsesPixelPrecise)
+        {
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, D.DrawingPrecise.PixelPrecise);
+        }
 
         gradientCircleSamplePos = D.Coords( 200, 6 );
-        drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, D.DrawingPrecise.SmoothingPrecise);
+        if (fTestCirclesEllipsesSmoothingPrecise)
+        {
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, D.DrawingPrecise.SmoothingPrecise);
+        }
+
     }
 
 
