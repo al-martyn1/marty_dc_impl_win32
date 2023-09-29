@@ -74,7 +74,7 @@ protected:
     ColorRef                  m_textBkColor = {255,255,255};
 
     //HFont                     m_defFont;
-    int                       m_curFontId;
+    int                       m_curFontId = -1;
 
 
 
@@ -152,7 +152,8 @@ protected:
     {
         //SetTextAlign (m_dc.m_hDC, GetTextAlign(m_dc.m_hDC) & (~TA_CENTER) | TA_LEFT );
 
-        m_curPenId = createSolidPen( 0, marty_draw_context::LineEndcapStyle::square, marty_draw_context::LineJoinStyle::mitter, 0, 0, 0 );
+        m_curPenId   = createSolidPen( 0, marty_draw_context::LineEndcapStyle::square, marty_draw_context::LineJoinStyle::bevel, 0, 0, 0 );
+        m_curBrushId = createSolidBrush( 0, 0, 0 );
 
         /*
         DWORD penStyle = PS_COSMETIC | PS_NULL | PS_ENDCAP_FLAT | PS_JOIN_BEVEL;
@@ -433,8 +434,8 @@ public:
         // LineTo  (m_hdc, right, bottom);
         auto left   = x-r;
         auto top    = y-r;
-        auto right  = x+r;
-        auto bottom = y+r;
+        auto right  = x+r; // +1;
+        auto bottom = y+r; // +1;
         Ellipse(m_hdc, left, top, right, bottom);
 
         SelectObject(m_hdc, hPrevPen);
@@ -1189,13 +1190,17 @@ public:
         return calcAngleRad(c)*floatToDouble(180)/3.14159265358979323846;
     }
 
+    // typedef std::unique_ptr< Gdiplus::Pen >          HPen        ;
+    // std::vector<HPen>         m_hPens;
 
-    virtual bool ellipticArcTo( const DrawCoord &leftTop
-                              , const DrawCoord &rightBottom
-                              , const DrawCoord &arcStartRefPoint
-                              , const DrawCoord &arcEndRefPoint    // как бы ref point, но не в ней ли дуга закончится должна?
-                              , bool             directionCounterclockwise
-                              ) override
+
+    bool ellipticArcToImpl( Gdiplus::Pen    *pPen
+                          , const DrawCoord &leftTop
+                          , const DrawCoord &rightBottom
+                          , const DrawCoord &arcStartRefPoint
+                          , const DrawCoord &arcEndRefPoint    // как бы ref point, но не в ней ли дуга закончится должна?
+                          , bool             directionCounterclockwise
+                          )
     {
         //auto scaledFrom = m_scale*m_curPos;
 
@@ -1365,8 +1370,8 @@ public:
         if (!m_curPath)
         {
             // // https://docs.microsoft.com/en-us/windows/win32/api/gdiplusgraphics/nf-gdiplusgraphics-graphics-drawarc(constpen_real_real_real_real_real_real)
-            ATLASSERT(m_curPenId>=0 && m_curPenId<(int)m_hPens.size());
-            if (Gdiplus::Ok!=m_g.DrawArc( m_hPens[(std::size_t)m_curPenId].get()
+            //ATLASSERT(m_curPenId>=0 && m_curPenId<(int)m_hPens.size());
+            if (Gdiplus::Ok!=m_g.DrawArc( pPen // m_hPens[(std::size_t)m_curPenId].get()
                                         , floatToFloat(leftTopSc.x)
                                         , floatToFloat(leftTopSc.y)
                                         , floatToFloat(widthHeightSc.x)
@@ -1395,6 +1400,350 @@ public:
 
     }
 
+    bool arcToImpl(Gdiplus::Pen *pPen, const DrawCoord &centerPos, const DrawCoord &endPos, bool directionCounterclockwise, DrawCoord *pResEndPos = 0 )
+    {
+        DrawCoord startPos = getCurPos( );
+        const DrawCoord &startVectorStartPos = centerPos;
+        const DrawCoord &startVectorEndPos   = startPos;
+
+        auto startVector = startVectorEndPos-startVectorStartPos;
+
+        const DrawCoord &endVectorStartPos   = centerPos;
+        const DrawCoord &endVectorEndPos     = endPos;
+
+        auto endVector = endVectorEndPos-endVectorStartPos;
+
+        // DC_LOG() << "GdiDcBase::arcTo (1)\n";
+        // DC_LOG() << "  startPos           : " << startPos            << "\n";
+        // DC_LOG() << "  startVectorStartPos: " << startVectorStartPos << "\n";
+        // DC_LOG() << "  startVectorEndPos  : " << startVectorEndPos   << "\n";
+        // DC_LOG() << "  startVector        : " << startVector         << "\n";
+        // DC_LOG() << "  endVectorStartPos  : " << endVectorStartPos   << "\n";
+        // DC_LOG() << "  endVectorEndPos    : " << endVectorEndPos     << "\n";
+        // DC_LOG() << "  endVector          : " << endVector           << "\n";
+
+
+        double startAngleRadians;
+        double endAngleRadians;
+        double vectorLen;
+
+        if (!math_helpers::calcVectorAngle((double)startVector.x, -(double)startVector.y, startAngleRadians, &vectorLen))
+        {
+            // DC_LOG()<<"pDc->arcTo - something goes wrong\n";
+            return false;
+        }
+
+        if (!math_helpers::calcVectorAngle((double)endVector.x, -(double)endVector.y, endAngleRadians))
+        {
+            // DC_LOG()<<"pDc->arcTo - something goes wrong\n";
+            return false;
+        }
+
+        // DC_LOG() << "  startAngleRadians  : " << startAngleRadians   << "\n";
+        // DC_LOG() << "  endAngleRadians    : " << endAngleRadians     << "\n";
+        // DC_LOG() << "  startAngle         : " << math_helpers::angleToDegrees(startAngleRadians)  << "\n";
+        // DC_LOG() << "  endAngle           : " << math_helpers::angleToDegrees(endAngleRadians  )  << "\n";
+
+
+        auto endPointX = centerPos.x + vectorLen*std::cos(endAngleRadians);
+        auto endPointY = centerPos.y - vectorLen*std::sin(endAngleRadians);
+
+        auto exactEndPos = DrawCoord{ endPointX, endPointY };
+
+        // DC_LOG() << "  endPointX          : " << endPointX           << "\n";
+        // DC_LOG() << "  endPointY          : " << endPointY           << "\n";
+        // DC_LOG() << "  exactEndPos        : " << exactEndPos         << "\n";
+        // DC_LOG()<<"    direction          : " << (directionCounterclockwise ? "CCW" : "CW") << "\n";
+
+
+        if (pResEndPos)
+        {
+            *pResEndPos = exactEndPos;
+        }
+
+        // DC_LOG()<<"pDc->arcTo - centerPos    : " << "{" << centerPos.x << "," << centerPos.y << "}" << "\n";
+        // DC_LOG()<<"             startPos     : " << "{" << startPos .x << "," << startPos .y << "}" << "\n";
+        // DC_LOG()<<"             endPos       : " << "{" << endPos   .x << "," << endPos   .y << "}" << "\n";
+        // DC_LOG()<<"             startAngle   : " <<        math_helpers::angleToDegrees(startAngleRadians) << "\n";
+        // DC_LOG()<<"             endAngle     : " <<        math_helpers::angleToDegrees(endAngleRadians  ) << "\n";
+        // DC_LOG()<<"             exactEndPos  : " << "{" << exactEndPos.x << "," << exactEndPos.y << "}" << "\n";
+        // DC_LOG()<<"             direction    : " <<        directionCounterclockwise << "\n";
+
+
+        double left   = (double)centerPos.x - vectorLen;
+        double right  = (double)centerPos.x + vectorLen;
+        double top    = (double)centerPos.y - vectorLen;
+        double bottom = (double)centerPos.y + vectorLen;
+
+        // DC_LOG() << "  left               : " << left          << "\n";
+        // DC_LOG() << "  right              : " << right         << "\n";
+        // DC_LOG() << "  top                : " << top           << "\n";
+        // DC_LOG() << "  bottom             : " << bottom        << "\n";
+        // DC_LOG() << "\n";
+        //  
+        // DC_LOG() << "Calling GdiDcBase::ellipticArcTo from GdiDcBase::arcTo (1)\n";
+
+        if (!ellipticArcToImpl( pPen
+                              , DrawCoord{ left , top    }
+                              , DrawCoord{ right, bottom }
+                              , startPos
+                              , exactEndPos
+                              , directionCounterclockwise
+                              )
+           )
+        {
+            return false;
+        }
+
+        if (!moveTo(exactEndPos))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    bool arcToImpl(Gdiplus::Pen *pPen, const DrawCoord &centerPos, const DrawCoord::value_type angleDegrees, DrawCoord *pResEndPos = 0 )
+    {
+        DrawCoord startPos = getCurPos( );
+        const DrawCoord &startVectorStartPos = centerPos;
+        const DrawCoord &startVectorEndPos   = startPos;
+
+        auto startVector = startVectorEndPos-startVectorStartPos;
+
+        double startAngleRadians;
+        double vectorLen;
+
+        // DC_LOG() << "GdiDcBase::arcTo (2)\n";
+        // DC_LOG() << "  centerPos          : " << centerPos           << "\n";
+        // DC_LOG() << "  startVectorStartPos: " << startVectorStartPos << "\n";
+        // DC_LOG() << "  startVectorEndPos  : " << startVectorEndPos   << "\n";
+        // DC_LOG() << "  startVector        : " << startVector         << "\n";
+
+
+        if (!math_helpers::calcVectorAngle((double)startVector.x, -(double)startVector.y, startAngleRadians, &vectorLen))
+        {
+            // DC_LOG()<<"pDc->arcTo - something goes wrong\n";
+            return false;
+        }
+
+        double arcAngleRadians = math_helpers::angleToRadians( double(angleDegrees) );
+
+        auto endPointAngleRadians = startAngleRadians + arcAngleRadians;
+
+        auto endPointX = centerPos.x + vectorLen*std::cos(endPointAngleRadians);
+        auto endPointY = centerPos.y - vectorLen*std::sin(endPointAngleRadians);
+
+        auto endPos = DrawCoord{ endPointX, endPointY };
+
+        if (pResEndPos)
+        {
+            *pResEndPos = endPos;
+        }
+
+        bool directionCounterclockwise = angleDegrees>0
+                                       ? true  // CounterClockWise
+                                       : false // ClockWise
+                                       ;
+
+        // DC_LOG() << "  endPointX          : " << endPointX           << "\n";
+        // DC_LOG() << "  endPointY          : " << endPointY           << "\n";
+        // DC_LOG() << "  endPos             : " << endPos              << "\n";
+        // DC_LOG() << "  direction          : " << (directionCounterclockwise ? "CCW" : "CW") << "\n";
+
+        // DC_LOG() << "  angleDegrees        : " << angleDegrees         << "\n";
+        // DC_LOG() << "  vectorLen           : " << vectorLen            << "\n";
+        // DC_LOG() << "  startAngleRadians   : " << startAngleRadians    << "\n";
+        // DC_LOG() << "  endPointAngleRadians: " << endPointAngleRadians << "\n";
+        // DC_LOG() << "  startAngle          : " << math_helpers::angleToDegrees(startAngleRadians)    << "\n";
+        // DC_LOG() << "  endPointAngle       : " << math_helpers::angleToDegrees(endPointAngleRadians) << "\n";
+
+        double left   = (double)centerPos.x - vectorLen;
+        double right  = (double)centerPos.x + vectorLen;
+        double top    = (double)centerPos.y - vectorLen;
+        double bottom = (double)centerPos.y + vectorLen;
+
+        // DC_LOG() << "  left               : " << left          << "\n";
+        // DC_LOG() << "  right              : " << right         << "\n";
+        // DC_LOG() << "  top                : " << top           << "\n";
+        // DC_LOG() << "  bottom             : " << bottom        << "\n";
+        // DC_LOG() << "\n";
+        //  
+        // DC_LOG() << "Calling GdiDcBase::ellipticArcTo from GdiDcBase::arcTo (2)\n";
+
+
+        if (!ellipticArcToImpl( pPen
+                              , DrawCoord{ left , top    }
+                              , DrawCoord{ right, bottom }
+                              , startPos
+                              , endPos
+                              , directionCounterclockwise
+                              )
+           )
+        {
+            return false;
+        }
+
+        if (!moveTo(endPos))
+        {
+            return false;
+        }
+
+        return true;
+
+    }
+
+    virtual bool ellipticArcTo( const DrawCoord &leftTop
+                              , const DrawCoord &rightBottom
+                              , const DrawCoord &arcStartRefPoint
+                              , const DrawCoord &arcEndRefPoint    // как бы ref point, но не в ней ли дуга закончится должна?
+                              , bool             directionCounterclockwise
+                              ) override
+    {
+        ATLASSERT(m_curPenId>=0 && m_curPenId<(int)m_hPens.size());
+        if (!(m_curPenId>=0 && m_curPenId<(int)m_hPens.size()))
+        {
+            return false;
+        }
+        return ellipticArcToImpl(m_hPens[(std::size_t)m_curPenId].get(), leftTop, rightBottom, arcStartRefPoint, arcEndRefPoint, directionCounterclockwise);
+    }
+
+    virtual bool arcTo(const DrawCoord &centerPos, const DrawCoord &endPos, bool directionCounterclockwise, DrawCoord *pResEndPos = 0 ) override
+    {
+        ATLASSERT(m_curPenId>=0 && m_curPenId<(int)m_hPens.size());
+        if (!(m_curPenId>=0 && m_curPenId<(int)m_hPens.size()))
+        {
+            return false;
+        }
+        return arcToImpl(m_hPens[(std::size_t)m_curPenId].get(), centerPos, endPos, directionCounterclockwise, pResEndPos);
+    }
+
+    virtual bool arcTo(const DrawCoord &centerPos, const DrawCoord::value_type angleDegrees, DrawCoord *pResEndPos = 0 ) override
+    {
+        ATLASSERT(m_curPenId>=0 && m_curPenId<(int)m_hPens.size());
+        if (!(m_curPenId>=0 && m_curPenId<(int)m_hPens.size()))
+        {
+            return false;
+        }
+        return arcToImpl(m_hPens[(std::size_t)m_curPenId].get(), centerPos, angleDegrees, pResEndPos);
+    }
+
+
+    virtual bool fillGradientCircle( const DrawCoord                                 &pos
+                                   , const DrawCoord::value_type                     &r
+                                   , const marty_draw_context::GradientParams        &gradientParams
+                                   , bool                                            excludeFrame
+                                   ) override
+    {
+        DrawContextImplBase::fillGradientCircle(pos, r, gradientParams, excludeFrame);
+        Gdiplus::Pen p(Gdiplus::Color(gradientParams.colorBegin.r,gradientParams.colorBegin.g,gradientParams.colorBegin.b), 0.5f);
+        return circleImpl(&p, pos, r);
+    }
+     
+    virtual bool fillGradientCircle( const DrawCoord                                 &pos
+                                   , const DrawCoord::value_type                     &r
+                                   , const marty_draw_context::ColorRef              &gradientColorBegin
+                                   , const marty_draw_context::ColorRef              &gradientColorMid
+                                   , const marty_draw_context::ColorRef              &gradientColorEnd
+                                   , const DrawCoord::value_type                     &gradientMidPoint
+                                   , bool                                            excludeFrame
+                                   ) override
+    {
+        DrawContextImplBase::fillGradientCircle(pos, r, gradientColorBegin, gradientColorMid, gradientColorEnd, gradientMidPoint, excludeFrame);
+        Gdiplus::Pen p(Gdiplus::Color(gradientColorBegin.r,gradientColorBegin.g,gradientColorBegin.b), 0.5f);
+        return circleImpl(&p, pos, r);
+    }
+
+
+    bool circleImpl(Gdiplus::Pen *pPen, const DrawCoord &centerPos, const DrawCoord::value_type &r)
+    {
+        // if (!isPathStarted())
+        // {
+        //     beginPath();
+        // }
+        // else
+        // {
+        //     return false;
+        // }
+
+        if (isPathStarted())
+        {
+            return false;
+        }
+
+        DrawCoord xy1  = mapRawToLogicSize(DrawCoord(1,1));
+        DrawCoord xy05 = mapRawToLogicSize(DrawCoord(0.5,0.5));
+        DrawCoord cp = centerPos; // - mapRawToLogicSize(DrawCoord(1,0));
+        cp.x -= xy1.x;
+        cp.y -= xy05.y;
+        //DrawCoord::value_type r_05 = r-(DrawCoord::value_type)0.5;
+        DrawCoord::value_type r_05 = r-mapRawToLogicSize(DrawCoord(0.5,0.5)).x;
+
+        auto leftPos  = cp - DrawCoord(r_05, (DrawCoord::value_type)0);
+        auto rightPos = cp + DrawCoord(r_05, (DrawCoord::value_type)0);
+
+
+        //leftPos  -= mapRawToLogicSize(DrawCoord(1,1));
+        //rightPos -= mapRawToLogicSize(DrawCoord(3,3));
+
+        // auto pp = getPenParams(m_curPenId);
+        // auto ppw = pp.width;
+        // ppw *= 2;
+        // rightPos -= DrawCoord(ppw, ppw);
+        // rightPos -= mapRawToLogicSize(DrawCoord(30,30));
+
+        moveTo(leftPos);
+        arcToImpl (pPen, cp, rightPos, false);
+        //moveTo(rightPos);
+        arcToImpl (pPen, cp, leftPos, false);
+
+        // endPath( true /* bStroke */, false /* bFill */ );
+
+        return true;
+    }
+
+    virtual bool circle    (const DrawCoord &centerPos, const DrawCoord::value_type &r) override
+    {
+        ATLASSERT(m_curPenId>=0 && m_curPenId<(int)m_hPens.size());
+        if (!(m_curPenId>=0 && m_curPenId<(int)m_hPens.size()))
+        {
+            return false;
+        }
+        return circleImpl(m_hPens[(std::size_t)m_curPenId].get(), centerPos, r);
+    }
+
+    virtual bool fillCircle(const DrawCoord &centerPos, const DrawCoord::value_type &r, bool drawFrame) override
+    {
+        if (!isPathStarted())
+        {
+            beginPath();
+        }
+        else
+        {
+            return false;
+        }
+
+        auto leftPos  = centerPos - DrawCoord(r, (DrawCoord::value_type)0);
+        auto rightPos = centerPos + DrawCoord(r, (DrawCoord::value_type)0);
+
+        //leftPos  -= mapRawToLogicSize(DrawCoord(1,1));
+        //rightPos -= mapRawToLogicSize(DrawCoord(3,3));
+
+        // auto pp = getPenParams(m_curPenId);
+        // auto ppw = pp.width;
+        // ppw *= 2;
+        // rightPos -= DrawCoord(ppw, ppw);
+        // rightPos -= mapRawToLogicSize(DrawCoord(30,30));
+
+        moveTo(leftPos);
+        arcTo (centerPos, rightPos, false);
+        //moveTo(rightPos);
+        arcTo (centerPos, leftPos, false);
+
+        endPath( drawFrame /* true */  /* bStroke */ , true /* bFill */ );
+
+        return true;
+    }
 
 
 }; // class GdiPlusDrawContext

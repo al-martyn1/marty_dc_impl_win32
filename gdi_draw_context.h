@@ -46,15 +46,15 @@ protected:
     DrawCoord m_curPos;
 
     std::vector<HPEN> m_hPens;
-    HPEN              m_defPen;
+    //HPEN              m_defPen;
     int               m_curPenId;
 
     std::vector<HBRUSH> m_hBrushes;
-    HBRUSH              m_defBrush;
+    //HBRUSH              m_defBrush;
     int                 m_curBrushId;
 
     std::vector<HFONT> m_hFonts;
-    HFONT              m_defFont;
+    //HFONT              m_defFont;
     int                m_curFontId;
 
 
@@ -92,6 +92,11 @@ protected:
     {
         //SetTextAlign (m_dc.m_hDC, GetTextAlign(m_dc.m_hDC) & (~TA_CENTER) | TA_LEFT );
 
+        m_curPenId   = createSolidPen( 0, marty_draw_context::LineEndcapStyle::square, marty_draw_context::LineJoinStyle::bevel, 0, 0, 0 );
+        m_curBrushId = createSolidBrush( 0, 0, 0 );
+
+
+        #if 0
         DWORD penStyle = PS_COSMETIC | PS_NULL | PS_ENDCAP_FLAT | PS_JOIN_BEVEL;
 
         LOGBRUSH lb;
@@ -119,6 +124,7 @@ protected:
         m_hBrushes.push_back(hBrush);
 
         m_defBrush = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)hBrush);
+        #endif
     }
 
 public:
@@ -133,13 +139,13 @@ public:
     , m_pathStarted(false)
     , m_curPos()
     , m_hPens()
-    , m_defPen(0)
+    // , m_defPen(0)
     , m_curPenId(-1)
     , m_hBrushes()
-    , m_defBrush(0)
+    // , m_defBrush(0)
     , m_curBrushId(-1)
     , m_hFonts()
-    , m_defFont(0)
+    // , m_defFont(0)
     , m_curFontId(-1)
     {
         init();
@@ -153,13 +159,13 @@ public:
     , m_pathStarted(false)
     , m_curPos()
     , m_hPens()
-    , m_defPen(0)
+    // , m_defPen(0)
     , m_curPenId(-1)
     , m_hBrushes()
-    , m_defBrush(0)
+    // , m_defBrush(0)
     , m_curBrushId(-1)
     , m_hFonts()
-    , m_defFont(0)
+    // , m_defFont(0)
     , m_curFontId(-1)
     {
         init();
@@ -209,7 +215,7 @@ public:
 
         // Чистим ручки
         {
-            SelectObject(m_hdc, (HGDIOBJ)m_defPen);
+            //SelectObject(m_hdc, (HGDIOBJ)m_defPen);
             for( auto hpen : m_hPens )
                 DeleteObject((HGDIOBJ)hpen);
             m_hPens.clear();
@@ -217,7 +223,7 @@ public:
         }
 
         {
-            SelectObject(m_hdc, (HGDIOBJ)m_defBrush);
+            //SelectObject(m_hdc, (HGDIOBJ)m_defBrush);
             for( auto hbrush : m_hBrushes )
                 DeleteObject((HGDIOBJ)hbrush);
             m_hBrushes.clear();
@@ -225,8 +231,8 @@ public:
         }
 
         {
-            if (m_defFont!=0)
-                SelectObject(m_hdc, (HGDIOBJ)m_defFont);
+            // if (m_defFont!=0)
+            //     SelectObject(m_hdc, (HGDIOBJ)m_defFont);
             for( auto hfont : m_hFonts )
                 DeleteObject((HGDIOBJ)hfont);
             m_hFonts.clear();
@@ -441,9 +447,9 @@ public:
         // LineTo  (m_hdc, right, bottom);
         auto left   = x-r;
         auto top    = y-r;
-        auto right  = x+r;
-        auto bottom = y+r;
-        Ellipse(m_hdc, left, top, right, bottom);
+        auto right  = x+r; // +1;
+        auto bottom = y+r; // +1;
+        ::Ellipse(m_hdc, left, top, right, bottom);
 
         SelectObject(m_hdc, hPrevPen);
         SelectObject(m_hdc, hPrevBrush);
@@ -621,10 +627,11 @@ public:
         if (fontId<0 || fontId>=(int)m_hFonts.size())
             return -1;
 
-        HFONT prevFont = (HFONT)SelectObject(m_hdc, (HGDIOBJ)m_hFonts[(std::size_t)fontId]);
+        //HFONT prevFont = (HFONT)
+        SelectObject(m_hdc, (HGDIOBJ)m_hFonts[(std::size_t)fontId]);
 
-        if (m_defFont==0)
-            m_defFont = prevFont;
+        //if (m_defFont==0)
+        //    m_defFont = prevFont;
 
         std::swap(fontId,m_curFontId);
         return fontId;
@@ -918,14 +925,30 @@ public:
 
     virtual bool circle    (const DrawCoord &centerPos, const DrawCoord::value_type &r) override
     {
-        auto lt   = centerPos - DrawCoord(r,r);
-        auto rb   = centerPos + DrawCoord(r,r);
-        auto ltSc = getScaledPos(lt);
-        auto rbSc = getScaledPos(rb);
+        auto cpSc = getScaledPos (centerPos);
+        cpSc.x -= 1;
+        auto rSc  = getScaledSize(DrawCoord(r,r));
+        auto ltSc = cpSc - rSc;
+        auto rbSc = cpSc + rSc;
 
         HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
         HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
         ::Ellipse(m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y));
+
+        #if 0
+        {
+            auto x = floatToInt(cpSc.x);
+            auto y = floatToInt(cpSc.y);
+            auto le = x-9;
+            auto to = y-9;
+            auto ri = x+9;
+            auto bo = y+9;
+
+            ::Ellipse(m_hdc, le, to, ri, bo);
+        }
+        #endif
+
+
         SelectObject( m_hdc, (HGDIOBJ)prevBrush);
 
         return true;
@@ -933,10 +956,11 @@ public:
 
     virtual bool fillCircle(const DrawCoord &centerPos, const DrawCoord::value_type &r, bool drawFrame) override
     {
-        auto lt   = centerPos - DrawCoord(r,r);
-        auto rb   = centerPos + DrawCoord(r,r);
-        auto ltSc = getScaledPos(lt);
-        auto rbSc = getScaledPos(rb);
+        auto cpSc = getScaledPos (centerPos);
+        cpSc.x -= 1;
+        auto rSc  = getScaledSize(DrawCoord(r,r));
+        auto ltSc = cpSc - rSc;
+        auto rbSc = cpSc + rSc;
 
         HPEN prevPen = 0;
         if (!drawFrame)
@@ -988,25 +1012,6 @@ public:
         return res;
     }
 
-    // virtual bool roundRect( const DrawCoord::value_type &cornersR
-    //                       , const DrawCoord             &leftTop
-    //                       , const DrawCoord             &rightBottom
-    //                       ) override
-    // {
-    //     DrawCoord::value_type dblR = cornersR*2;
-    //  
-    //     auto leftTopScaled     = getScaledPos(leftTop    );
-    //     auto rightBottomScaled = getScaledPos(rightBottom);
-    //     auto rScaled           = getScaledSize(DrawCoord{dblR,dblR});
-    //  
-    //     // https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-rectangle
-    //  
-    //     return RoundRect(m_hdc, int(floatToInt(leftTopScaled.x    )), int(floatToInt(leftTopScaled.y    ))
-    //                          , int(floatToInt(rightBottomScaled.x)), int(floatToInt(rightBottomScaled.y))
-    //                          , int(floatToInt(rScaled.x))          , int(floatToInt(rScaled.y))
-    //                          ) ? true : false;
-    // }
-
     virtual bool roundRect( const DrawCoord::value_type &cornersR
                           , const DrawCoord             &leftTop
                           , const DrawCoord             &rightBottom
@@ -1030,12 +1035,6 @@ public:
                      , const DrawCoord             &rightBottom
                      ) override
     {
-        // if (!moveTo(leftTop)) return false;
-        // if (!lineTo(DrawCoord(rightBottom.x, leftTop.y))) return false;
-        // if (!lineTo(rightBottom)) return false;
-        // if (!lineTo(DrawCoord(leftTop.x   , rightBottom.y))) return false;
-        // if (!lineTo(leftTop)) return false;
-
         auto leftTopSc     = getScaledPos(leftTop    );
         auto rightBottomSc = getScaledPos(rightBottom);
 
@@ -1057,23 +1056,9 @@ public:
     {
         MARTY_ARG_USED(drawFrame);
 
-        // if (m_curBrushId<0)
-        //     return false;
-        //  
-        // if (m_curBrushId>=(int)m_hBrushes.size())
-        //     return false;
-
         DrawCoord leftTopSc     = getScaledPos(leftTop         );
         DrawCoord rightBottomSc = getScaledPos(rightBottom     );
 
-        //  
-        // RECT r;
-        // r.left   = (LONG)(int)leftTopSc.x;
-        // r.top    = (LONG)(int)leftTopSc.y;
-        // r.right  = (LONG)(int)rightBottomSc.x;
-        // r.bottom = (LONG)(int)rightBottomSc.y;
-
-        // return ::FillRect(m_hdc, &r, m_hBrushes[(std::size_t)m_curBrushId]) ? true : false;
         HPEN prevPen = 0;
         if (!drawFrame)
         {

@@ -1,27 +1,33 @@
 // TestDrawContext02.nut - OnPaint handler test
 
 // Turn On all tests
-const fTestDrawSimpleRect                   = false; // true ;
-const fTestDrawFishTail                     = false; // true ;
-const fTestDrawSnake                        = false; // true ;
-const fTestDrawRoundSquare                  = false; // true ;
-const fTestDrawRects                        = false; // true ;
-const fTestCirclesEllipses                  = true ;
-const fTestArcTo                            = false; // true ;
-const fTestSpider                           = false; // true ;
-const fTestTextout                          = false; // true ;
-const fTestLineJoinStyleTriangle            = false; // true ;
-const fTestRectPixelPrecise                 = false; // true ;
-const fTestGradientRects                    = false; // true ;
+const fTestDrawSimpleRect                   =  true ; // false; // true ;
+const fTestDrawFishTail                     =  true ; // false; // true ;
+const fTestDrawSnake                        =  true ; // false; // true ;
+const fTestDrawRoundSquare                  =  true ; // false; // true ;
+const fTestDrawRects                        =  true ; // false; // true ;
+const fTestCirclesEllipses                  =  true ; // false; // true ;
+const fTestArcTo                            =  true ; // false; // true ;
+const fTestSpider                           =  true ; // false; // true ;
+const fTestTextout                          =  true ; // false; // true ;
+const fTestLineJoinStyleTriangle            =  true ; // false; // true ;
+const fTestRectPixelPrecise                 =  true ; // false; // true ;
+const fTestGradientRects                    =  true ; // false; // true ;
 
-const fTestCirclesEllipses                  = true ;
-const fTestCirclesEllipsesDefPrecise        = false; // true ;
-const fTestCirclesEllipsesPixelPrecise      = false; // true ;
-const fTestCirclesEllipsesSmoothingPrecise  = true ;
-
+const fTestCirclesEllipses                  =  true ; // false; // true ;
+const fTestCirclesEllipsesDefPrecise        =  true ; // false; // true ;
+const fTestCirclesEllipsesPixelPrecise      =  true ; // false; // true ;
+const fTestCirclesEllipsesSmoothingPrecise  =  true ; // false; // true ;
+const fTestGradientCircles                  =  true ; // false; // true ;
+const fTestSimpleCircles                    =  true ; // false; // true ;
+const fTestFillCircles                      =  true ; // false; // true ;
+const fTestSimpleEllipses                   =  true ; // false; // true ;
+const fTestFillEllipses                     =  true ; // false; // true ;
+                                               
 
 
 local drawingPrecise = Drawing.DrawingPrecise.DefPrecise;
+local markersPenId   = -1;
 
 
 function makeEllipseLT(center, r, xScale)
@@ -40,37 +46,90 @@ function drawCirclesEllipses( dc, pos, circleR, nextCircleScale, gradientParams,
     local prevPenId   = dc.selectPen  (framePenId );
     local prevBrushId = dc.selectBrush(fillBrushId);
     
+    local markersCollectMode = dc.setCollectMarkers(true);
 
     // local gradientCircleSamplePos = D.Coords( 4 + gradientRectSizeX + 2*gradientRectSizeY, iconBottomCurrentPos+1*gradientRectSizeY );
 
     // local circleR = 1.08*gradientRectSizeY;
-    dc.fillGradientCircle(pos, circleR, gradientParams, true);
+    if (fTestGradientCircles)
+    {
+        dc.fillGradientCircle(pos, circleR, gradientParams, true);
+        dc.markerAdd(pos);
+    }
 
     //const nextCircleScale = 2.1;
     pos.y += nextCircleScale*circleR;
 
-    dc.fillGradientCircle(pos, circleR, gradientParams, true);
-    //savedPenId     = dc.selectPen(orangePenId);
-    dc.circle(pos, circleR);
+    if (fTestGradientCircles)
+    {
+        dc.fillGradientCircle(pos, circleR, gradientParams, true);
+        dc.markerAdd(pos);
+    }
+
+    if (fTestSimpleCircles)
+    {
+        dc.circle(pos, circleR);
+        dc.markerAdd(pos);
+    }
     pos.y += nextCircleScale*circleR;
-    dc.circle(pos, circleR);
+    if (fTestSimpleCircles)
+    {
+        dc.circle(pos, circleR);
+        dc.markerAdd(pos);
+    }
     pos.y += nextCircleScale*circleR;
-    dc.fillCircle(pos, circleR, false);
+    if (fTestFillCircles)
+    {
+        dc.fillCircle(pos, circleR, false);
+        dc.markerAdd(pos);
+    }
     pos.y += nextCircleScale*circleR;
-    dc.fillCircle(pos, circleR, true );
+    if (fTestFillCircles)
+    {
+        dc.fillCircle(pos, circleR, true );
+        dc.markerAdd(pos);
+    }
 
     //local ellipseLeftTop     = D.Coords(pos.x-circleR*1.3, pos.y-circleR);
     //local ellipseRightBottom = D.Coords(pos.x+circleR*1.3, pos.y+circleR);
     pos.y += nextCircleScale*circleR;
-    dc.ellipse    (makeEllipseLT(pos, circleR, 1.3), makeEllipseRB(pos, circleR, 1.0));
+    if (fTestSimpleEllipses)
+    {
+        local lt = makeEllipseLT(pos, circleR, 1.3);
+        local bt = makeEllipseRB(pos, circleR, 1.0);
+        dc.ellipse    (lt, bt);
+        dc.markerAdd(pos);
+        dc.markerAdd(lt);
+        dc.markerAdd(bt);
+    }
     pos.y += nextCircleScale*circleR;
-    dc.fillEllipse(makeEllipseLT(pos, circleR, 1.3), makeEllipseRB(pos, circleR, 1.0), false);
+    if (fTestFillEllipses)
+    {
+        local lt = makeEllipseLT(pos, circleR, 1.3);
+        local bt = makeEllipseRB(pos, circleR, 1.0);
+        dc.fillEllipse(lt, bt, false);
+        dc.markerAdd(pos);
+        dc.markerAdd(lt);
+        dc.markerAdd(bt);
+    }
     pos.y += nextCircleScale*circleR;
-    dc.fillEllipse(makeEllipseLT(pos, circleR, 1.3), makeEllipseRB(pos, circleR, 1.0), true );
+    if (fTestFillEllipses)
+    {
+        local lt = makeEllipseLT(pos, circleR, 1.3);
+        local bt = makeEllipseRB(pos, circleR, 1.0);
+        dc.fillEllipse(lt, bt, true );
+        dc.markerAdd(pos);
+        dc.markerAdd(lt);
+        dc.markerAdd(bt);
+    }
 
     dc.selectPen  (prevPenId  );
     dc.selectBrush(prevBrushId);
     dc.setDrawingPrecise(prevDrawingPrecise);
+
+    dc.setCollectMarkers(markersCollectMode);
+    dc.markersDrawEx(markersPenId);
+
 }
 
 
@@ -367,12 +426,14 @@ function onPaint(drawingContext)
     local lgrayPenId     = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(160, 160, 160) );
     local llgrayPenId    = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(192, 192, 192) );
     local dgrayPenId     = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(128, 128, 128) );
-    local orangePenId    = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Orange );
+    local orangePenId    = dc.createSolidPen( D.PenParams(0.1, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Orange );
+    local orangeThickPenId = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Orange );
     
 
     local cosmeticPenId  = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 0, 0) );
     local cosmeticPenId2 = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(168, 168, 168) );
-    local markersPenId   = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 0, 0) );
+    //local 
+    markersPenId   = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 0, 0) );
 
     local prevCosmeticPenId = dc.setDefaultCosmeticPen(cosmeticPenId);
 
@@ -460,15 +521,16 @@ function onPaint(drawingContext)
         //pDc->lineTo(Drawing.Coords(15,120));
         dc.closeFigure();
         dc.endPath( true, false );
+        dc.selectPen( orgPen );
     }
 
     if (fTestRectPixelPrecise)
     {
+        local orgPen = dc.selectPen( blueThickPen );
         // Rect with pixel precise
         drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.PixelPrecise);
         dc.rect(D.Coords(5,40), D.Coords(50,55));
         drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
-    
         dc.selectPen( orgPen );
     }
 
@@ -605,7 +667,7 @@ function onPaint(drawingContext)
             dc.endPath(true,false);
         }
     
-        markersCollectMode = dc.setCollectMarkers(true);
+        local markersCollectMode = dc.setCollectMarkers(true);
     
         //arcToByAngle( dc, arcCenter, startPointOffset, angleGradus )
         arcToByAngle(dc, arcCenter, D.Coords(2, 2), 40);
@@ -639,7 +701,7 @@ function onPaint(drawingContext)
         // local gradientCircleSamplePos = D.Coords( 4 + gradientRectSizeX + 2*gradientRectSizeY, iconBottomCurrentPos+1*gradientRectSizeY );
         local 
         gradientCircleSamplePos = D.Coords( 170, 6 );
-        local circleR = 1.5*gradientRectSizeY;
+        local circleR = 1.6*gradientRectSizeY;
         local ncs = 2.2; // nextCircleScale
         if (fTestCirclesEllipsesDefPrecise)
         {
@@ -657,6 +719,29 @@ function onPaint(drawingContext)
         {
             drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, D.DrawingPrecise.SmoothingPrecise);
         }
+
+
+        gradientCircleSamplePos = D.Coords( 215, 6 );
+        local circleR = 1.6*gradientRectSizeY;
+        local ncs = 2.2; // nextCircleScale
+        if (fTestCirclesEllipsesDefPrecise)
+        {
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangeThickPenId, brushId, D.DrawingPrecise.DefPrecise);
+        }
+
+        gradientCircleSamplePos = D.Coords( 230, 6 );
+        if (fTestCirclesEllipsesPixelPrecise)
+        {
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangeThickPenId, brushId, D.DrawingPrecise.PixelPrecise);
+        }
+
+        gradientCircleSamplePos = D.Coords( 245, 6 );
+        if (fTestCirclesEllipsesSmoothingPrecise)
+        {
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangeThickPenId, brushId, D.DrawingPrecise.SmoothingPrecise);
+        }
+
+
 
     }
 

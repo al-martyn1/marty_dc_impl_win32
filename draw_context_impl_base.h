@@ -234,6 +234,18 @@ protected:
         return pit->second.color;
     }
 
+    virtual PenParams getPenParams(int penId) override
+    {
+        std::map<int, marty_draw_context::PenParamsWithColor>::const_iterator pit = pensParamsById.find(penId);
+        if (pit==pensParamsById.end())
+        {
+            return marty_draw_context::PenParams();
+        }
+
+        return PenParams(pit->second);
+    }
+
+
     virtual bool getFontParamsById( int id, marty_draw_context::FontParamsW &fp ) override
     {
         if (id<0)
@@ -449,11 +461,12 @@ protected:
 
         auto prevSmoothingMode = setSmoothingMode(marty_draw_context::SmoothingMode::none);
 
+        auto _1 = mapRawToLogicSize(DrawCoord(1,1));
 
         for(const auto &m : markers)
         {
             auto sz = DrawCoord(m.size,m.size);
-            rect( m.pos-sz, m.pos+sz );
+            rect( m.pos-sz, m.pos+sz+_1 );
         }
 
 
@@ -1549,9 +1562,6 @@ protected:
     }
 
 
-
-
-
     virtual bool arcTo(const DrawCoord &centerPos, const DrawCoord &endPos, bool directionCounterclockwise, DrawCoord *pResEndPos = 0 ) override
     {
         DrawCoord startPos = getCurPos( );
@@ -2413,7 +2423,7 @@ protected:
 
         while(gradientNumVals>=gradientColorsBufSize)
         {
-            gradientNumVals /= 2;
+            gradientNumVals /= 2+1;
             stepSize        *= 2;
         }
 
@@ -2428,7 +2438,7 @@ protected:
         auto y = floatToInt(scaledPos.y);
 
         std::size_t gradientIdx = 0;
-        for(int curR=intR; curR>=0; ++gradientIdx)
+        for(int curR=intR+1; curR>=0; ++gradientIdx)
         {
             std::size_t stepIdx = 0;
             for(; stepIdx!=stepSize && curR>=0; --curR, ++stepIdx)
@@ -2442,53 +2452,6 @@ protected:
 
     }
 
-    virtual bool circle    (const DrawCoord &centerPos, const DrawCoord::value_type &r) override
-    {
-        if (!isPathStarted())
-        {
-            beginPath();
-        }
-        else
-        {
-            return false;
-        }
-
-        auto leftPos  = centerPos - DrawCoord(r, (DrawCoord::value_type)0);
-        auto rightPos = centerPos + DrawCoord(r, (DrawCoord::value_type)0);
-
-        moveTo(leftPos);
-        arcTo (centerPos, rightPos, false);
-        //moveTo(rightPos);
-        arcTo (centerPos, leftPos, false);
-
-        endPath( true /* bStroke */, false /* bFill */ );
-
-        return true;
-    }
-
-    virtual bool fillCircle(const DrawCoord &centerPos, const DrawCoord::value_type &r, bool drawFrame) override
-    {
-        if (!isPathStarted())
-        {
-            beginPath();
-        }
-        else
-        {
-            return false;
-        }
-
-        auto leftPos  = centerPos - DrawCoord(r, (DrawCoord::value_type)0);
-        auto rightPos = centerPos + DrawCoord(r, (DrawCoord::value_type)0);
-
-        moveTo(leftPos);
-        arcTo (centerPos, rightPos, false);
-        //moveTo(rightPos);
-        arcTo (centerPos, leftPos, false);
-
-        endPath( drawFrame /* true */  /* bStroke */ , true /* bFill */ );
-
-        return true;
-    }
 
 
 
