@@ -1002,6 +1002,9 @@ public:
         rEllipseSc.x  = std::min(rEllipseSc.x, whSc_2.x);
         rEllipseSc.y  = std::min(rEllipseSc.y, whSc_2.y);
 
+        rEllipseSc.x  = std::min(rEllipseSc.x, rEllipseSc.y);
+        rEllipseSc.y  = std::min(rEllipseSc.x, rEllipseSc.y);
+
         HPEN prevPen = 0;
         if (!drawFrame)
         {
@@ -1032,6 +1035,9 @@ public:
         auto whSc_2   = DrawCoord(whSc.x/2.0, whSc.y/2.0);
         rEllipseSc.x  = std::min(rEllipseSc.x, whSc_2.x);
         rEllipseSc.y  = std::min(rEllipseSc.y, whSc_2.y);
+
+        rEllipseSc.x  = std::min(rEllipseSc.x, rEllipseSc.y);
+        rEllipseSc.y  = std::min(rEllipseSc.x, rEllipseSc.y);
 
         HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
         HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
