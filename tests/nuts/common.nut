@@ -13,6 +13,7 @@ const fTestTextout                          =  true ; // false; // true ;
 const fTestLineJoinStyleTriangle            =  true ; // false; // true ;
 const fTestRectPixelPrecise                 =  true ; // false; // true ;
 const fTestGradientRects                    =  true ; // false; // true ;
+const fTestRoundRects                       =  true ; // false; // true ;
 
 const fTestCirclesEllipses                  =  true ; // false; // true ;
 const fTestCirclesEllipsesDefPrecise        =  true ; // false; // true ;
@@ -444,37 +445,37 @@ function onPaint(drawingContext)
     local genericFontParamsH20 = D.FontParams(20, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
     genericFontParamsH20.height = 20.0;
 
-    local infoFontId     = dc.createFontWithFace( genericFontParamsH4 , "Arial"          );
-    local arialFontId    = dc.createFontWithFace( genericFontParamsH8 , "Arial"          );
-    local timesFontId    = dc.createFontWithFace( genericFontParamsH8 , "Times New Roman");
-    local courierFontId  = dc.createFontWithFace( genericFontParamsH8 , "Courier New"    );
-    local labelsFontId   = dc.createFontWithFace( genericFontParamsH20, "Courier New"    );
+    local infoFontId          = dc.createFontWithFace( genericFontParamsH4 , "Arial"          );
+    local arialFontId         = dc.createFontWithFace( genericFontParamsH8 , "Arial"          );
+    local timesFontId         = dc.createFontWithFace( genericFontParamsH8 , "Times New Roman");
+    local courierFontId       = dc.createFontWithFace( genericFontParamsH8 , "Courier New"    );
+    local labelsFontId        = dc.createFontWithFace( genericFontParamsH20, "Courier New"    );
 
-    local markerLabelsFontId   = dc.createFontWithFace( genericFontParamsH1_7, "Arial"     );
+    local markerLabelsFontId  = dc.createFontWithFace( genericFontParamsH1_7, "Arial"     );
 
-    local savedPenId     = -1;
+    local savedPenId          = -1;
     
-    local penId          = dc.selectNewSolidPen( D.PenParams(0.5, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 168, 0) );
-    local brushId        = dc.selectNewSolidBrush( D.Color.fromRgb(0, 0, 168) );
-    local yellowBrushId  = dc.createSolidBrush( D.Color.fromRgb(255, 242, 0) );
-    local pinkBrushId    = dc.createSolidBrush( D.Color.fromRgb(255, 160, 128) );
+    local penId               = dc.selectNewSolidPen( D.PenParams(0.5, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 168, 0) );
+    local brushId             = dc.selectNewSolidBrush( D.Color.fromRgb(0, 0, 168) );
+    local yellowBrushId       = dc.createSolidBrush( D.Color.fromRgb(255, 242, 0) );
+    local pinkBrushId         = dc.createSolidBrush( D.Color.fromRgb(255, 160, 128) );
 
-    local normalKeySize1 = 12.0; // 50; // 40; // 80; // 120, 140, 30
-    local keyFrameWidth  = normalKeySize1/30.0; // 1  /20
+    local normalKeySize1      = 12.0; // 50; // 40; // 80; // 120, 140, 30
+    local keyFrameWidth       = normalKeySize1/30.0; // 1  /20
     
-    local lgrayPenId     = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(160, 160, 160) );
-    local llgrayPenId    = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(192, 192, 192) );
-    local dgrayPenId     = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(128, 128, 128) );
-    local orangePenId    = dc.createSolidPen( D.PenParams(0.1, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Orange );
-    local orangeThickPenId = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Orange );
+    local lgrayPenId          = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(160, 160, 160) );
+    local llgrayPenId         = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(192, 192, 192) );
+    local dgrayPenId          = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(128, 128, 128) );
+    local orangePenId         = dc.createSolidPen( D.PenParams(0.1, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Orange );
+    local orangeThickPenId    = dc.createSolidPen( D.PenParams(keyFrameWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Orange );
     
 
-    local cosmeticPenId  = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 0, 0) );
-    local cosmeticPenId2 = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(168, 168, 168) );
+    local cosmeticPenId       = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 0, 0) );
+    local cosmeticPenId2      = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(168, 168, 168) );
     //local 
-    markersPenId   = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 0, 0) );
+    markersPenId              = dc.createSolidPen( D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Color.fromRgb(0, 0, 0) );
 
-    local prevCosmeticPenId = dc.setDefaultCosmeticPen(cosmeticPenId);
+    local prevCosmeticPenId   = dc.setDefaultCosmeticPen(cosmeticPenId);
 
     // Fishtail
 
@@ -563,12 +564,38 @@ function onPaint(drawingContext)
         dc.selectPen( orgPen );
     }
 
+    // Round rects
+    if (fTestRoundRects)
+    {
+        local orgPen = dc.selectPen(orangePenId);
+
+        local pos    = D.Coords(4,35);
+        local sizeX  = 50;
+
+        local rrr = 1.2;
+
+        dc.    roundRect (rrr, pos, pos+Drawing.Coords( sizeX, 4));
+        pos.y += 5;
+    
+        dc.    roundRect (rrr, pos, pos+Drawing.Coords( sizeX, 3));
+        pos.y += 4;
+    
+        dc.    roundRect (rrr, pos, pos+Drawing.Coords( sizeX, 2));
+        pos.y += 3;
+    
+        dc.    roundRect (rrr, pos, pos+Drawing.Coords( sizeX, 1));
+        pos.y += 2;
+    
+        dc.selectPen( orgPen );
+    }
+
+
     if (fTestRectPixelPrecise)
     {
         local orgPen = dc.selectPen( blueThickPen );
         // Rect with pixel precise
         drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.PixelPrecise);
-        dc.rect(D.Coords(5,40), D.Coords(50,55));
+        dc.rect(D.Coords(5,55), D.Coords(50,70));
         drawingPrecise = dc.setDrawingPrecise(drawingPrecise);
         dc.selectPen( orgPen );
     }
