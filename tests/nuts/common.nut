@@ -23,24 +23,41 @@ const fTestSimpleCircles                    =  true ; // false; // true ;
 const fTestFillCircles                      =  true ; // false; // true ;
 const fTestSimpleEllipses                   =  true ; // false; // true ;
 const fTestFillEllipses                     =  true ; // false; // true ;
+const fTestMarkerLabels                     =  true ; // false; // true ;
                                                
 
 
 local drawingPrecise = Drawing.DrawingPrecise.DefPrecise;
 local markersPenId   = -1;
 
+function formatCoord(c)
+{
+    return "(" + c.x.tostring() + ";" + c.y.tostring() + ")";
+}
+
+function addMarkerWithLabel(dc, pos, fontId)
+{
+    local D  = Drawing;        // short alias for namespace Drawing
+    dc.markerAdd(pos);
+
+    if (fTestMarkerLabels)
+    {
+        dc.textOutWithFontAndColor( pos+D.Coords( 0.5,0.5), fontId, D.Color.fromRgb(0,0,0), formatCoord(pos) );
+    }
+}
+
 
 function makeEllipseLT(center, r, xScale)
 {
-    return Drawing.Coords(center.x-r*xScale, center.y-r);
+    return Drawing.Coords(center.x.tofloat() - r.tofloat()*xScale.tofloat(), center.y.tofloat() - r.tofloat());
 }
 
 function makeEllipseRB(center, r, xScale)
 {
-    return Drawing.Coords(center.x+r*xScale, center.y+r);
+    return Drawing.Coords(center.x.tofloat() + r.tofloat()*xScale.tofloat(), center.y.tofloat() + r.tofloat());
 }
 
-function drawCirclesEllipses( dc, pos, circleR, nextCircleScale, gradientParams, framePenId, fillBrushId, drawingPrecise)
+function drawCirclesEllipses( dc, pos, circleR, nextCircleScale, gradientParams, framePenId, fillBrushId, fontId, drawingPrecise)
 {
     local prevDrawingPrecise = dc.setDrawingPrecise(drawingPrecise);
     local prevPenId   = dc.selectPen  (framePenId );
@@ -48,79 +65,94 @@ function drawCirclesEllipses( dc, pos, circleR, nextCircleScale, gradientParams,
     
     local markersCollectMode = dc.setCollectMarkers(true);
 
-    // local gradientCircleSamplePos = D.Coords( 4 + gradientRectSizeX + 2*gradientRectSizeY, iconBottomCurrentPos+1*gradientRectSizeY );
-
-    // local circleR = 1.08*gradientRectSizeY;
     if (fTestGradientCircles)
     {
         dc.fillGradientCircle(pos, circleR, gradientParams, true);
         dc.markerAdd(pos);
+        addMarkerWithLabel(dc, pos, fontId);
     }
 
-    //const nextCircleScale = 2.1;
     pos.y += nextCircleScale*circleR;
 
     if (fTestGradientCircles)
     {
         dc.fillGradientCircle(pos, circleR, gradientParams, true);
-        dc.markerAdd(pos);
+        //dc.markerAdd(pos);
+        
     }
 
     if (fTestSimpleCircles)
     {
         dc.circle(pos, circleR);
-        dc.markerAdd(pos);
+        //dc.markerAdd(pos);
+        addMarkerWithLabel(dc, pos, fontId);
     }
+
     pos.y += nextCircleScale*circleR;
     if (fTestSimpleCircles)
     {
         dc.circle(pos, circleR);
-        dc.markerAdd(pos);
+        //dc.markerAdd(pos);
+        addMarkerWithLabel(dc, pos, fontId);
     }
+
     pos.y += nextCircleScale*circleR;
     if (fTestFillCircles)
     {
         dc.fillCircle(pos, circleR, false);
-        dc.markerAdd(pos);
+        //dc.markerAdd(pos);
+        addMarkerWithLabel(dc, pos, fontId);
     }
+
     pos.y += nextCircleScale*circleR;
     if (fTestFillCircles)
     {
         dc.fillCircle(pos, circleR, true );
-        dc.markerAdd(pos);
+        //dc.markerAdd(pos);
+        addMarkerWithLabel(dc, pos, fontId);
     }
 
-    //local ellipseLeftTop     = D.Coords(pos.x-circleR*1.3, pos.y-circleR);
-    //local ellipseRightBottom = D.Coords(pos.x+circleR*1.3, pos.y+circleR);
+    const ellipseScaleX = 1.14;
     pos.y += nextCircleScale*circleR;
     if (fTestSimpleEllipses)
     {
-        local lt = makeEllipseLT(pos, circleR, 1.3);
-        local bt = makeEllipseRB(pos, circleR, 1.0);
+        local lt = makeEllipseLT(pos, circleR, ellipseScaleX);
+        local bt = makeEllipseRB(pos, circleR, ellipseScaleX);
         dc.ellipse    (lt, bt);
-        dc.markerAdd(pos);
-        dc.markerAdd(lt);
-        dc.markerAdd(bt);
+        //dc.markerAdd(pos);
+        //dc.markerAdd(lt);
+        //dc.markerAdd(bt);
+        addMarkerWithLabel(dc, pos, fontId);
+        addMarkerWithLabel(dc, lt, fontId);
+        addMarkerWithLabel(dc, bt, fontId);
     }
-    pos.y += nextCircleScale*circleR;
+
+    pos.y += 1.4*nextCircleScale*circleR;
     if (fTestFillEllipses)
     {
-        local lt = makeEllipseLT(pos, circleR, 1.3);
-        local bt = makeEllipseRB(pos, circleR, 1.0);
+        local lt = makeEllipseLT(pos, circleR, ellipseScaleX);
+        local bt = makeEllipseRB(pos, circleR, ellipseScaleX);
         dc.fillEllipse(lt, bt, false);
-        dc.markerAdd(pos);
-        dc.markerAdd(lt);
-        dc.markerAdd(bt);
+        //dc.markerAdd(pos);
+        //dc.markerAdd(lt);
+        //dc.markerAdd(bt);
+        addMarkerWithLabel(dc, pos, fontId);
+        addMarkerWithLabel(dc, lt, fontId);
+        addMarkerWithLabel(dc, bt, fontId);
     }
-    pos.y += nextCircleScale*circleR;
+
+    pos.y += 1.4*nextCircleScale*circleR;
     if (fTestFillEllipses)
     {
-        local lt = makeEllipseLT(pos, circleR, 1.3);
-        local bt = makeEllipseRB(pos, circleR, 1.0);
+        local lt = makeEllipseLT(pos, circleR, ellipseScaleX);
+        local bt = makeEllipseRB(pos, circleR, ellipseScaleX);
         dc.fillEllipse(lt, bt, true );
-        dc.markerAdd(pos);
-        dc.markerAdd(lt);
-        dc.markerAdd(bt);
+        //dc.markerAdd(pos);
+        //dc.markerAdd(lt);
+        //dc.markerAdd(bt);
+        addMarkerWithLabel(dc, pos, fontId);
+        addMarkerWithLabel(dc, lt, fontId);
+        addMarkerWithLabel(dc, bt, fontId);
     }
 
     dc.selectPen  (prevPenId  );
@@ -129,7 +161,6 @@ function drawCirclesEllipses( dc, pos, circleR, nextCircleScale, gradientParams,
 
     dc.setCollectMarkers(markersCollectMode);
     dc.markersDrawEx(markersPenId);
-
 }
 
 
@@ -398,8 +429,14 @@ function onPaint(drawingContext)
     dc.setScale(D.Scale(scale,scale));
     dc.setPenScale(scale);
 
-    local genericFontParamsH4  = D.FontParams(4, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
-    local genericFontParamsH8  = D.FontParams(8, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
+    local genericFontParamsH1    = D.FontParams(1  , D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
+    local genericFontParamsH1_3  = D.FontParams(1.3, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
+    local genericFontParamsH1_5  = D.FontParams(1.5, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
+    local genericFontParamsH1_6  = D.FontParams(1.6, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
+    local genericFontParamsH1_7  = D.FontParams(1.7, D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
+    local genericFontParamsH2    = D.FontParams(2  , D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
+    local genericFontParamsH4    = D.FontParams(4  , D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
+    local genericFontParamsH8    = D.FontParams(8  , D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
     //local genericFontParamsH20 = clone genericFontParamsH8;
     //genericFontParamsH20.height = 20; // Type error bad cast expected: FLOAT got: INTEGER
     //genericFontParamsH20.height = 20.0; // : Access violation writing location 0x0000000000000000.
@@ -412,6 +449,8 @@ function onPaint(drawingContext)
     local timesFontId    = dc.createFontWithFace( genericFontParamsH8 , "Times New Roman");
     local courierFontId  = dc.createFontWithFace( genericFontParamsH8 , "Courier New"    );
     local labelsFontId   = dc.createFontWithFace( genericFontParamsH20, "Courier New"    );
+
+    local markerLabelsFontId   = dc.createFontWithFace( genericFontParamsH1_7, "Arial"     );
 
     local savedPenId     = -1;
     
@@ -705,19 +744,19 @@ function onPaint(drawingContext)
         local ncs = 2.2; // nextCircleScale
         if (fTestCirclesEllipsesDefPrecise)
         {
-            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, D.DrawingPrecise.DefPrecise);
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, markerLabelsFontId, D.DrawingPrecise.DefPrecise);
         }
 
         gradientCircleSamplePos = D.Coords( 185, 6 );
         if (fTestCirclesEllipsesPixelPrecise)
         {
-            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, D.DrawingPrecise.PixelPrecise);
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, markerLabelsFontId, D.DrawingPrecise.PixelPrecise);
         }
 
         gradientCircleSamplePos = D.Coords( 200, 6 );
         if (fTestCirclesEllipsesSmoothingPrecise)
         {
-            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, D.DrawingPrecise.SmoothingPrecise);
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangePenId, brushId, markerLabelsFontId, D.DrawingPrecise.SmoothingPrecise);
         }
 
 
@@ -726,19 +765,19 @@ function onPaint(drawingContext)
         local ncs = 2.2; // nextCircleScale
         if (fTestCirclesEllipsesDefPrecise)
         {
-            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangeThickPenId, brushId, D.DrawingPrecise.DefPrecise);
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangeThickPenId, brushId, markerLabelsFontId, D.DrawingPrecise.DefPrecise);
         }
 
         gradientCircleSamplePos = D.Coords( 230, 6 );
         if (fTestCirclesEllipsesPixelPrecise)
         {
-            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangeThickPenId, brushId, D.DrawingPrecise.PixelPrecise);
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangeThickPenId, brushId, markerLabelsFontId, D.DrawingPrecise.PixelPrecise);
         }
 
         gradientCircleSamplePos = D.Coords( 245, 6 );
         if (fTestCirclesEllipsesSmoothingPrecise)
         {
-            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangeThickPenId, brushId, D.DrawingPrecise.SmoothingPrecise);
+            drawCirclesEllipses(dc, gradientCircleSamplePos, circleR, ncs, gradientParams, orangeThickPenId, brushId, markerLabelsFontId, D.DrawingPrecise.SmoothingPrecise);
         }
 
 
