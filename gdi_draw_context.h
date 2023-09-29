@@ -991,19 +991,15 @@ public:
     {
         MARTY_ARG_USED(drawFrame);
 
+        auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
+        auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
+        auto rMax  = std::min(wh_2.x, wh_2.y);
+        auto r     = std::min(rMax, cornersR);
+
         auto ltSc = getScaledPos(leftTop    );
         auto rbSc = getScaledPos(rightBottom);
 
-        DrawCoord::value_type r = cornersR;
         auto rEllipseSc = getScaledSize(DrawCoord{r,r});
-
-        auto whSc     = DrawCoord(rbSc.x - ltSc.x, rbSc.y - ltSc.y);
-        auto whSc_2   = DrawCoord(whSc.x/2.0, whSc.y/2.0);
-        rEllipseSc.x  = std::min(rEllipseSc.x, whSc_2.x);
-        rEllipseSc.y  = std::min(rEllipseSc.y, whSc_2.y);
-
-        rEllipseSc.x  = std::min(rEllipseSc.x, rEllipseSc.y);
-        rEllipseSc.y  = std::min(rEllipseSc.x, rEllipseSc.y);
 
         HPEN prevPen = 0;
         if (!drawFrame)
@@ -1025,19 +1021,15 @@ public:
                           , const DrawCoord             &rightBottom
                           ) override
     {
+        auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
+        auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
+        auto rMax  = std::min(wh_2.x, wh_2.y);
+        auto r     = std::min(rMax, cornersR);
+
         auto ltSc = getScaledPos(leftTop    );
         auto rbSc = getScaledPos(rightBottom);
 
-        DrawCoord::value_type r = cornersR;
         auto rEllipseSc = getScaledSize(DrawCoord{r,r});
-
-        auto whSc     = DrawCoord(rbSc.x - ltSc.x, rbSc.y - ltSc.y);
-        auto whSc_2   = DrawCoord(whSc.x/2.0, whSc.y/2.0);
-        rEllipseSc.x  = std::min(rEllipseSc.x, whSc_2.x);
-        rEllipseSc.y  = std::min(rEllipseSc.y, whSc_2.y);
-
-        rEllipseSc.x  = std::min(rEllipseSc.x, rEllipseSc.y);
-        rEllipseSc.y  = std::min(rEllipseSc.x, rEllipseSc.y);
 
         HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
         HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
