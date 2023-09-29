@@ -991,11 +991,16 @@ public:
     {
         MARTY_ARG_USED(drawFrame);
 
-        auto ltScaled = getScaledPos(leftTop    );
-        auto rbScaled = getScaledPos(rightBottom);
+        auto ltSc = getScaledPos(leftTop    );
+        auto rbSc = getScaledPos(rightBottom);
 
-        DrawCoord::value_type r2 = 2*cornersR;
-        auto rEllipse = getScaledPos(DrawCoord{r2,r2});
+        DrawCoord::value_type r = cornersR;
+        auto rEllipseSc = getScaledSize(DrawCoord{r,r});
+
+        auto whSc     = DrawCoord(rbSc.x - ltSc.x, rbSc.y - ltSc.y);
+        auto whSc_2   = DrawCoord(whSc.x/2.0, whSc.y/2.0);
+        rEllipseSc.x  = std::min(rEllipseSc.x, whSc_2.x);
+        rEllipseSc.y  = std::min(rEllipseSc.y, whSc_2.y);
 
         HPEN prevPen = 0;
         if (!drawFrame)
@@ -1003,7 +1008,7 @@ public:
             HPEN transperrantPen = (HPEN)::GetStockObject(NULL_PEN);
             prevPen         = (HPEN)SelectObject( m_hdc, (HGDIOBJ)transperrantPen);
         }
-        auto res = ::RoundRect(m_hdc, floatToInt(ltScaled.x), floatToInt(ltScaled.y), floatToInt(rbScaled.x), floatToInt(rbScaled.y), floatToInt(rEllipse.x), floatToInt(rEllipse.y)) ? true : false;
+        auto res = ::RoundRect(m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y), floatToInt(rEllipseSc.x), floatToInt(rEllipseSc.y)) ? true : false;
         if (!drawFrame)
         {
             SelectObject( m_hdc, (HGDIOBJ)prevPen);
@@ -1017,15 +1022,20 @@ public:
                           , const DrawCoord             &rightBottom
                           ) override
     {
-        auto ltScaled = getScaledPos(leftTop    );
-        auto rbScaled = getScaledPos(rightBottom);
-     
-        DrawCoord::value_type r2 = 2*cornersR;
-        auto rEllipse = getScaledPos(DrawCoord{r2,r2});
-     
+        auto ltSc = getScaledPos(leftTop    );
+        auto rbSc = getScaledPos(rightBottom);
+
+        DrawCoord::value_type r = cornersR;
+        auto rEllipseSc = getScaledSize(DrawCoord{r,r});
+
+        auto whSc     = DrawCoord(rbSc.x - ltSc.x, rbSc.y - ltSc.y);
+        auto whSc_2   = DrawCoord(whSc.x/2.0, whSc.y/2.0);
+        rEllipseSc.x  = std::min(rEllipseSc.x, whSc_2.x);
+        rEllipseSc.y  = std::min(rEllipseSc.y, whSc_2.y);
+
         HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
         HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
-        auto res = RoundRect(m_hdc, floatToInt(ltScaled.x), floatToInt(ltScaled.y), floatToInt(rbScaled.x), floatToInt(rbScaled.y), floatToInt(rEllipse.x), floatToInt(rEllipse.y)) ? true : false;
+        auto res = RoundRect(m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y), floatToInt(rEllipseSc.x), floatToInt(rEllipseSc.y)) ? true : false;
         SelectObject( m_hdc, (HGDIOBJ)prevBrush);
      
         return res;
