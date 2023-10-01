@@ -521,7 +521,7 @@ function Game::onPaint(drawingContext)
 
     if (fTestTextout)
     {
-        dc.textOutWithFontAndColor( D.Coords( 60,14), arialFontId  , D.Color.fromRgb(128,0,0)  , "Arial A"   );
+        dc.textOutWithFontAndColor( D.Coords( 60,14), arialFontId  , D.Color.fromRgb(128,0,0)  , "Arial A: " + Vk.Code._1.tostring() );
         dc.textOutWithFontAndColor( D.Coords( 80,28), timesFontId  , D.Color.fromRgb(128,128,0), "Times T"   );
         //dc.textOutWithFontAndColor( D.Coords(100,42), courierFontId, D.Color.fromRgb(0,128,128), "Courier C" );
         dc.textOutWithFontAndColor( D.Coords(100,42), courierFontId, D.Colors.Magenta, "Courier C" );
