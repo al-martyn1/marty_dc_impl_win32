@@ -300,10 +300,10 @@ int main( int argc, char* argv[] )
             ssq::sqstring substRes  = marty_draw_context::simplesquirrel::prepareScriptEnums(srcScript, "Drawing", false);
 
             std::cout << "--- Script (input):\n";
-            std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(srcScript);
+            std::cout << marty_simplesquirrel::to_ascii(srcScript);
 
             std::cout << "--- Script (processed):\n";
-            std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(substRes);
+            std::cout << marty_simplesquirrel::to_ascii(substRes);
             std::cout << "\n";
         }
 
@@ -312,7 +312,7 @@ int main( int argc, char* argv[] )
         {
             std::cout << "--- Script enums prefix:\n";
             auto exposeEnumsScript = marty_draw_context::simplesquirrel::enumsExposeMakeScript(' ', ';', 0, "Drawing");
-            std::cout << marty_draw_context::simplesquirrel::utils::to_ascii(exposeEnumsScript) << "\n"; // Тут проверяем, что там нагенерировалось
+            std::cout << marty_simplesquirrel::to_ascii(exposeEnumsScript) << "\n"; // Тут проверяем, что там нагенерировалось
         }
 
         // добавляем описание enum'ов в самое начало рабочего скрипта и заменяем enum'ы в тексте скрипта 

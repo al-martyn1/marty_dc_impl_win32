@@ -28,7 +28,7 @@
 #endif
 
 #include "marty_draw_context/bindings/simplesquirrel.h"
-
+#include "marty_vk/bindings/simplesquirrel.h"
 #include "marty_fs_adapters/simple_file_api.h"
 
 #include "nutHelpers.h"
@@ -124,9 +124,12 @@ public:
             {
                 vm = ssq::VM(1024, ssq::Libs::MATH |  /* ssq::Libs::SYSTEM | */  ssq::Libs::STRING);
     
-                ssq::sqstring preparedScriptText1 = marty_draw_context::simplesquirrel::performBinding(vm, sqScript, "Drawing");
-                //lout << encoding::toUtf8(preparedScriptText1);
-                //lout << "\n----------\n\n";
+                ssq::sqstring preparedScriptText1 = _SC("Game <- {}")
+                                                  + marty_vk::simplesquirrel::enumsExposeMakeScript("Vk")
+                                                  + marty_draw_context::simplesquirrel::performBinding(vm, sqScript, "Drawing")
+                                                  ;
+                // lout << encoding::toUtf8(preparedScriptText1);
+                // lout << "\n----------\n\n";
     
                 ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
     
@@ -259,7 +262,8 @@ public:
 
         try{
 
-            ssq::Function sqOnPaint = vm.findFunc(_SC("onPaint"));
+            //ssq::Function sqOnPaint = vm.findFunc(_SC("onPaint"));
+            ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onPaint");
 
             //lout << "DoPaintImpl: call onPaint from script\n";
             marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);

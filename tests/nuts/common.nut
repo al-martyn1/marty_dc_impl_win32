@@ -388,7 +388,7 @@ function arcToByEnd(dc, arcCenter, startPointOffset, endPointOffset, dir)
 }
 
 
-function onPaint(drawingContext)
+function Game::onPaint(drawingContext)
 {
     local D  = Drawing;        // short alias for namespace Drawing
     local dc = drawingContext; // short alias for Drawing.Context object

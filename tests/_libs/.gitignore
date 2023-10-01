@@ -7,6 +7,7 @@ marty_csv
 marty_decimal
 marty_draw_context
 marty_fs_adapters
+marty_vk
 marty_pugixml
 marty_rcfs
 marty_rich_text
