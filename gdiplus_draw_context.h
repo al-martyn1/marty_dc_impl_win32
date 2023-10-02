@@ -261,6 +261,11 @@ public:
         */
     }
 
+    virtual std::string getEngineName() override
+    {
+        return std::string("GDI+");
+    }
+
     virtual void flushBits() override
     {
         m_g.Flush(Gdiplus::FlushIntentionSync);

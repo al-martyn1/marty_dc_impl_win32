@@ -205,6 +205,11 @@ public:
         #endif
     }
 
+    virtual std::string getEngineName() override
+    {
+        return std::string("GDI");
+    }
+
     virtual void flushBits() override
     {
     }

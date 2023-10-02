@@ -13,10 +13,15 @@
 #include "umba/filename.h"
 #include "umba/time_service.h"
 
+#include "dotNutBase/bindings/simplesquirrel.h"
+#include "dotNutBase/dotNutBase.h"
+
 
 #include "marty_dc_impl_win32/gdi_draw_context.h"
 #include "marty_dc_impl_win32/gdiplus_draw_context.h"
 #include "marty_dc_impl_win32/multi_dc.h"
+
+
 
 #include <array>
 
@@ -95,10 +100,11 @@ public:
     // static const Flag STRING = 0x0010;
     // static const Flag ALL = 0xFFFF;
 
-    ssq::VM         vm; // (1024, ssq::Libs::MATH | ssq::Libs::SYSTEM | ssq::Libs::STRING);
+    ssq::VM            vm; // (1024, ssq::Libs::MATH | ssq::Libs::SYSTEM | ssq::Libs::STRING);
+    dotnut::AppHost    appHost;
 
-    UINT_PTR        mainTimerId    = 0;
-    std::uint32_t   lastTimerTick  = 0;
+    UINT_PTR           mainTimerId    = 0;
+    std::uint32_t      lastTimerTick  = 0;
 
 
     std::uint32_t getTickDelta()
@@ -149,6 +155,8 @@ public:
             {
                 vm = ssq::VM(1024, ssq::Libs::MATH |  /* ssq::Libs::SYSTEM | */  ssq::Libs::STRING);
     
+                dotnut::simplesquirrel::performBinding(vm, "DotNut");
+
                 ssq::sqstring preparedScriptText1 = _SC("Game <- {}")
                                                   + marty_vk::simplesquirrel::enumsExposeMakeScript("Vk")
                                                   + marty_draw_context::simplesquirrel::performBinding(vm, sqScript, "Drawing")
@@ -176,6 +184,9 @@ public:
                 lout << e.what() << "\n";
                 loadingFailed = true;
                 //return -1;
+            } catch (std::out_of_range& e) {
+                lout << e.what() << "\n";
+                //return -1;
             } catch (...) {
                 lout << "Unknown error" << "\n";
                 loadingFailed = true;
@@ -197,7 +208,7 @@ public:
                 try{
                     ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onLoad");
     
-                    auto res = vm.callFunc(sqOnPaint, vm, bFirstTime);
+                    auto res = vm.callFunc(sqOnPaint, vm, appHost, bFirstTime);
     
                     bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onLoad returned"));
                     if (needUpdate)
@@ -217,6 +228,9 @@ public:
                 } catch (ssq::NotFoundException& e) {
                     lout << e.what() << "\n";
                     //return -1;
+                } catch (std::out_of_range& e) {
+                    lout << e.what() << "\n";
+                    //return -1;
                 } catch (...) {
                     lout << "Unknown error" << "\n";
                     //return -1;
@@ -234,6 +248,11 @@ public:
     {
         using umba::lout;
         using namespace umba::omanip;
+
+        appHost.sys.printHandler = [&](const ssq::sqstring &str)
+        {
+            lout << encoding::toUtf8(str);
+        };
 
         Sleep(300);
         
@@ -282,17 +301,26 @@ public:
             std::uint32_t tickDelta = getTickDelta();
             updateLastTick();
 
-            try{
-                ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onUpdate");
-    
-                auto res = vm.callFunc(sqOnPaint, vm, tickDelta);
+            bool timerHandlerFails = true;
 
-                bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onUpdate returned"));
-                if (needUpdate)
+            try{
+
+                try
                 {
-                    InvalidateRect(0, TRUE);
-                }
+                    ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onUpdate");
+                    auto res = vm.callFunc(sqOnPaint, vm, appHost, tickDelta);
     
+                    bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onUpdate returned"));
+                    if (needUpdate)
+                    {
+                        InvalidateRect(0, TRUE);
+                    }
+
+                    timerHandlerFails = false;
+                }
+                catch (ssq::NotFoundException&)
+                {}
+
             } catch (ssq::CompileException& e) {
                 lout << "Failed to run file: " << e.what() << "\n";
                 //return -1;
@@ -305,12 +333,20 @@ public:
             } catch (ssq::NotFoundException& e) {
                 lout << e.what() << "\n";
                 //return -1;
+            } catch (std::out_of_range& e) {
+                lout << e.what() << "\n";
+                //return -1;
             } catch (...) {
                 lout << "Unknown error" << "\n";
                 //return -1;
             }
 
-        
+            if (timerHandlerFails)
+            {
+                ::KillTimer(m_hWnd, mainTimerId);
+                mainTimerId = 0;
+            }
+
         }
     }
 
@@ -360,7 +396,7 @@ public:
         try{
             ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onKeyEvent");
 
-            auto res = vm.callFunc(sqOnPaint, vm, bDown, nChar, nRepCnt);
+            auto res = vm.callFunc(sqOnPaint, vm, appHost, bDown, nChar, nRepCnt);
 
             bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onKeyEvent returned"));
             if (needUpdate)
@@ -433,6 +469,9 @@ public:
         #endif
 
         IDrawContext *pDc = &idc;
+
+        appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
+
         DoPaintImpl(pDc);
 
     }
@@ -459,7 +498,7 @@ public:
             sqDc.ctxSizeX = (int)(cx);
             sqDc.ctxSizeY = (int)(cy);
 
-            vm.callFunc(sqOnPaint, vm, &sqDc);
+            vm.callFunc(sqOnPaint, vm, appHost, &sqDc);
             //vm.callFunc(sqOnPaint, vm, sqDc);
 
         } catch (ssq::CompileException& e) {

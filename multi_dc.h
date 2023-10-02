@@ -114,10 +114,12 @@ MultiDrawContext makeMultiDrawContext(HDC hdc, bool prefferGdiPlus = false, HdcR
 
     #if !defined(MARTY_DRAW_CONTEXT_NO_GDIPLUS)
 
+        mdc.engineName = "GDI";
         std::shared_ptr<IDrawContext> gdiPlusDc = std::make_shared<GdiPlusDrawContext>(hdc);
 
     #else
 
+        mdc.engineName = prefferGdiPlus ? "GDI+/GDI" : "GDI/GDI+";
         std::shared_ptr<IDrawContext> gdiPlusDc = gdiDc;
 
     #endif
@@ -153,10 +155,12 @@ std::shared_ptr<IDrawContext> makeSharedMultiDrawContext(HDC hdc, bool prefferGd
 
     #if !defined(MARTY_DRAW_CONTEXT_NO_GDIPLUS)
 
+        mdc->engineName = "GDI";
         std::shared_ptr<IDrawContext> gdiPlusDc = std::make_shared<GdiPlusDrawContext>(hdc);
 
     #else
 
+        mdc->engineName = prefferGdiPlus ? "GDI+/GDI" : "GDI/GDI+";
         std::shared_ptr<IDrawContext> gdiPlusDc = gdiDc;
 
     #endif

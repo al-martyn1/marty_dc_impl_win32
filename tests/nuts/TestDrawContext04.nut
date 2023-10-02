@@ -1,4 +1,5 @@
 
+local sysInfoStr = "";
 
 local pos = Drawing.Coords(50,50);
 
@@ -43,12 +44,28 @@ function keySpeed(vk)
 }
 
 
-function Game::onLoad(bFirstTime)
+function Game::onLoad(appHost, bFirstTime)
 {
+    /*
+    local sys = appHost.sys;
+
+    // local infoStr = 
+    sysInfoStr = sys.info.kernel + "/" + sys.info.platform + ", " + sys.info.os + "-" + sys.info.osVer + ", " + sys.info.graphicsBackend.name;
+
+    if (bFirstTime)
+    {
+        sys.smpprintln("Starting on " + sysInfoStr);
+    }
+    else
+    {
+        sys.smpprintln("Reloading on " + sysInfoStr);
+    }
+
     return false;
+    */
 }
 
-function Game::onUpdate(tickDelta)
+function Game::onUpdate(appHost, tickDelta)
 {
     local bUpdate = false;
 
@@ -99,7 +116,7 @@ function Game::onUpdate(tickDelta)
     return true;
 }
 
-function Game::onKeyEvent(bDown, nChar, nRepCnt)
+function Game::onKeyEvent(appHost, bDown, nChar, nRepCnt)
 {
     if (nChar==Vk.Code.Left || nChar==Vk.Code.Right || nChar==Vk.Code.Up || nChar==Vk.Code.Down)
     {
@@ -119,7 +136,7 @@ function Game::onKeyEvent(bDown, nChar, nRepCnt)
 }
 
 
-function Game::onPaint(dc)
+function Game::onPaint(appHost, dc)
 {
     local D = Drawing;
 
@@ -144,6 +161,7 @@ function Game::onPaint(dc)
 
     dc.textOutWithFontAndColor( D.Coords( 120,120), arialFontId, D.Color.fromRgb(0,0,0), formatCoord(pos) + "  " + getKeyStatesStr());
 
+    dc.textOutWithFontAndColor( D.Coords(  10,120), arialFontId, D.Color.fromRgb(0,0,0), sysInfoStr);
 
 }
 
