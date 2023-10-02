@@ -84,6 +84,23 @@ typedef marty_draw_context::GdiPlusDrawContext                GdiPlusDrawContext
 // Про PNG - https://4pda.to/forum/index.php?showtopic=44099
 
 
+inline
+void smpPrint(ssq::Object val)
+{
+    using umba::lout;
+    lout << encoding::toUtf8(dotnut::System::objectToStringHelper(val));
+}
+
+inline
+void smpPrintLn(ssq::Object val)
+{
+    using umba::lout;
+    lout << encoding::toUtf8(dotnut::System::objectToStringHelper(val)) << "\n";
+}
+
+
+
+
 class CBitmapView : public CScrollWindowImpl<CBitmapView>
 {
 public:
@@ -157,6 +174,10 @@ public:
     
                 dotnut::simplesquirrel::performBinding(vm, "DotNut");
 
+                vm.addFunc( _SC("smpprint"  ) , &smpPrint   );
+                vm.addFunc( _SC("smpprintln") , &smpPrintLn );
+
+
                 ssq::sqstring preparedScriptText1 = _SC("Game <- {}")
                                                   + marty_vk::simplesquirrel::enumsExposeMakeScript("Vk")
                                                   + marty_draw_context::simplesquirrel::performBinding(vm, sqScript, "Drawing")
@@ -208,7 +229,7 @@ public:
                 try{
                     ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onLoad");
     
-                    auto res = vm.callFunc(sqOnPaint, vm, appHost, bFirstTime);
+                    auto res = vm.callFunc(sqOnPaint, vm,  /* appHost, */  bFirstTime);
     
                     bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onLoad returned"));
                     if (needUpdate)
@@ -308,7 +329,7 @@ public:
                 try
                 {
                     ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onUpdate");
-                    auto res = vm.callFunc(sqOnPaint, vm, appHost, tickDelta);
+                    auto res = vm.callFunc(sqOnPaint, vm,  /* appHost,  */ tickDelta);
     
                     bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onUpdate returned"));
                     if (needUpdate)
@@ -369,7 +390,7 @@ public:
             return;
         }
 
-        OnKeyEvent(false, (std::uint32_t)nChar, (std::uint32_t)nRepCnt, (std::uint32_t)nFlags);
+        OnKeyEvent(true, (std::uint32_t)nChar, (std::uint32_t)nRepCnt, (std::uint32_t)nFlags);
     }
 
     void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -396,7 +417,7 @@ public:
         try{
             ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onKeyEvent");
 
-            auto res = vm.callFunc(sqOnPaint, vm, appHost, bDown, nChar, nRepCnt);
+            auto res = vm.callFunc(sqOnPaint, vm,  /* appHost,  */ bDown, nChar, nRepCnt);
 
             bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onKeyEvent returned"));
             if (needUpdate)
@@ -498,7 +519,7 @@ public:
             sqDc.ctxSizeX = (int)(cx);
             sqDc.ctxSizeY = (int)(cy);
 
-            vm.callFunc(sqOnPaint, vm, appHost, &sqDc);
+            vm.callFunc(sqOnPaint, vm,  /* appHost,  */ &sqDc);
             //vm.callFunc(sqOnPaint, vm, sqDc);
 
         } catch (ssq::CompileException& e) {

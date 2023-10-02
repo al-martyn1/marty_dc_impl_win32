@@ -1,4 +1,5 @@
 2c_common
+dotNutBase
 encoding
 encoding_prev
 marty_adt
@@ -7,6 +8,7 @@ marty_csv
 marty_decimal
 marty_draw_context
 marty_fs_adapters
+marty_simplesquirrel
 marty_vk
 marty_pugixml
 marty_rcfs

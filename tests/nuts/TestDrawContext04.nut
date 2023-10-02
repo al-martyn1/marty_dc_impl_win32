@@ -1,9 +1,13 @@
 
-local sysInfoStr = "";
+local sysInfoStr = "Uninitialized";
 
 local pos = Drawing.Coords(50,50);
 
 local keyState = {}
+
+local borderPenWidth  = 3;
+local puckBorderWidth = 2;
+local puckR = 3;
 
 keyState[Vk.Code.Left ] <- 0;
 keyState[Vk.Code.Right] <- 0;
@@ -44,7 +48,7 @@ function keySpeed(vk)
 }
 
 
-function Game::onLoad(appHost, bFirstTime)
+function Game::onLoad(bFirstTime)
 {
     /*
     local sys = appHost.sys;
@@ -65,23 +69,23 @@ function Game::onLoad(appHost, bFirstTime)
     */
 }
 
-function Game::onUpdate(appHost, tickDelta)
+function Game::onUpdate(tickDelta)
 {
     local bUpdate = false;
 
     local xSpeed = 0;
     local ySpeed = 0;
 
-    xSpeed = -keySpeed(Vk.Code.Left);
+    xSpeed = - keySpeed(Vk.Code.Left);
     if (xSpeed==0)
     {
-        xSpeed = -keySpeed(Vk.Code.Right);
+        xSpeed = keySpeed(Vk.Code.Right);
     }
 
     ySpeed = -keySpeed(Vk.Code.Up);
     if (ySpeed==0)
     {
-        ySpeed = -keySpeed(Vk.Code.Down);
+        ySpeed = keySpeed(Vk.Code.Down);
     }
 
     
@@ -90,43 +94,49 @@ function Game::onUpdate(appHost, tickDelta)
         return false;
     }
 
-    pos.x = pos.x + (xSpeed*tickDelta);///10.0;
-    pos.y = pos.y + (ySpeed*tickDelta);///10.0;
+    pos.x = pos.x + (xSpeed*tickDelta)/20.0;
+    pos.y = pos.y + (ySpeed*tickDelta)/20.0;
 
-    if (pos.x<0.0)
+    if (pos.x<(0.0+puckR))
     {
-        pos.x = 0.0;
+        pos.x = (0.0+puckR);
     }
 
-    if (pos.x>100.0)
+    if (pos.x>(100.0-puckR))
     {
-        pos.x = 100.0;
+        pos.x = (100.0-puckR);
     }
 
-    if (pos.y<0.0)
+    if (pos.y<(0.0+puckR))
     {
-        pos.y = 0.0;
+        pos.y = (0.0+puckR);
     }
 
-    if (pos.y>100.0)
+    if (pos.y>(100.0-puckR))
     {
-        pos.y = 100.0;
+        pos.y = (100.0-puckR);
     }
 
     return true;
 }
 
-function Game::onKeyEvent(appHost, bDown, nChar, nRepCnt)
+function Game::onKeyEvent(bDown, nChar, nRepCnt)
 {
     if (nChar==Vk.Code.Left || nChar==Vk.Code.Right || nChar==Vk.Code.Up || nChar==Vk.Code.Down)
     {
         if (bDown)
         {
+            //smpprint  ("Key down, code: ");
+            //smpprint  (nChar)
+            //smpprint  (", nRepCnt: ");
+            //smpprintln(nRepCnt);
             keyState[nChar] = nRepCnt;
             return true;
         }
         else
         {
+            //smpprint  ("Key up, code: ");
+            //smpprintln(nChar);
             keyState[nChar] = 0;
         }
     }
@@ -136,11 +146,11 @@ function Game::onKeyEvent(appHost, bDown, nChar, nRepCnt)
 }
 
 
-function Game::onPaint(appHost, dc)
+function Game::onPaint(dc)
 {
     local D = Drawing;
 
-    local framePen  = dc.createSolidPen(D.PenParams(3, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Blue);
+    local framePen  = dc.createSolidPen(D.PenParams(borderPenWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Blue);
 
     dc.setOffset(D.Coords(10,10));
 
@@ -151,9 +161,9 @@ function Game::onPaint(appHost, dc)
     dc.selectPen(framePen);
     dc.roundRect(3, Drawing.Coords( 0,0), Drawing.Coords(100,100));
 
-    local circlePen = dc.createSolidPen(D.PenParams(2, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Green);
+    local circlePen = dc.createSolidPen(D.PenParams(puckBorderWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Green);
     dc.selectPen(circlePen);
-    dc.circle(pos, 3);
+    dc.circle(pos, puckR);
 
     local genericFontParamsH20 = D.FontParams(2  , D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
     local arialFontId          = dc.createFontWithFace( genericFontParamsH20 , "Arial"          );
