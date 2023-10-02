@@ -141,6 +141,8 @@ public:
 
         #endif
 
+        bool loadingFailed = false;
+
         if (!sqScript.empty())
         {
             try
@@ -160,45 +162,69 @@ public:
                 
             } catch (ssq::CompileException& e) {
                 lout << "Failed to run file: " << e.what() << "\n";
+                loadingFailed = true;
                 //return -1;
             } catch (ssq::TypeException& e) {
                 lout << "Something went wrong passing objects: " << e.what() << "\n";
+                loadingFailed = true;
                 //return -1;
             } catch (ssq::RuntimeException& e) {
                 lout << "Something went wrong during execution: " << e.what() << "\n";
+                loadingFailed = true;
                 //return -1;
             } catch (ssq::NotFoundException& e) {
                 lout << e.what() << "\n";
+                loadingFailed = true;
+                //return -1;
+            } catch (...) {
+                lout << "Unknown error" << "\n";
+                loadingFailed = true;
                 //return -1;
             }
 
 
-            try{
-                ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onLoad");
-
-                auto res = vm.callFunc(sqOnPaint, vm, bFirstTime);
-
-                bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onLoad returned"));
-                if (needUpdate)
+            if (loadingFailed)
+            {
+                if (mainTimerId)
                 {
-                    InvalidateRect(0, TRUE);
+                    ::KillTimer(m_hWnd, mainTimerId);
+                    mainTimerId = 0;
                 }
+
+            }
+            else // loaded
+            {
+                try{
+                    ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onLoad");
     
-            } catch (ssq::CompileException& e) {
-                lout << "Failed to run file: " << e.what() << "\n";
-                //return -1;
-            } catch (ssq::TypeException& e) {
-                lout << "Something went wrong passing objects: " << e.what() << "\n";
-                //return -1;
-            } catch (ssq::RuntimeException& e) {
-                lout << "Something went wrong during execution: " << e.what() << "\n";
-                //return -1;
-            } catch (ssq::NotFoundException& e) {
-                lout << e.what() << "\n";
-                //return -1;
-            } catch (...) {
-                lout << "Unknown error" << "\n";
-                //return -1;
+                    auto res = vm.callFunc(sqOnPaint, vm, bFirstTime);
+    
+                    bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onLoad returned"));
+                    if (needUpdate)
+                    {
+                        InvalidateRect(0, TRUE);
+                    }
+        
+                } catch (ssq::CompileException& e) {
+                    lout << "Failed to run file: " << e.what() << "\n";
+                    //return -1;
+                } catch (ssq::TypeException& e) {
+                    lout << "Something went wrong passing objects: " << e.what() << "\n";
+                    //return -1;
+                } catch (ssq::RuntimeException& e) {
+                    lout << "Something went wrong during execution: " << e.what() << "\n";
+                    //return -1;
+                } catch (ssq::NotFoundException& e) {
+                    lout << e.what() << "\n";
+                    //return -1;
+                } catch (...) {
+                    lout << "Unknown error" << "\n";
+                    //return -1;
+                }
+
+
+                mainTimerId = ::SetTimer(m_hWnd, 1, 25 /* ms */ , 0);
+
             }
 
         }
@@ -210,8 +236,7 @@ public:
         using namespace umba::omanip;
 
         Sleep(300);
-
-        reloadScript(true);
+        
     }
 
     CBitmapView(const CBitmapView& ) = delete;
@@ -240,7 +265,9 @@ public:
     {
         MARTY_ARG_USED(lpCreateStruct);
 
-        // mainTimerId = ::SetTimer(m_hWnd, 1, 10, 0);
+        reloadScript(true);
+
+        //mainTimerId = ::SetTimer(m_hWnd, 1, 10, 0);
 
         return 0;
     }
@@ -331,11 +358,11 @@ public:
         MARTY_ARG_USED(nFlags);
 
         try{
-            ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onUpdate");
+            ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onKeyEvent");
 
             auto res = vm.callFunc(sqOnPaint, vm, bDown, nChar, nRepCnt);
 
-            bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onUpdate returned"));
+            bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onKeyEvent returned"));
             if (needUpdate)
             {
                 InvalidateRect(0, TRUE);

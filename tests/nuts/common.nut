@@ -28,6 +28,18 @@ const fTestMarkerLabels                     =  true ; // false; // true ;
                                                
 
 
+function Game::onLoad(bFirstTime)
+{
+    return false;
+}
+
+function Game::onUpdate(tickDelta)
+{
+    return false;
+}
+
+
+
 local drawingPrecise = Drawing.DrawingPrecise.DefPrecise;
 local markersPenId   = -1;
 
