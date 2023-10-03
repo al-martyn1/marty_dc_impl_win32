@@ -234,7 +234,7 @@ public:
                     bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onLoad returned"));
                     if (needUpdate)
                     {
-                        InvalidateRect(0, TRUE);
+                        invalidateClientArea();
                     }
         
                 } catch (ssq::CompileException& e) {
@@ -312,6 +312,11 @@ public:
         return 0;
     }
 
+    void invalidateClientArea()
+    {
+        InvalidateRect(0, FALSE);
+    }
+
     void OnTimer(UINT_PTR nIDEvent)
     {
         using umba::lout;
@@ -334,7 +339,7 @@ public:
                     bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onUpdate returned"));
                     if (needUpdate)
                     {
-                        InvalidateRect(0, TRUE);
+                        invalidateClientArea();
                     }
 
                     timerHandlerFails = false;
@@ -384,7 +389,7 @@ public:
             if (nRepCnt<2)
             {
                 reloadScript();
-                InvalidateRect(0, TRUE);
+                invalidateClientArea();
             }
 
             return;
@@ -422,7 +427,7 @@ public:
             bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onKeyEvent returned"));
             if (needUpdate)
             {
-                InvalidateRect(0, TRUE);
+                invalidateClientArea();
             }
 
         } catch (ssq::CompileException& e) {
@@ -445,10 +450,13 @@ public:
 
     LRESULT OnEraseBackground(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
-        RECT rect;
-        GetClientRect(&rect);
-        int x = 0;
-        int y = 0;
+        // RECT rect;
+        // GetClientRect(&rect);
+        // int x = 0;
+        // int y = 0;
+
+        MARTY_ARG_USED(wParam);
+
         /*
         if(!m_bmp.IsNull())
         {
@@ -456,6 +464,7 @@ public:
             y = m_size.cy + 1;
         }
         */
+        /*
         CDCHandle dc = (HDC)wParam;
         if(rect.right > m_sizeAll.cx)
         {
@@ -470,6 +479,7 @@ public:
             rectBottom.top = y;
             dc.FillRect(&rectBottom, COLOR_WINDOW);
         }
+        */
         /*
         if(!m_bmp.IsNull())
         {
@@ -483,10 +493,41 @@ public:
 
     void DoPaint(CDCHandle dc)
     {
+
+        RECT clientRect{0,0};
+        ::GetClientRect(m_hWnd, &clientRect);
+
+        auto cx = clientRect.right  - clientRect.left + 1;
+        auto cy = clientRect.bottom - clientRect.top  + 1;
+
+
+        HDC memDc = ::CreateCompatibleDC(dc.m_hDC);
+
+        HBITMAP hMemBmp  = ::CreateCompatibleBitmap ( dc.m_hDC, cx, cy );
+        HBITMAP hOldBmp = (HBITMAP)::SelectObject(memDc, hMemBmp);
+
+        RECT clRect;
+        clRect.left   = 0;
+        clRect.top    = 0;
+        clRect.right  = cx;
+        clRect.bottom = cy;
+        ::FillRect(memDc, &clRect, (HBRUSH)COLOR_WINDOW);
+
+        #if 0
+        ::BitBlt( memDc     // A handle to the destination device context.
+                , 0, 0         //dstX, dstY   // The x/y-coordinates, in logical units, of the upper-left corner of the destination rectangle.
+                , cx, cy       // The width/height, in logical units, of the source and destination rectangles.
+                , dc.m_hDC        // hdcCopyFrom  // A handle to the source device context.
+                , 0, 0         // The x/y-coordinate, in logical units, of the upper-left corner of the source rectangle.
+                , SRCCOPY      // A raster-operation code - Copies the source rectangle directly to the destination rectangle.
+                );
+        #endif
+
+
         #ifdef TEST_DC_USE_GDIPLUS
-            auto idc = marty_draw_context::makeMultiDrawContext(dc, true  /* prefferGdiPlus */);
+            auto idc = marty_draw_context::makeMultiDrawContext(memDc, true  /* prefferGdiPlus */);
         #else
-            auto idc = marty_draw_context::makeMultiDrawContext(dc, false /* prefferGdiPlus */);
+            auto idc = marty_draw_context::makeMultiDrawContext(memDc, false /* prefferGdiPlus */);
         #endif
 
         IDrawContext *pDc = &idc;
@@ -494,6 +535,17 @@ public:
         appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
 
         DoPaintImpl(pDc);
+
+        ::BitBlt( dc.m_hDC     // A handle to the destination device context.
+                , 0, 0         //dstX, dstY   // The x/y-coordinates, in logical units, of the upper-left corner of the destination rectangle.
+                , cx, cy       // The width/height, in logical units, of the source and destination rectangles.
+                , memDc        // hdcCopyFrom  // A handle to the source device context.
+                , 0, 0         // The x/y-coordinate, in logical units, of the upper-left corner of the source rectangle.
+                , SRCCOPY      // A raster-operation code - Copies the source rectangle directly to the destination rectangle.
+                );
+
+        ::SelectObject(memDc, hOldBmp);
+        ::DeleteObject(hMemBmp);
 
     }
 
@@ -507,14 +559,19 @@ public:
         try{
             ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onPaint");
 
+            pDc->setStringEncoding("UTF-8");
+            pDc->setBkMode( BkMode::transparent );
+            pDc->setSmoothingMode(SmoothingMode::antiAlias); // highSpeed highQuality antiAlias defMode none
+
+
             //lout << "DoPaintImpl: call onPaint from script\n";
             marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
 
             RECT clientRect{0,0};
             ::GetClientRect(m_hWnd, &clientRect);
 
-            auto cx = clientRect.right  - clientRect.left;
-            auto cy = clientRect.bottom - clientRect.top ;
+            auto cx = clientRect.right  - clientRect.left + 1;
+            auto cy = clientRect.bottom - clientRect.top  + 1;
             // lout << "OnPaint: cx: " << cx << ", cy: " << cy <<"\n";
             sqDc.ctxSizeX = (int)(cx);
             sqDc.ctxSizeY = (int)(cy);
