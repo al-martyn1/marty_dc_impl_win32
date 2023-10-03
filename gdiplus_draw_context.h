@@ -235,8 +235,13 @@ public:
 
     ~GdiPlusDrawContext()
     {
+        ::SelectObject(m_hdc, ::GetStockObject(NULL_PEN));
+        ::SelectObject(m_hdc, ::GetStockObject(NULL_BRUSH));
+        ::SelectObject(m_hdc, ::GetStockObject(DEVICE_DEFAULT_FONT));
 
         m_g.Flush(Gdiplus::FlushIntentionSync);
+
+        freeAllocatedRc();
 
         m_hdc = hdcRelease(m_hdc, m_hdcReleaseMode, m_hwnd /* , lpPaintStruct */ );
 

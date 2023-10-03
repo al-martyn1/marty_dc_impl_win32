@@ -175,8 +175,9 @@ public:
 
     ~GdiDrawContext()
     {
-
-        m_hdc = hdcRelease(m_hdc, m_hdcReleaseMode, m_hwnd /* , lpPaintStruct */ );
+        ::SelectObject(m_hdc, ::GetStockObject(NULL_PEN));
+        ::SelectObject(m_hdc, ::GetStockObject(NULL_BRUSH));
+        ::SelectObject(m_hdc, ::GetStockObject(DEVICE_DEFAULT_FONT));
 
         #if 0
 
@@ -200,9 +201,12 @@ public:
 
         #else
 
-            freeAllocatedRc();
+        freeAllocatedRc();
 
         #endif
+
+        m_hdc = hdcRelease(m_hdc, m_hdcReleaseMode, m_hwnd /* , lpPaintStruct */ );
+
     }
 
     virtual std::string getEngineName() override
