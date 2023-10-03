@@ -46,15 +46,15 @@ protected:
     DrawCoord m_curPos;
 
     std::vector<HPEN> m_hPens;
-    //HPEN              m_defPen;
+    HPEN              m_defGdiPen;
     int               m_curPenId;
 
     std::vector<HBRUSH> m_hBrushes;
-    //HBRUSH              m_defBrush;
+    HBRUSH              m_defGdiBrush;
     int                 m_curBrushId;
 
     std::vector<HFONT> m_hFonts;
-    //HFONT              m_defFont;
+    HFONT              m_defGdiFont;
     int                m_curFontId;
 
 
@@ -92,39 +92,19 @@ protected:
     {
         //SetTextAlign (m_dc.m_hDC, GetTextAlign(m_dc.m_hDC) & (~TA_CENTER) | TA_LEFT );
 
-        m_curPenId   = createSolidPen( 0, marty_draw_context::LineEndcapStyle::square, marty_draw_context::LineJoinStyle::bevel, 0, 0, 0 );
-        m_curBrushId = createSolidBrush( 0, 0, 0 );
+        // получили текущие (дефолтные) перо/кисть/фонт, замещая их стоковыми
+        m_defGdiPen   = (HPEN)  ::SelectObject(m_hdc, ::GetStockObject(NULL_PEN));
+        m_defGdiBrush = (HBRUSH)::SelectObject(m_hdc, ::GetStockObject(NULL_BRUSH));
+        m_defGdiFont  = (HFONT )::SelectObject(m_hdc, ::GetStockObject(DEVICE_DEFAULT_FONT));
 
+        // восстанавливаем на всякий случай те объекты, которые были в HDC
+        ::SelectObject(m_hdc, (HGDIOBJ)m_defGdiPen  );
+        ::SelectObject(m_hdc, (HGDIOBJ)m_defGdiBrush);
+        ::SelectObject(m_hdc, (HGDIOBJ)m_defGdiFont );
+        
+        //m_curPenId   = createSolidPen( 0, marty_draw_context::LineEndcapStyle::square, marty_draw_context::LineJoinStyle::bevel, 0, 0, 0 );
+        //m_curBrushId = createSolidBrush( 0, 0, 0 );
 
-        #if 0
-        DWORD penStyle = PS_COSMETIC | PS_NULL | PS_ENDCAP_FLAT | PS_JOIN_BEVEL;
-
-        LOGBRUSH lb;
-        lb.lbStyle = BS_NULL; // BS_SOLID
-        lb.lbColor = 0;
-        lb.lbHatch = 0;
-
-        HPEN hpen = ExtCreatePen( penStyle
-                                , 1
-                                , &lb // LOGBRUSH
-                                , 0 // not a user styled pen
-                                , 0 // not a user styled pen
-                                );
-        // if (hpen==0)
-        //     throw std
-
-        ATLASSERT(hpen!=0);
-        m_hPens.push_back(hpen);
-
-        m_defPen = (HPEN)SelectObject( m_hdc, (HGDIOBJ)hpen);
-
-
-        HBRUSH hBrush = CreateSolidBrush( 0 ); // black brush
-        ATLASSERT(hBrush!=0);
-        m_hBrushes.push_back(hBrush);
-
-        m_defBrush = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)hBrush);
-        #endif
     }
 
 public:
@@ -139,13 +119,13 @@ public:
     , m_pathStarted(false)
     , m_curPos()
     , m_hPens()
-    // , m_defPen(0)
+    , m_defGdiPen(0)
     , m_curPenId(-1)
     , m_hBrushes()
-    // , m_defBrush(0)
+    , m_defGdiBrush(0)
     , m_curBrushId(-1)
     , m_hFonts()
-    // , m_defFont(0)
+    , m_defGdiFont(0)
     , m_curFontId(-1)
     {
         init();
@@ -159,13 +139,13 @@ public:
     , m_pathStarted(false)
     , m_curPos()
     , m_hPens()
-    // , m_defPen(0)
+    , m_defGdiPen(0)
     , m_curPenId(-1)
     , m_hBrushes()
-    // , m_defBrush(0)
+    , m_defGdiBrush(0)
     , m_curBrushId(-1)
     , m_hFonts()
-    // , m_defFont(0)
+    , m_defGdiFont(0)
     , m_curFontId(-1)
     {
         init();
@@ -175,64 +155,49 @@ public:
 
     ~GdiDrawContext()
     {
-        ::SelectObject(m_hdc, ::GetStockObject(NULL_PEN));
-        ::SelectObject(m_hdc, ::GetStockObject(NULL_BRUSH));
-        ::SelectObject(m_hdc, ::GetStockObject(DEVICE_DEFAULT_FONT));
-
-        #if 0
-
-        SelectObject(m_hdc, (HGDIOBJ)m_defPen);
-
-        for( auto hpen : m_hPens )
-            DeleteObject((HGDIOBJ)hpen);
-
-
-        SelectObject(m_hdc, (HGDIOBJ)m_defBrush);
-
-        for( auto hbrush : m_hBrushes )
-            DeleteObject((HGDIOBJ)hbrush);
-
-
-        if (m_defFont!=0)
-            SelectObject(m_hdc, (HGDIOBJ)m_defFont);
-
-        for( auto hfont : m_hFonts )
-            DeleteObject((HGDIOBJ)hfont);
-
-        #else
+        // ::SelectObject(m_hdc, ::GetStockObject(NULL_PEN));
+        // ::SelectObject(m_hdc, ::GetStockObject(NULL_BRUSH));
+        // ::SelectObject(m_hdc, ::GetStockObject(DEVICE_DEFAULT_FONT));
 
         freeAllocatedRc();
-
-        #endif
 
         m_hdc = hdcRelease(m_hdc, m_hdcReleaseMode, m_hwnd /* , lpPaintStruct */ );
 
     }
 
-    virtual std::string getEngineName() override
-    {
-        return std::string("GDI");
-    }
-
-    virtual void flushBits() override
-    {
-    }
-
     virtual void freeAllocatedRc() override
     {
+        DcResourcesState st;
+        st.nPens      =  0;
+        st.penId      = -1;
+        st.nBrushes   =  0;
+        st.brushId    = -1;
+        st.nFonts     =  0;
+        st.fontId     = -1;
+        st.textColor  = ColorRef::fromUnsigned(0);
+        st.bkColor    = ColorRef::fromUnsigned(0x00FFFFFF);
+
+        // Это - не нужно, 
+        // ::SelectObject(m_hdc, (HGDIOBJ)m_defGdiPen  );
+        // ::SelectObject(m_hdc, (HGDIOBJ)m_defGdiBrush);
+        // ::SelectObject(m_hdc, (HGDIOBJ)m_defGdiFont );
+
         DrawContextImplBase::freeAllocatedRc();
 
+        restoreResourcesState(st);
+
+        /*
         // Чистим ручки
         {
-            //SelectObject(m_hdc, (HGDIOBJ)m_defPen);
+            //SelectObject(m_hdc, (HGDIOBJ)m_defGdiPen);
             for( auto hpen : m_hPens )
-                DeleteObject((HGDIOBJ)hpen);
+                auto res = ::DeleteObject((HGDIOBJ)hpen);
             m_hPens.clear();
             m_curPenId = -1;
         }
 
         {
-            //SelectObject(m_hdc, (HGDIOBJ)m_defBrush);
+            //SelectObject(m_hdc, (HGDIOBJ)m_defGdiBrush);
             for( auto hbrush : m_hBrushes )
                 DeleteObject((HGDIOBJ)hbrush);
             m_hBrushes.clear();
@@ -240,8 +205,8 @@ public:
         }
 
         {
-            // if (m_defFont!=0)
-            //     SelectObject(m_hdc, (HGDIOBJ)m_defFont);
+            // if (m_defGdiFont!=0)
+            //     SelectObject(m_hdc, (HGDIOBJ)m_defGdiFont);
             for( auto hfont : m_hFonts )
                 DeleteObject((HGDIOBJ)hfont);
             m_hFonts.clear();
@@ -249,6 +214,88 @@ public:
         }
 
         init();
+        */
+    }
+
+    virtual void restoreResourcesState(const DcResourcesState &rcState) override
+    {
+        std::size_t nPens     = (std::size_t)rcState.nPens;
+        std::size_t nBrushes  = (std::size_t)rcState.nBrushes;
+        std::size_t nFonts    = (std::size_t)rcState.nFonts;
+
+        if (((std::size_t)rcState.penId)<nPens)
+        {
+            //m_curPenId = rcState.penId;
+            selectPen(rcState.penId);
+        }
+        else
+        {
+            //m_curPenId = -1;
+            selectPen(-1);
+        }
+
+        if (((std::size_t)rcState.brushId)<nBrushes)
+        {
+            //m_curBrushId = rcState.brushId;
+            selectBrush(rcState.brushId);
+        }
+        else
+        {
+            //m_curBrushId = -1;
+            selectBrush(-1);
+        }
+
+        if (((std::size_t)rcState.fontId)<nFonts)
+        {
+            //m_curFontId = rcState.fontId;
+            selectFont(rcState.fontId);
+        }
+        else
+        {
+            //m_curFontId = -1;
+            selectFont(-1);
+        }
+
+        
+
+        setTextColor(rcState.textColor);
+        setBkColor(rcState.bkColor);
+
+        if (nPens<m_hPens.size())
+        {
+            for(std::size_t i=nPens; i!=m_hPens.size(); ++i)
+            {
+                auto res = ::DeleteObject((HGDIOBJ)m_hPens[i]);
+                MARTY_ARG_USED(res);
+                ATLASSERT(res);
+            }
+
+            m_hPens.resize(nPens);
+        }
+
+        if (nBrushes<m_hBrushes.size())
+        {
+            for(std::size_t i=nBrushes; i!=m_hBrushes.size(); ++i)
+            {
+                auto res = ::DeleteObject((HGDIOBJ)m_hBrushes[i]);
+                MARTY_ARG_USED(res);
+                ATLASSERT(res);
+            }
+
+            m_hBrushes.resize(nBrushes);
+        }
+
+        if (nFonts<m_hFonts.size())
+        {
+            for(std::size_t i=nFonts; i!=m_hFonts.size(); ++i)
+            {
+                auto res = ::DeleteObject((HGDIOBJ)m_hFonts[i]);
+                MARTY_ARG_USED(res);
+                ATLASSERT(res);
+            }
+            m_hFonts.resize(nFonts);
+        }
+
     }
 
     virtual DcResourcesState getResourcesState() override
@@ -268,65 +315,13 @@ public:
         return rcState;
     }
 
-    virtual void restoreResourcesState(const DcResourcesState &rcState) override
+    virtual std::string getEngineName() override
     {
-        std::size_t nPens     = (std::size_t)rcState.nPens;
-        std::size_t nBrushes  = (std::size_t)rcState.nBrushes;
-        std::size_t nFonts    = (std::size_t)rcState.nFonts;
+        return std::string("GDI");
+    }
 
-        if (nPens<m_hPens.size())
-        {
-            for(std::size_t i=nPens; i!=m_hPens.size(); ++i)
-                DeleteObject((HGDIOBJ)m_hPens[i]);
-
-            m_hPens.resize(nPens);
-        }
-
-        if (nBrushes<m_hBrushes.size())
-        {
-            for(std::size_t i=nBrushes; i!=m_hBrushes.size(); ++i)
-                DeleteObject((HGDIOBJ)m_hBrushes[i]);
-
-            m_hBrushes.resize(nBrushes);
-        }
-
-        if (nFonts<m_hFonts.size())
-        {
-            for(std::size_t i=nFonts; i!=m_hFonts.size(); ++i)
-                DeleteObject((HGDIOBJ)m_hFonts[i]);
-
-            m_hFonts.resize(nFonts);
-        }
-
-        if (((std::size_t)rcState.penId)<m_hPens.size())
-        {
-            m_curPenId = rcState.penId;
-        }
-        else
-        {
-            m_curPenId = -1;
-        }
-
-        if (((std::size_t)rcState.brushId)<m_hBrushes.size())
-        {
-            m_curBrushId = rcState.brushId;
-        }
-        else
-        {
-            m_curBrushId = -1;
-        }
-
-        if (((std::size_t)rcState.fontId)<m_hFonts.size())
-        {
-            m_curFontId = rcState.fontId;
-        }
-        else
-        {
-            m_curFontId = -1;
-        }
-
-        setTextColor(rcState.textColor);
-        setBkColor(rcState.bkColor);
+    virtual void flushBits() override
+    {
     }
 
 
@@ -630,17 +625,20 @@ public:
         return createFont( fp.height, fp.escapement, fp.orientation, fp.weight, fp.fontStyleFlags, fp.fontFace.c_str() );
     }
 
-
     virtual int selectFont( int fontId ) override
     {
         if (fontId<0 || fontId>=(int)m_hFonts.size())
-            return -1;
+        {
+            ::SelectObject(m_hdc, (HGDIOBJ)m_defGdiFont );
+            fontId = -1;
+        }
+        else
+        {
+            ::SelectObject(m_hdc, (HGDIOBJ)m_hFonts[(std::size_t)fontId]);
+        }
 
-        //HFONT prevFont = (HFONT)
-        SelectObject(m_hdc, (HGDIOBJ)m_hFonts[(std::size_t)fontId]);
-
-        //if (m_defFont==0)
-        //    m_defFont = prevFont;
+        //if (m_defGdiFont==0)
+        //    m_defGdiFont = prevFont;
 
         std::swap(fontId,m_curFontId);
         return fontId;
@@ -714,9 +712,14 @@ public:
     virtual int selectBrush( int brushId ) override
     {
         if (brushId<0 || brushId>=(int)m_hBrushes.size())
-            return -1;
-
-        SelectObject(m_hdc, (HGDIOBJ)m_hBrushes[(std::size_t)brushId]);
+        {
+            ::SelectObject(m_hdc, (HGDIOBJ)m_defGdiBrush);
+            brushId = -1;
+        }
+        else
+        {
+            ::SelectObject(m_hdc, (HGDIOBJ)m_hBrushes[(std::size_t)brushId]);
+        }
 
         std::swap(m_curBrushId,brushId);
 
@@ -728,12 +731,18 @@ public:
         return m_curBrushId;
     }
 
+        
     virtual int selectPen( int penId ) override
     {
         if (penId<0 || penId>=(int)m_hPens.size())
-            return -1;
-
-        SelectObject(m_hdc, (HGDIOBJ)m_hPens[(std::size_t)penId]);
+        {
+            ::SelectObject(m_hdc, (HGDIOBJ)m_defGdiPen  );
+            penId = -1;
+        }
+        else
+        {
+            ::SelectObject(m_hdc, (HGDIOBJ)m_hPens[(std::size_t)penId]);
+        }
 
         std::swap(m_curPenId,penId);
 

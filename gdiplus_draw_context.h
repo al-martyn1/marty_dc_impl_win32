@@ -152,38 +152,9 @@ protected:
     {
         //SetTextAlign (m_dc.m_hDC, GetTextAlign(m_dc.m_hDC) & (~TA_CENTER) | TA_LEFT );
 
-        m_curPenId   = createSolidPen( 0, marty_draw_context::LineEndcapStyle::square, marty_draw_context::LineJoinStyle::bevel, 0, 0, 0 );
-        m_curBrushId = createSolidBrush( 0, 0, 0 );
+        // m_curPenId   = createSolidPen( 0, marty_draw_context::LineEndcapStyle::square, marty_draw_context::LineJoinStyle::bevel, 0, 0, 0 );
+        // m_curBrushId = createSolidBrush( 0, 0, 0 );
 
-        /*
-        DWORD penStyle = PS_COSMETIC | PS_NULL | PS_ENDCAP_FLAT | PS_JOIN_BEVEL;
-
-        LOGBRUSH lb;
-        lb.lbStyle = BS_NULL; // BS_SOLID
-        lb.lbColor = 0;
-        lb.lbHatch = 0;
-
-        HPEN hpen = ExtCreatePen( penStyle
-                                , 1
-                                , &lb // LOGBRUSH
-                                , 0 // not a user styled pen
-                                , 0 // not a user styled pen
-                                );
-        // if (hpen==0)
-        //     throw std
-
-        ATLASSERT(hpen!=0);
-        m_hPens.push_back(hpen);
-
-        m_defPen = (HPEN)SelectObject( m_dc.m_hDC, (HGDIOBJ)hpen);
-
-
-        HBRUSH hBrush = CreateSolidBrush( 0 ); // black brush
-        ATLASSERT(hBrush!=0);
-        m_hBrushes.push_back(hBrush);
-
-        m_defBrush = (HBRUSH)SelectObject( m_dc.m_hDC, (HGDIOBJ)hBrush);
-        */
     }
 
 public:

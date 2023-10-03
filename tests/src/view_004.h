@@ -541,7 +541,10 @@ public:
 
         auto endTick = umba::time_service::getCurTimeMs();
 
-        lout << "OnPaint times: " << (endTick-startTick) << "\n";
+        MARTY_ARG_USED(startTick);
+        MARTY_ARG_USED(endTick);
+
+        //lout << "OnPaint times: " << (endTick-startTick) << "\n";
 
     }
 

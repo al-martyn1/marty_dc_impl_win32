@@ -150,6 +150,9 @@ function Game::onPaint(dc)
 {
     local D = Drawing;
 
+    //local drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.SmoothingPrecise);
+    local drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.PixelPrecise);
+
     local framePen  = dc.createSolidPen(D.PenParams(borderPenWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Blue);
 
     dc.setOffset(D.Coords(10,10));
