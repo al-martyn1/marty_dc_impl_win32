@@ -225,9 +225,11 @@ public:
         auto lgrayPenId    = pDc->createSolidPen( keyFrameWidth /* width */ , LineEndcapStyle::round, LineJoinStyle::round, 160, 160, 160 );
         auto llgrayPenId   = pDc->createSolidPen( keyFrameWidth /* width */ , LineEndcapStyle::round, LineJoinStyle::round, 192, 192, 192 );
         auto dgrayPenId    = pDc->createSolidPen( keyFrameWidth /* width */ , LineEndcapStyle::round, LineJoinStyle::round, 128, 128, 128 );
+        auto orangePenId   = pDc->createSolidPen( 0.1                       , LineEndcapStyle::round, LineJoinStyle::round, 0xFF, 0x7F, 0x50  /* D.Colors.Orange */  );
         MARTY_ARG_USED(lgrayPenId );
         MARTY_ARG_USED(llgrayPenId);
         MARTY_ARG_USED(dgrayPenId );
+        MARTY_ARG_USED(orangePenId);
 
         MARTY_ARG_USED(llgrayPenId);
 
@@ -361,15 +363,15 @@ public:
         }
 
 
+        DrawCoord
+        gradientSamplePos = DrawCoord{ (DrawCoord::value_type)4, iconBottomCurrentPos };
         {
             //DC_LOG()<<"\n*** TEST_DC_GRADIENT_RECT\n\n";
 
             // iconBottomCurrentPos = 0;
 
-            DrawCoord
-            gradientSamplePos = DrawCoord{ (DrawCoord::value_type)4, iconBottomCurrentPos };
-
-
+            // DrawCoord
+            // gradientSamplePos = DrawCoord{ (DrawCoord::value_type)4, iconBottomCurrentPos };
 
             #ifdef TEST_DC_GRADIENT_RECT
             {
@@ -496,6 +498,40 @@ public:
             }
             #endif // #ifdef TEST_DC_GRADIENT_ROUNDRECT
 
+        }
+
+        test_drawRects(pDc, gradientSamplePos);
+        gradientSamplePos.y += 8;
+        gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
+
+        {
+            auto pos = gradientSamplePos;
+
+            auto orgPen = pDc->selectPen(orangePenId);
+
+            auto rrr = 1.2;
+    
+            //auto pos    = DrawCoord(4,35);
+            auto sizeX  = 50;
+    
+            //auto rrr = 1.2;
+    
+            pDc->    roundRect (rrr, pos, pos+DrawCoord( sizeX, 4));
+            pos.y += 5;
+        
+            pDc->    roundRect (rrr, pos, pos+DrawCoord( sizeX, 3));
+            pos.y += 4;
+        
+            pDc->    roundRect (rrr, pos, pos+DrawCoord( sizeX, 2));
+            pos.y += 3;
+        
+            pDc->    roundRect (rrr, pos, pos+DrawCoord( sizeX, 1));
+            pos.y += 2;
+        
+            pDc->selectPen( orgPen );
+
+            gradientSamplePos = pos;
+        
         }
 
 

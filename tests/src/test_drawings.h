@@ -17,6 +17,20 @@ void test_drawSquareMarker(marty_draw_context::IDrawContext *pDc, marty_draw_con
 }
 
 inline
+void  test_drawRects(marty_draw_context::IDrawContext *pDc, marty_draw_context::DrawCoord offs)
+{
+    using marty_draw_context::DrawCoord;
+    pDc->roundRect    (1, offs+DrawCoord( 0,0), offs+DrawCoord( 8, 8));
+    pDc->fillRoundRect(1, offs+DrawCoord(10,0), offs+DrawCoord(18, 8), false);
+    pDc->fillRoundRect(1, offs+DrawCoord(20,0), offs+DrawCoord(28, 8), true );
+
+    pDc->rect         (   offs+DrawCoord(30,0), offs+DrawCoord(38, 8));
+    pDc->fillRect     (   offs+DrawCoord(40,0), offs+DrawCoord(48, 8), false);
+    pDc->fillRect     (   offs+DrawCoord(50,0), offs+DrawCoord(58, 8), true );
+}
+
+
+inline
 void test_drawSpider_calcPoints( marty_draw_context::DrawCoord pos, marty_draw_context::DrawCoord::value_type sz
                                , marty_draw_context::DrawCoord &leftCenter
                                , marty_draw_context::DrawCoord &rightCenter
