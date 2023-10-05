@@ -4,8 +4,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.31205.134
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDrawContext01_GdiOnly", "_prj_msvc\TestDrawContext01_GdiOnly.vcxproj", "{001634AE-5567-412E-ACEC-6EC488026C66}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308} = {CD833BDE-D6AB-4112-99D2-35130F0A8308}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDrawContext01_GdiPlus", "_prj_msvc\TestDrawContext01_GdiPlus.vcxproj", "{54A77677-01AE-4869-83ED-7D9BFD52F9EB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308} = {CD833BDE-D6AB-4112-99D2-35130F0A8308}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_squirrel", "_prj_msvc\_squirrel.vcxproj", "{6DE78A45-B642-42FA-A469-EA8474162724}"
 EndProject
@@ -41,16 +47,34 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_all", "_prj_msvc\_all.vcxp
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDrawContext02_GdiOnly", "_prj_msvc\TestDrawContext02_GdiOnly.vcxproj", "{5D4EDB0B-75D4-4D39-AE23-3CE1BBC5108F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308} = {CD833BDE-D6AB-4112-99D2-35130F0A8308}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDrawContext02_GdiPlus", "_prj_msvc\TestDrawContext02_GdiPlus.vcxproj", "{F515EF48-F08D-4527-9219-F3DD25EBEC9C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308} = {CD833BDE-D6AB-4112-99D2-35130F0A8308}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDrawContext03_GdiOnly", "_prj_msvc\TestDrawContext03_GdiOnly.vcxproj", "{D761F81B-756C-4F72-A645-9CCB15FAC371}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308} = {CD833BDE-D6AB-4112-99D2-35130F0A8308}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDrawContext03_GdiPlus", "_prj_msvc\TestDrawContext03_GdiPlus.vcxproj", "{1762E1CB-95E1-4DB0-B035-03E80E6C237C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308} = {CD833BDE-D6AB-4112-99D2-35130F0A8308}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDrawContext04_GdiOnly", "_prj_msvc\TestDrawContext04_GdiOnly.vcxproj", "{3B17F341-ECD4-4C45-921F-7FF7143AD517}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308} = {CD833BDE-D6AB-4112-99D2-35130F0A8308}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDrawContext04_GdiPlus", "_prj_msvc\TestDrawContext04_GdiPlus.vcxproj", "{8A5EBEF6-5D85-437A-B7AC-038B566242D0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CD833BDE-D6AB-4112-99D2-35130F0A8308} = {CD833BDE-D6AB-4112-99D2-35130F0A8308}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
