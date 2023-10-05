@@ -337,6 +337,7 @@ public:
                     auto res = vm.callFunc(sqOnPaint, vm,  /* appHost,  */ tickDelta);
     
                     bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onUpdate returned"));
+                    //needUpdate = true;
                     if (needUpdate)
                     {
                         invalidateClientArea();
@@ -501,17 +502,20 @@ public:
         auto cy = clientRect.bottom - clientRect.top  + 1;
 
 
-        HDC memDc = ::CreateCompatibleDC(dc.m_hDC);
+        // HDC memDc = ::CreateCompatibleDC(dc.m_hDC);
+        CDC memDc = ::CreateCompatibleDC(dc.m_hDC);
 
         HBITMAP hMemBmp  = ::CreateCompatibleBitmap ( dc.m_hDC, cx, cy );
-        HBITMAP hOldBmp = (HBITMAP)::SelectObject(memDc, hMemBmp);
+        //HBITMAP hOldBmp = (HBITMAP)::SelectObject(memDc.m_hDC, hMemBmp);
+        HBITMAP hOldBmp = memDc.SelectBitmap(hMemBmp);
 
         RECT clRect;
         clRect.left   = 0;
         clRect.top    = 0;
         clRect.right  = cx;
         clRect.bottom = cy;
-        ::FillRect(memDc, &clRect, (HBRUSH)COLOR_WINDOW);
+        //::FillRect(memDc, &clRect, (HBRUSH)COLOR_WINDOW);
+        memDc.FillRect(&clRect, (HBRUSH)COLOR_WINDOW);
 
         #if 0
         ::BitBlt( memDc     // A handle to the destination device context.
@@ -525,9 +529,9 @@ public:
 
 
         #ifdef TEST_DC_USE_GDIPLUS
-            auto idc = marty_draw_context::makeMultiDrawContext(memDc, true  /* prefferGdiPlus */);
+            auto idc = marty_draw_context::makeMultiDrawContext(memDc.m_hDC, true  /* prefferGdiPlus */);
         #else
-            auto idc = marty_draw_context::makeMultiDrawContext(memDc, false /* prefferGdiPlus */);
+            auto idc = marty_draw_context::makeMultiDrawContext(memDc.m_hDC, false /* prefferGdiPlus */);
         #endif
 
         IDrawContext *pDc = &idc;
@@ -536,16 +540,17 @@ public:
 
         DoPaintImpl(pDc);
 
-        ::BitBlt( dc.m_hDC     // A handle to the destination device context.
-                , 0, 0         //dstX, dstY   // The x/y-coordinates, in logical units, of the upper-left corner of the destination rectangle.
-                , cx, cy       // The width/height, in logical units, of the source and destination rectangles.
-                , memDc        // hdcCopyFrom  // A handle to the source device context.
-                , 0, 0         // The x/y-coordinate, in logical units, of the upper-left corner of the source rectangle.
-                , SRCCOPY      // A raster-operation code - Copies the source rectangle directly to the destination rectangle.
+        ::BitBlt( dc.m_hDC       // A handle to the destination device context.
+                , 0, 0           //dstX, dstY   // The x/y-coordinates, in logical units, of the upper-left corner of the destination rectangle.
+                , cx, cy         // The width/height, in logical units, of the source and destination rectangles.
+                , memDc.m_hDC    // hdcCopyFrom  // A handle to the source device context.
+                , 0, 0           // The x/y-coordinate, in logical units, of the upper-left corner of the source rectangle.
+                , SRCCOPY        // A raster-operation code - Copies the source rectangle directly to the destination rectangle.
                 );
 
         ::SelectObject(memDc, hOldBmp);
         ::DeleteObject(hMemBmp);
+        //::DeleteDC(memDc);
 
     }
 
