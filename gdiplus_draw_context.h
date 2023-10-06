@@ -159,7 +159,29 @@ protected:
 
 public:
 
-    GdiPlusDrawContext(CDCHandle dc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
+    GdiPlusDrawContext(const CDCHandle &dc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
+    : DrawContextImplBase()
+    , m_hdc(dc.m_hDC)
+    , m_hdcReleaseMode(hdcReleaseMode)
+    , m_hwnd(hwnd)
+    , m_g(dc.m_hDC)
+    //, m_pathStarted(false)
+    , m_curPath()     // https://docs.microsoft.com/en-us/windows/win32/api/gdipluspath/nf-gdipluspath-graphicspath-graphicspath(fillmode)
+    , m_curPos()
+    , m_hPens()
+    //, m_defPen()
+    , m_curPenId(-1)
+    , m_hBrushes()
+    //, m_defBrush()
+    , m_curBrushId(-1)
+    , m_hFonts()
+    //, m_defFont()
+    , m_curFontId(-1)
+    {
+        init();
+    }
+
+    GdiPlusDrawContext(const CDC &dc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
     : DrawContextImplBase()
     , m_hdc(dc.m_hDC)
     , m_hdcReleaseMode(hdcReleaseMode)

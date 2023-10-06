@@ -111,7 +111,27 @@ public:
 
 // HDC       m_hdc; // m_dc.m_hDC
 
-    GdiDrawContext(CDCHandle dc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
+    GdiDrawContext(const CDCHandle &dc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
+    : DrawContextImplBase()
+    , m_hdc(dc.m_hDC)
+    , m_hdcReleaseMode(hdcReleaseMode)
+    , m_hwnd(hwnd)
+    , m_pathStarted(false)
+    , m_curPos()
+    , m_hPens()
+    , m_defGdiPen(0)
+    , m_curPenId(-1)
+    , m_hBrushes()
+    , m_defGdiBrush(0)
+    , m_curBrushId(-1)
+    , m_hFonts()
+    , m_defGdiFont(0)
+    , m_curFontId(-1)
+    {
+        init();
+    }
+
+    GdiDrawContext(const CDC &dc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
     : DrawContextImplBase()
     , m_hdc(dc.m_hDC)
     , m_hdcReleaseMode(hdcReleaseMode)
