@@ -544,35 +544,6 @@ public:
     }
 
 
-    #if 0
-    // https://docs.microsoft.com/ru-ru/windows/win32/api/wingdi/nf-wingdi-roundrect
-    // The RoundRect function draws a rectangle with rounded corners. The rectangle is outlined by using the current pen and filled by using the current brush.
-    virtual bool roundRect( const DrawCoord::value_type &cornersR
-                          , const DrawCoord             &leftTop
-                          , const DrawCoord             &rightBottom
-                          ) override
-    {
-
-        /*
-        DrawCoord::value_type dblR = cornersR*2;
-
-        auto leftTopScaled     = getScaledCoord(leftTop    );
-        auto rightBottomScaled = getScaledCoord(rightBottom);
-        auto rScaled           = getScaledCoord(DrawCoord{dblR,dblR});
-
-        // https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-rectangle
-
-        return m_dc.RoundRect( int(floatToInt(leftTopScaled.x    )), int(floatToInt(leftTopScaled.y    ))
-                             , int(floatToInt(rightBottomScaled.x)), int(floatToInt(rightBottomScaled.y))
-                             , int(floatToInt(rScaled.x))          , int(floatToInt(rScaled.y))
-                             ) ? true : false;
-        */
-
-        return true;
-    }
-    #endif
-
-
     virtual int createSolidBrush( const ColorRef &rgb ) override
     {
         return createSolidBrush( rgb.r, rgb.g, rgb.b );
@@ -974,6 +945,35 @@ public:
     // У RoundRect'ов очень плохо с симетричностью
     // Тут про GDI+ - https://www.codeproject.com/Articles/27228/A-class-for-creating-round-rectangles-in-GDI-with
 
+    #if 0
+    // https://docs.microsoft.com/ru-ru/windows/win32/api/wingdi/nf-wingdi-roundrect
+    // The RoundRect function draws a rectangle with rounded corners. The rectangle is outlined by using the current pen and filled by using the current brush.
+    virtual bool roundRect( const DrawCoord::value_type &cornersR
+                          , const DrawCoord             &leftTop
+                          , const DrawCoord             &rightBottom
+                          ) override
+    {
+
+        /*
+        DrawCoord::value_type dblR = cornersR*2;
+
+        auto leftTopScaled     = getScaledCoord(leftTop    );
+        auto rightBottomScaled = getScaledCoord(rightBottom);
+        auto rScaled           = getScaledCoord(DrawCoord{dblR,dblR});
+
+        // https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-rectangle
+
+        return m_dc.RoundRect( int(floatToInt(leftTopScaled.x    )), int(floatToInt(leftTopScaled.y    ))
+                             , int(floatToInt(rightBottomScaled.x)), int(floatToInt(rightBottomScaled.y))
+                             , int(floatToInt(rScaled.x))          , int(floatToInt(rScaled.y))
+                             ) ? true : false;
+        */
+
+        return true;
+    }
+    #endif
+
+
     virtual bool fillRoundRect( const DrawCoord::value_type &cornersR
                           , const DrawCoord             &leftTop
                           , const DrawCoord             &rightBottom
@@ -991,13 +991,18 @@ public:
             return false;
         }
          
+        auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
+        auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
+        auto rMax  = std::min(wh_2.x, wh_2.y);
+        auto r     = std::min(rMax, cornersR);
+
         DrawCoord coords[4] = { leftTop
                               , { rightBottom.x, leftTop.y } // rightTop
                               , rightBottom
                               , { leftTop.x, rightBottom.y } // leftBottom
                               };
          
-        auto res = roundRectFigure( cornersR, sizeof(coords)/sizeof(coords[0]), &coords[0] );
+        auto res = roundRectFigure( r /* cornersR */ , sizeof(coords)/sizeof(coords[0]), &coords[0] );
         MARTY_IDC_ARG_USED(res);
 
         //if (isPathStarted())
@@ -1022,13 +1027,18 @@ public:
             return false;
         }
          
+        auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
+        auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
+        auto rMax  = std::min(wh_2.x, wh_2.y);
+        auto r     = std::min(rMax, cornersR);
+
         DrawCoord coords[4] = { leftTop
                               , { rightBottom.x, leftTop.y } // rightTop
                               , rightBottom
                               , { leftTop.x, rightBottom.y } // leftBottom
                               };
          
-        auto res = roundRectFigure( cornersR, sizeof(coords)/sizeof(coords[0]), &coords[0] );
+        auto res = roundRectFigure( r /* cornersR */ , sizeof(coords)/sizeof(coords[0]), &coords[0] );
         MARTY_IDC_ARG_USED(res);
 
         //if (isPathStarted())

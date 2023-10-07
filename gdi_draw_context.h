@@ -1029,15 +1029,32 @@ public:
     {
         MARTY_ARG_USED(drawFrame);
 
+        // auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
+        // auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
+        // auto rMax  = std::min(wh_2.x, wh_2.y);
+        // auto r     = std::min(rMax, cornersR);
+        //  
+        // auto ltSc = getScaledPos(leftTop    );
+        // auto rbSc = getScaledPos(rightBottom);
+        //  
+        // auto rEllipseSc = getScaledSize(DrawCoord{r,r});
+
         auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
         auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
-        auto rMax  = std::min(wh_2.x, wh_2.y);
-        auto r     = std::min(rMax, cornersR);
+        //auto rMax  = std::min(wh_2.x, wh_2.y);
+        //auto r     = std::min(rMax, cornersR);
 
-        auto ltSc = getScaledPos(leftTop    );
-        auto rbSc = getScaledPos(rightBottom);
+        auto ltSc      = getScaledPos(leftTop    );
+        auto rbSc      = getScaledPos(rightBottom);
+        auto whSc      = DrawCoord(rbSc.x - ltSc.x, rbSc.y - ltSc.y);
+        auto whSc_2    = DrawCoord(floatToInt(whSc.x)/2, floatToInt(whSc.y)/2);
+        auto whScMaxR  = std::min(whSc_2.x, whSc_2.y);
+        auto whScR     = std::min(whScMaxR, getScaledSize(DrawCoord{cornersR,cornersR}).x);
 
-        auto rEllipseSc = getScaledSize(DrawCoord{r,r});
+        //auto rEllipseSc = getScaledSize(DrawCoord{r,r});
+
+        auto finalR = floatToInt(whScR);
+        auto finalD = 2*finalR;
 
         HPEN prevPen = 0;
         if (!drawFrame)
@@ -1045,7 +1062,10 @@ public:
             HPEN transperrantPen = (HPEN)::GetStockObject(NULL_PEN);
             prevPen         = (HPEN)SelectObject( m_hdc, (HGDIOBJ)transperrantPen);
         }
-        auto res = ::RoundRect(m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y), floatToInt(rEllipseSc.x), floatToInt(rEllipseSc.y)) ? true : false;
+        auto res = ::RoundRect( m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y)
+                              //, floatToInt(rEllipseSc.x), floatToInt(rEllipseSc.y)
+                              , finalD, finalD
+                              ) ? true : false;
         if (!drawFrame)
         {
             SelectObject( m_hdc, (HGDIOBJ)prevPen);
@@ -1061,17 +1081,28 @@ public:
     {
         auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
         auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
-        auto rMax  = std::min(wh_2.x, wh_2.y);
-        auto r     = std::min(rMax, cornersR);
+        //auto rMax  = std::min(wh_2.x, wh_2.y);
+        //auto r     = std::min(rMax, cornersR);
 
-        auto ltSc = getScaledPos(leftTop    );
-        auto rbSc = getScaledPos(rightBottom);
+        auto ltSc      = getScaledPos(leftTop    );
+        auto rbSc      = getScaledPos(rightBottom);
+        auto whSc      = DrawCoord(rbSc.x - ltSc.x, rbSc.y - ltSc.y);
+        auto whSc_2    = DrawCoord(floatToInt(whSc.x)/2, floatToInt(whSc.y)/2);
+        auto whScMaxR  = std::min(whSc_2.x, whSc_2.y);
+        auto whScR     = std::min(whScMaxR, getScaledSize(DrawCoord{cornersR,cornersR}).x);
 
-        auto rEllipseSc = getScaledSize(DrawCoord{r,r});
+        //auto rEllipseSc = getScaledSize(DrawCoord{r,r});
+
+        auto finalR = floatToInt(whScR);
+        auto finalD = 2*finalR;
 
         HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
         HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
-        auto res = RoundRect(m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y), floatToInt(rEllipseSc.x), floatToInt(rEllipseSc.y)) ? true : false;
+        // https://www.functionx.com/bcb/gdi/circleshapes.htm
+        auto res = RoundRect( m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y)
+                            // , floatToInt(rEllipseSc.x), floatToInt(rEllipseSc.y)
+                            , finalD, finalD
+                            ) ? true : false;
         SelectObject( m_hdc, (HGDIOBJ)prevBrush);
      
         return res;

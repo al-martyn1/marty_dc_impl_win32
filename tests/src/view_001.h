@@ -509,23 +509,35 @@ public:
 
             auto orgPen = pDc->selectPen(orangePenId);
 
-            auto rrr = 1.2;
+            DrawCoord::value_type rrr = 1.2;
     
             //auto pos    = DrawCoord(4,35);
-            auto sizeX  = 50;
+            DrawCoord::value_type sizeX  = 22;
     
             //auto rrr = 1.2;
     
-            pDc->    roundRect (rrr, pos, pos+DrawCoord( sizeX, 4));
+            pDc->        roundRect (rrr, pos                                             , pos+DrawCoord( sizeX    , (DrawCoord::value_type)9.6));
+            pDc->    fillRoundRect (rrr, pos+DrawCoord(sizeX+1, (DrawCoord::value_type)0), pos+DrawCoord( sizeX*2+1, (DrawCoord::value_type)9.6), true);
+            pos.y += 11;
+        
+            pDc->        roundRect (rrr, pos                                             , pos+DrawCoord( sizeX    , (DrawCoord::value_type)4.8));
+            pDc->    fillRoundRect (rrr, pos+DrawCoord(sizeX+1, (DrawCoord::value_type)0), pos+DrawCoord( sizeX*2+1, (DrawCoord::value_type)4.8), true);
+            pos.y += 6;
+        
+            pDc->        roundRect (rrr, pos                                             , pos+DrawCoord( sizeX    , (DrawCoord::value_type)3.6));
+            pDc->    fillRoundRect (rrr, pos+DrawCoord(sizeX+1, (DrawCoord::value_type)0), pos+DrawCoord( sizeX*2+1, (DrawCoord::value_type)3.6), true);
             pos.y += 5;
         
-            pDc->    roundRect (rrr, pos, pos+DrawCoord( sizeX, 3));
-            pos.y += 4;
-        
-            pDc->    roundRect (rrr, pos, pos+DrawCoord( sizeX, 2));
+            pDc->        roundRect (rrr, pos                                             , pos+DrawCoord( sizeX    , (DrawCoord::value_type)2.4));
+            pDc->    fillRoundRect (rrr, pos+DrawCoord(sizeX+1, (DrawCoord::value_type)0), pos+DrawCoord( sizeX*2+1, (DrawCoord::value_type)2.4), true);
             pos.y += 3;
         
-            pDc->    roundRect (rrr, pos, pos+DrawCoord( sizeX, 1));
+            pDc->        roundRect (rrr, pos                                             , pos+DrawCoord( sizeX    , (DrawCoord::value_type)1.2));
+            pDc->    fillRoundRect (rrr, pos+DrawCoord(sizeX+1, (DrawCoord::value_type)0), pos+DrawCoord( sizeX*2+1, (DrawCoord::value_type)1.2), true);
+            pos.y += 2;
+        
+            pDc->        roundRect (rrr, pos                                             , pos+DrawCoord( sizeX    , (DrawCoord::value_type)1));
+            pDc->    fillRoundRect (rrr, pos+DrawCoord(sizeX+1, (DrawCoord::value_type)0), pos+DrawCoord( sizeX*2+1, (DrawCoord::value_type)1), true);
             pos.y += 2;
         
             pDc->selectPen( orgPen );

@@ -2129,7 +2129,7 @@ protected:
             auto sqrSinA  = 1-sqrCosA;
             auto sinA     = std::sqrt(sqrSinA);
             double sinAR  = sinA*floatToDouble(gradientR);
-            double scaledSinAR = sinAR*scaleXY;
+            double scaledSinAR = floatToDouble(sinAR*scaleXY);
 
             roundingLinesLen.emplace_back(floatToInt(scaledSinAR));
 
