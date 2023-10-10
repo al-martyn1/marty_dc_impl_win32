@@ -203,7 +203,7 @@ protected:
     // }
 
     template<typename LogfontStruct, typename CharType>
-    void fillLogfontStruct( LogfontStruct &lf, int height, int escapement, int orientation, int weight, marty_draw_context::FontStyleFlags fontStyleFlags, const CharType *pFontFace )
+    void fillLogfontStruct( LogfontStruct &lf, int height, int escapement, int orientation, int weight, marty_draw_context::FontStyleFlags fontStyleFlags, const CharType *pFontFace ) const
     {
         std::memset(&lf, 0, sizeof(lf));
 
@@ -238,7 +238,7 @@ protected:
     }
 
     template<typename LogfontStruct, typename FontParamsStruct>
-    void fillLogfontStruct( LogfontStruct &lf, const FontParamsStruct &fp )
+    void fillLogfontStruct( LogfontStruct &lf, const FontParamsStruct &fp ) const
     {
         int scaledHeight = int(floatToInt(getScaledSize(DrawCoord(fp.height,fp.height)).y));
         fillLogfontStruct( lf, scaledHeight, fp.escapement, fp.orientation, (int)fp.weight, fp.fontStyleFlags, fp.fontFace.c_str() );
@@ -270,7 +270,7 @@ protected:
     }
 
     //! Длина символа в wchar_t'ах - поддержка сурогатных пар, возвращает 0/1/2, 0 - достигли конца строки
-    virtual std::size_t getCharLen(const wchar_t *text, std::size_t textSize=(std::size_t)-1) override
+    virtual std::size_t getCharLen(const wchar_t *text, std::size_t textSize=(std::size_t)-1) const override
     {
         textSize = checkCalcStringSize(text, textSize);
 
@@ -299,7 +299,7 @@ protected:
     }
 
     //! Длина текста в символах с учетом суррогатных пар
-    virtual std::size_t getTextCharsLen(const wchar_t *text, std::size_t textSize=(std::size_t)-1) override
+    virtual std::size_t getTextCharsLen(const wchar_t *text, std::size_t textSize=(std::size_t)-1) const override
     {
         textSize = checkCalcStringSize(text, textSize);
         if (!textSize)
@@ -323,7 +323,7 @@ protected:
     }
 
     //! Возвращает Unicode символ, формируя его (возможно) из суррогатной пары
-    virtual std::uint32_t getChar32(const wchar_t *text, std::size_t textSize=(std::size_t)-1) override
+    virtual std::uint32_t getChar32(const wchar_t *text, std::size_t textSize=(std::size_t)-1) const override
     {
         textSize = checkCalcStringSize(text, textSize);
         if (!textSize)
@@ -499,6 +499,16 @@ protected:
         return m_scale*c;
     }
 
+    virtual DrawCoord::value_type getScaledSizeX( const DrawCoord::value_type &c ) const override
+    {
+        return m_scale.x*c;
+    }
+
+    virtual DrawCoord::value_type getScaledSizeY( const DrawCoord::value_type &c ) const override
+    {
+        return m_scale.y*c;
+    }
+
     void updateScaledOffset()
     {
         m_scaledOffset = { m_offset.x*m_scale.x, m_offset.y*m_scale.y };
@@ -516,16 +526,28 @@ protected:
         return mapRawToLogicSize(DrawCoord{cx,cy});
     }
 
-    virtual marty_draw_context::DrawCoord mapRawToLogicPos( const marty_draw_context::DrawCoord &c ) override
+    virtual marty_draw_context::DrawCoord mapRawToLogicPos( const marty_draw_context::DrawCoord &c ) const override
     {
         auto tmp = c - m_scaledOffset;
         return tmp / m_scale;
     }
 
-    virtual marty_draw_context::DrawCoord mapRawToLogicSize( const marty_draw_context::DrawCoord &c ) override
+    virtual marty_draw_context::DrawCoord mapRawToLogicSize( const marty_draw_context::DrawCoord &c ) const override
     {
         auto tmp = c;
         return tmp / m_scale;
+    }
+
+    virtual DrawCoord::value_type mapRawToLogicSizeX( const DrawCoord::value_type &c ) const override
+    {
+        auto tmp = c;
+        return tmp / m_scale.x;
+    }
+
+    virtual DrawCoord::value_type mapRawToLogicSizeY( const DrawCoord::value_type &c ) const override
+    {
+        auto tmp = c;
+        return tmp / m_scale.y;
     }
 
     virtual marty_draw_context::DrawScale setScale( const marty_draw_context::DrawScale &scale ) override

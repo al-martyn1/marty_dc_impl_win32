@@ -356,7 +356,7 @@ public:
 
     }
 
-    bool getCharWidth (std::uint32_t charCode, float_t &w /* use current font */)
+    bool getCharWidth (std::uint32_t charCode, float_t &w /* use current font */) const
     {
         INT tmpW = 0;
         if (!::GetCharWidth32W(m_hdc, charCode, charCode, &tmpW))
@@ -369,7 +369,7 @@ public:
         return true;
     }
 
-    virtual bool getCharWidths(std::vector<float_t> &widths, const wchar_t *text, std::size_t textSize=(std::size_t)-1, int fontId=-1 /* use current font */ ) override
+    virtual bool getCharWidths(std::vector<float_t> &widths, const wchar_t *text, std::size_t textSize=(std::size_t)-1, int fontId=-1 /* use current font */ ) const override
     {
         if (fontId<0 || fontId>=(int)m_hFonts.size())
         {
