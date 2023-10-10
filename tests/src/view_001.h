@@ -190,16 +190,24 @@ public:
                                           , 0   // escapement
                                           , 0   // orientation
                                           , marty_draw_context::FontWeight::normal
-                                          , marty_draw_context::FontStyleFlags::normal
+                                          , marty_draw_context::FontStyleFlags::italic // normal
                                           };
         marty_draw_context::FontParamsA genericFontParamsH20 = genericFontParamsH8; genericFontParamsH20.height = 20;
 
         
 
 
-        auto arialFontId   = pDc->createFont( genericFontParamsH8, "Arial"          );
-        auto timesFontId   = pDc->createFont( genericFontParamsH8, "Times New Roman");
-        auto courierFontId = pDc->createFont( genericFontParamsH8, "Courier New"    );
+        auto arialFontId     = pDc->createFont( genericFontParamsH8, "Arial"          );
+        auto timesFontId     = pDc->createFont( genericFontParamsH8, "Times New Roman");
+        auto courierFontId   = pDc->createFont( genericFontParamsH8, "Courier New"    );
+        // https://learn.microsoft.com/ru-ru/windows/win32/intl/international-fonts-and-text-display
+        // https://learn.microsoft.com/ru-ru/windows/win32/intl/using-ms-shell-dlg-and-ms-shell-dlg-2
+        auto shellDlgFontId  = pDc->createFont( genericFontParamsH8, "MS Shell Dlg"   );
+        auto shellDlg2FontId = pDc->createFont( genericFontParamsH8, "MS Shell Dlg 2" );
+        auto lucidaFontId    = pDc->createFont( genericFontParamsH8, "Lucida Console" );
+        auto fixedsysFontId  = pDc->createFont( genericFontParamsH8, "Fixedsys" );
+
+
         auto labelsFontId  = pDc->createFont( genericFontParamsH20, "Courier New"    );
         MARTY_ARG_USED(arialFontId  );
         MARTY_ARG_USED(timesFontId  );
@@ -285,9 +293,77 @@ public:
 
             //NOTE: !!! GDI ignores \n, but GDI doesn't
             //pDc->textOut( DrawCoord(0,0), arialFontId, ColorRef{128,0,0}, "Arial at (0,0)" );
-            pDc->textOut( DrawCoord( 76,14), arialFontId, ColorRef{128,0,0}, "Arial A" );
-            pDc->textOut( DrawCoord( 94,28), timesFontId, ColorRef{128,128,0}, "Times T" );
-            pDc->textOut( DrawCoord(112,42), courierFontId, ColorRef{0,128,128}, "Courier C" );
+            //                      +18 +14 
+        {
+
+            auto drawSampleTextImpl = [&]( DrawCoord pos, marty_draw_context::DrawCoord::value_type dy, int fontId, const ColorRef &clr, const wchar_t *text)
+            {
+                pDc->textOut(pos, fontId, clr, text);
+
+                pos.y += dy;
+
+                DrawCoord retPos = pos;
+
+                #if 1
+                std::vector<marty_draw_context::DrawCoord::value_type> widths;
+                if (pDc->getCharWidths(widths, text, (std::size_t)-1, fontId))
+                {
+                    std::vector<marty_draw_context::DrawCoord::value_type>::const_iterator wit = widths.begin();
+                    std::size_t curCharLen = pDc->getCharLen(text);
+                    for(; curCharLen!=0 && wit!=widths.end(); ++wit, curCharLen = pDc->getCharLen(text))
+                    {
+                        pDc->textOut( pos, fontId, clr, std::wstring(text, curCharLen) );
+                        pos.x += *wit;
+                        text += curCharLen;
+                    }
+                }
+                #endif
+
+                return retPos;
+            };
+
+            auto drawSampleText = [&]( DrawCoord pos, marty_draw_context::DrawCoord::value_type dy, int fontId, const ColorRef &clr, const std::wstring &textStr)
+            {
+                return drawSampleTextImpl(pos, dy, fontId, clr, textStr.c_str());
+            };
+
+            auto dPos = DrawCoord(18, 10);
+            //auto pos  = DrawCoord(76, 14);
+            auto pos  = DrawCoord(76, 10)-dPos;
+
+            // https://comp-security.net/%D1%83%D0%B4%D0%B0%D1%80%D0%B5%D0%BD%D0%B8%D0%B5-%D0%BD%D0%B0%D0%B4-%D0%B1%D1%83%D0%BA%D0%B2%D0%BE%D0%B9-%D0%BD%D0%B0-%D0%BA%D0%BB%D0%B0%D0%B2%D0%B8%D0%B0%D1%82%D1%83%D1%80%D0%B5/
+            // Тут у нас строки с символом ударения U+02CA (а надо так-то U+0301), рисуется как говно, и это надо будет исправить
+            // Вставлял из Word, там символ ударения задавал через Alt+ Numpad 769 (301 Alt+X)
+            // Word отображает нормально, студия тоже, но в строке какие-то левые символы появились - 1052 (0x41C) M (Cyrillic Capital Letter Em) 
+            // и 1027 (0x403) - Г с акцентом (Cyrillic Capital Letter Gje)
+            // Какая-то хуйня
+            // Поэтому ручками вставим конкретный символ
+            std::wstring strTimes = L"Times T";
+            // Вставка после 2го символа, вставляем один символ
+	        // strTimes.insert(2u, 1u, (wchar_t)0x2CA); // Тут вставляется не комбайнинг акцент
+            strTimes.insert(2u, 1u, (wchar_t)0x301); // Работает гуд
+
+            // Комбайнинг символы имеют нулевую отображаемую ширину, тут работает система и ничего дополнительно делать вообще не надо для нормального отображения
+            // Тут возникает одно но - если система рисует, то она умеет снижать положение акцента в зависимости высоты буквы (прописная/строчная), если под 
+            // ударением строчная i - то точка заменяется на символ ударения.
+            // Если рисуем по буквам сами - то рисуется i с точкой, и над точкой ещё символ ударения
+            // Не очень, но жить можно, думаю, никто и не заметит.
+
+            pos = drawSampleText(pos+dPos, 3*dPos.y/4, timesFontId    , ColorRef{128,128,  0}, strTimes          );
+            pos = drawSampleText(pos+dPos, 3*dPos.y/4, arialFontId    , ColorRef{128,  0,  0}, L"Aˊrial A"       );
+            pos = drawSampleText(pos+dPos, 3*dPos.y/4, courierFontId  , ColorRef{0  ,128,128}, L"Courier C"      );
+            pos = drawSampleText(pos+dPos, 3*dPos.y/4, shellDlgFontId , ColorRef{128,  0,128}, L"MS Shell Dlg"   );
+            pos = drawSampleText(pos+dPos, 3*dPos.y/4, shellDlg2FontId, ColorRef{0  ,  0,128}, L"MS Shell Dlg 2" );
+            pos = drawSampleText(pos+dPos, 3*dPos.y/4, lucidaFontId   , ColorRef{0  ,  0,128}, L"Lucída Consóle" );
+            pos = drawSampleText(pos+dPos, 3*dPos.y/4, fixedsysFontId , ColorRef{0  ,  0,128}, L"Fixedsys" );
+            //drawSampleText(pos+dPos*DrawCoord(2,2), pos.y, );
+
+        }
+            // pDc->textOut( DrawCoord( 76, 14), arialFontId    , ColorRef{128,  0,  0}, L"Arial A"        );
+            // pDc->textOut( DrawCoord( 94, 28), timesFontId    , ColorRef{128,128,  0}, L"Times T"        );
+            // pDc->textOut( DrawCoord(112, 42), courierFontId  , ColorRef{0  ,128,128}, L"Courier C"      );
+            // pDc->textOut( DrawCoord(130, 56), shellDlgFontId , ColorRef{128,  0,128}, L"MS Shell Dlg"   );
+            // pDc->textOut( DrawCoord(148, 70), shellDlg2FontId, ColorRef{0  ,  0,128}, L"MS Shell Dlg 2" );
 
         #endif
 

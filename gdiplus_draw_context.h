@@ -356,6 +356,177 @@ public:
 
     }
 
+    bool getCharWidth (std::uint32_t charCode, float_t &w /* use current font */)
+    {
+        INT tmpW = 0;
+        if (!::GetCharWidth32W(m_hdc, charCode, charCode, &tmpW))
+        {
+            return false;
+        }
+
+        w = mapRawToLogicSize( DrawCoord{tmpW,tmpW} ).y;
+
+        return true;
+    }
+
+    virtual bool getCharWidths(std::vector<float_t> &widths, const wchar_t *text, std::size_t textSize=(std::size_t)-1, int fontId=-1 /* use current font */ ) override
+    {
+        if (fontId<0 || fontId>=(int)m_hFonts.size())
+        {
+            fontId = m_curFontId;
+        }
+
+        if (fontId<0 || fontId>=(int)m_hFonts.size())
+        {
+            return false;
+        }
+
+        // Тут задают вопросы, как в GDI+ получить ширину символа - https://forums.codeguru.com/showthread.php?513528-GDI-MeasureString-and-character-width
+        // Похоже, что только через GDI, поэтому пока через GDI и делаю
+        std::map<int, marty_draw_context::FontParamsW>::const_iterator fpIt = fontsParamsById.find(fontId);
+        if (fpIt==fontsParamsById.end())
+        {
+            return false;
+        }
+
+        // Теперь пока шрифт отложим, и зарезервируем место под длины символов
+
+        textSize = checkCalcStringSize(text, textSize);
+
+        widths.clear();
+        auto totalCharsN = getTextCharsLen(text, textSize);
+        if (!totalCharsN)
+        {
+            return false; // или true? Всё ока, просто нет символов в строке?
+        }
+
+        widths.reserve(totalCharsN); // резервируем место, чтобы не было аллокаций, и не стрельнуло исключение
+
+
+        // Теперь можно продолжать со шрифтом
+        LOGFONTW lf;
+        fillLogfontStruct( lf, fpIt->second );
+        HFONT hFont = CreateFontIndirectW(&lf);
+        if (!hFont)
+        {
+            return false;
+        }
+
+        HFONT hPrevFont = (HFONT)::SelectObject(m_hdc, (HGDIOBJ)hFont );
+
+
+        bool bRes = true;
+        std::unordered_map<std::uint32_t, float_t> cache;
+
+        std::size_t curCharLen = getCharLen(text, textSize);
+        while(curCharLen && textSize)
+        {
+            //sizeTotal += curCharLen;
+            std::uint32_t ch32 = getChar32(text, textSize);
+
+            std::unordered_map<std::uint32_t, float_t>::const_iterator cit = cache.find(ch32);
+            if (cit!=cache.end())
+            {
+                widths.emplace_back(cit->second); //!!! Тут может быть исключение, и тогда hFont утечёт
+            }
+            else
+            {
+                float_t w = 0.0f;
+                if (!getCharWidth(ch32, w))
+                {
+                    bRes = false;
+                    break;
+                }
+
+                cache[ch32] = w;
+                widths.emplace_back(w);
+            }
+
+            text      += curCharLen;
+            textSize  -= curCharLen;
+            curCharLen = getCharLen(text, textSize);
+        }
+
+        ::SelectObject(m_hdc, (HGDIOBJ)hPrevFont );
+        ::DeleteObject((HGDIOBJ)hFont);
+
+        return bRes;
+
+    }
+
+    ///////////////
+    #if 0
+    virtual int selectFont( int fontId ) override
+    {
+        if (fontId<0 || fontId>=(int)m_hFonts.size())
+            return -1;
+
+        std::swap(m_curFontId, fontId);
+
+        return fontId;
+    }
+
+    virtual int  getCurFont() override
+    {
+        return m_curFontId;
+    }
+
+
+    virtual bool textOut( const DrawCoord &pos, const std::wstring &text ) override
+    {
+        if (m_curFontId<0 || m_curFontId>=(int)m_hFonts.size())
+            return false;
+
+        Gdiplus::SolidBrush textBrush = Gdiplus::SolidBrush(Gdiplus::Color(m_textColor.r,m_textColor.g,m_textColor.b));
+
+        auto scaledPos = getScaledPos(pos);
+        Gdiplus::PointF posF = Gdiplus::PointF(floatToFloat(scaledPos.x),floatToFloat(scaledPos.y));
+        const Gdiplus::StringFormat* pStringFormat = Gdiplus::StringFormat::GenericTypographic();
+
+        m_g.SetTextRenderingHint(Gdiplus::TextRenderingHintAntiAlias);
+        m_g.DrawString( text.c_str(), -1, m_hFonts[(std::size_t)m_curFontId].get(), posF, pStringFormat, &textBrush );
+
+        return true;
+    }
+    #endif
+    ///////////////
+
+
+
+    //!!!
+    #if 0
+    virtual bool getCharWidth (std::uint32_t charCode, float_t &w) override
+    {
+        // FLOAT f = 0.0f;
+        // if (!::GetCharWidthFloatW(m_hdc, charCode, charCode, &f))
+        INT tmpW = 0;
+        if (!::GetCharWidth32W(m_hdc, charCode, charCode, &tmpW))
+        {
+            return false;
+        }
+
+        // float_t scale = 1.0;
+        // FontParamsW fpw;
+        // if (m_curFontId>=0 && getFontParamsById(m_curFontId, fpw))
+        // {
+        //     //scale = mapRawToLogicSize( DrawCoord{fpw.height,fpw.height} ).y;
+        //     //scale = getScaledSize( DrawCoord{fpw.height,fpw.height} ).y;
+        //     scale = fpw.height;
+        // }
+        //float_t scale = mapRawToLogicSize( DrawCoord{tmpW,tmpW} ).y;
+        
+        // w = mapRawToLogicSize( DrawCoord{f,f} ).y;
+        //bool getFontParamsById( int id, marty_draw_context::FontParamsW &fp ) override
+        //w = scale*f;
+
+        w = mapRawToLogicSize( DrawCoord{tmpW,tmpW} ).y;
+
+        return true;
+    }
+    #endif
+
+    //!!!
+
 
     virtual DrawSize calcDrawnTextSizeExact (int   fontId         , const char*    text, std::size_t nChars) override
     {
@@ -375,6 +546,8 @@ public:
         // https://learn.microsoft.com/en-us/windows/win32/api/gdiplusgraphics/nf-gdiplusgraphics-graphics-measurestring(constwchar_int_constfont_constrectf__conststringformat_rectf_int_int)
         // m_hFonts[m_curFontId].get()
 
+        // Может, layoutRect не нужен?
+        // https://learn.microsoft.com/en-us/windows/win32/api/gdiplusgraphics/nf-gdiplusgraphics-graphics-measurestring(constwchar_int_constfont_constpointf__conststringformat_rectf)
         Gdiplus::RectF layoutRect(0.0f, 0.0f, 100.0f, 50.0f);
 
         const Gdiplus::StringFormat* pStringFormat = Gdiplus::StringFormat::GenericTypographic();
@@ -666,7 +839,7 @@ public:
         // UnitMillimeter
         // UnitPixel
 
-        auto fontSize = getScaledSize(DrawCoord(height,height)).x;
+        auto fontSize = getScaledSize(DrawCoord(height,height)).y;
         //fontSize = fontSize*90/100;
 
         m_hFonts.emplace_back( std::make_unique<Gdiplus::Font>( pff

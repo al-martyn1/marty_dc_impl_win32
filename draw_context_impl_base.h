@@ -195,6 +195,179 @@ protected:
         brushesByParams.clear();
     }
 
+    //virtual bool getCharWidth (std::uint32_t charCode, float_t &w) = 0;
+
+    // virtual bool getCharWidths(const std::wstring &text, std::vector<float_t> &widths, int fontId=-1 /* use current font */ ) override
+    // {
+    //     return getCharWidths(text.c_str(), widths, fontId);
+    // }
+
+    template<typename LogfontStruct, typename CharType>
+    void fillLogfontStruct( LogfontStruct &lf, int height, int escapement, int orientation, int weight, marty_draw_context::FontStyleFlags fontStyleFlags, const CharType *pFontFace )
+    {
+        std::memset(&lf, 0, sizeof(lf));
+
+        lf.lfHeight          = height      ;  // LONG высота, in logical units
+        lf.lfWidth           = 0           ;  // LONG
+        lf.lfEscapement      = escapement  ;  // LONG ориентация (всего текста), для TTF любой градус, для растровых - 0-90-180-270
+        lf.lfOrientation     = orientation ;  // LONG ориентация отельных символов
+        lf.lfWeight          = weight      ;  // LONG толщина (жыр)
+        lf.lfItalic          = (BYTE)((fontStyleFlags&FontStyleFlags::italic    ) != 0 ? TRUE : FALSE); // BYTE
+        lf.lfUnderline       = (BYTE)((fontStyleFlags&FontStyleFlags::underlined) != 0 ? TRUE : FALSE); // BYTE
+        lf.lfStrikeOut       = (BYTE)((fontStyleFlags&FontStyleFlags::strikeout ) != 0 ? TRUE : FALSE); // BYTE
+        // ANSI_CHARSET/DEFAULT_CHARSET
+        lf.lfCharSet         = DEFAULT_CHARSET; // BYTE // !!!
+        lf.lfOutPrecision    = OUT_OUTLINE_PRECIS; // OUT_DEVICE_PRECIS; // OUT_TT_PRECIS; // OUT_OUTLINE_PRECIS; // OUT_TT_PRECIS; // BYTE
+        lf.lfClipPrecision   = CLIP_DEFAULT_PRECIS; // BYTE
+        lf.lfQuality         = CLEARTYPE_QUALITY; // DRAFT_QUALITY; // PROOF_QUALITY; // ANTIALIASED_QUALITY; // BYTE // !!!
+        lf.lfPitchAndFamily  = DEFAULT_PITCH | FF_DONTCARE; // FF_DECORATIVE; // BYTE
+
+        if (lf.lfHeight>0)
+           lf.lfHeight = -lf.lfHeight;
+
+        typedef typename std::remove_reference<decltype(lf.lfFaceName[0])>::type   TargetCharType;
+        typedef typename std::make_unsigned<CharType>::type                        UnsignedSourceCharType;
+
+        //lf.lfHeight = -lf.lfHeight;
+        int iff=0;
+        for(; iff<(LF_FACESIZE-1) && pFontFace[iff] /* *fontFace */ ; ++iff)
+            lf.lfFaceName[iff] = static_cast< TargetCharType >( static_cast<UnsignedSourceCharType>(pFontFace[iff]) );
+            
+        lf.lfFaceName[iff] = 0;
+
+    }
+
+    template<typename LogfontStruct, typename FontParamsStruct>
+    void fillLogfontStruct( LogfontStruct &lf, const FontParamsStruct &fp )
+    {
+        int scaledHeight = int(floatToInt(getScaledSize(DrawCoord(fp.height,fp.height)).y));
+        fillLogfontStruct( lf, scaledHeight, fp.escapement, fp.orientation, (int)fp.weight, fp.fontStyleFlags, fp.fontFace.c_str() );
+    }
+
+
+    template<typename CharType>
+    std::size_t checkCalcStringSize(const CharType *pStr, std::size_t size) const
+    {
+        if (!pStr)
+        {
+            return 0u;
+        }
+
+        if (size!=(std::size_t)-1)
+        {
+            return size;
+        }
+
+        //!!! Наверно надо заменить на strlen/wcslen
+        size = 0u;
+
+        while(pStr[size])
+        {
+            ++size;
+        }
+
+        return size;
+    }
+
+    //! Длина символа в wchar_t'ах - поддержка сурогатных пар, возвращает 0/1/2, 0 - достигли конца строки
+    virtual std::size_t getCharLen(const wchar_t *text, std::size_t textSize=(std::size_t)-1) override
+    {
+        textSize = checkCalcStringSize(text, textSize);
+
+        if (textSize<2u) // 0 или 1 - не важно. Если у нас началась суррогатная пара, но остался только один символ в строке - мы эту ошибку игнорим
+        {
+            return textSize;
+        }
+
+        // Тут у нас в строке гарантированно 2+ символов есть
+
+        wchar_t ch = *text;
+
+        if (ch<0xD800u || ch>0xDFFFu)
+        {
+            return 1u;
+        }
+
+        if (ch>=0xDC00u)
+        {
+            // вообще-то это ошибка, но мы просто игнорим её и инвалида пропускаем, как символ длинны 1
+            return 1u;
+        }
+
+        return 2u;
+
+    }
+
+    //! Длина текста в символах с учетом суррогатных пар
+    virtual std::size_t getTextCharsLen(const wchar_t *text, std::size_t textSize=(std::size_t)-1) override
+    {
+        textSize = checkCalcStringSize(text, textSize);
+        if (!textSize)
+        {
+            return textSize;
+        }
+
+        std::size_t sizeTotal = 0u;
+
+        std::size_t curCharLen = getCharLen(text, textSize);
+        while(curCharLen && textSize)
+        {
+            //sizeTotal += curCharLen;
+            ++sizeTotal;
+            text      += curCharLen;
+            textSize  -= curCharLen;
+            curCharLen = getCharLen(text, textSize);
+        }
+
+        return sizeTotal;
+    }
+
+    //! Возвращает Unicode символ, формируя его (возможно) из суррогатной пары
+    virtual std::uint32_t getChar32(const wchar_t *text, std::size_t textSize=(std::size_t)-1) override
+    {
+        textSize = checkCalcStringSize(text, textSize);
+        if (!textSize)
+        {
+            return 0u;
+        }
+
+        wchar_t ch = *text;
+
+        if (ch<0xD800u || ch>0xDFFFu)
+        {
+            return (std::uint32_t)ch;
+        }
+
+        if (ch>=0xDC00u)
+        {
+            // вообще-то это ошибка, но мы просто игнорим её и инвалида возвращаем как символ
+            return (std::uint32_t)ch;
+        }
+
+        if (textSize<2u)
+        {
+            // суррогатная пара внезапно закончилась по окончании текста, вообще-то это ошибка, но мы её игнорим
+            // инвалида возвращаем как символ
+            return (std::uint32_t)ch;
+        }
+
+        std::uint32_t ch32 = ((std::uint32_t)(ch&0x03FFu)) << 10;
+
+        ++text;
+        wchar_t ch2 = *text;
+
+        if (ch2<0xDC00u || ch2>0xDFFFu)
+        {
+            // суррогатная пара содержит левое значение, вообще-то это ошибка, но мы её игнорим
+            // инвалида возвращаем как символ
+            return (std::uint32_t)ch;
+        }
+
+        return (ch32 | (std::uint32_t)(ch2&0x03FFu));
+
+    }
+
+
     virtual DrawingPrecise setDrawingPrecise(DrawingPrecise p) override
     {
         MARTY_IDC_ARG_USED(p);

@@ -344,10 +344,99 @@ public:
     {
     }
 
+    bool getCharWidth (std::uint32_t charCode, float_t &w)
+    {
+        // FLOAT f = 0.0f;
+        // if (!::GetCharWidthFloatW(m_hdc, charCode, charCode, &f))
+        INT tmpW = 0;
+        if (!::GetCharWidth32W(m_hdc, charCode, charCode, &tmpW))
+        {
+            return false;
+        }
+
+        // float_t scale = 1.0;
+        // FontParamsW fpw;
+        // if (m_curFontId>=0 && getFontParamsById(m_curFontId, fpw))
+        // {
+        //     //scale = mapRawToLogicSize( DrawCoord{fpw.height,fpw.height} ).y;
+        //     //scale = getScaledSize( DrawCoord{fpw.height,fpw.height} ).y;
+        //     scale = fpw.height;
+        // }
+        //float_t scale = mapRawToLogicSize( DrawCoord{tmpW,tmpW} ).y;
+        
+        // w = mapRawToLogicSize( DrawCoord{f,f} ).y;
+        //bool getFontParamsById( int id, marty_draw_context::FontParamsW &fp ) override
+        //w = scale*f;
+
+        w = mapRawToLogicSize( DrawCoord{tmpW,tmpW} ).y;
+
+        return true;
+    }
+
+    virtual bool getCharWidths(std::vector<float_t> &widths, const wchar_t *text, std::size_t textSize=(std::size_t)-1, int fontId=-1 /* use current font */ ) override
+    {
+        textSize = checkCalcStringSize(text, textSize);
+
+        widths.clear();
+        auto totalCharsN = getTextCharsLen(text, textSize);
+        if (!totalCharsN)
+        {
+            return false; // или true? Всё ока, просто нет символов в строке?
+        }
+
+        widths.reserve(totalCharsN); // резервируем место, чтобы не было аллокаций, и не стрельнуло исключение
+
+        int prevFont = -1;
+        if (fontId>=0)
+        {
+            prevFont = selectFont(fontId);
+        }
+
+        bool bRes = true;
+        std::unordered_map<std::uint32_t, float_t> cache;
+
+        std::size_t curCharLen = getCharLen(text, textSize);
+        while(curCharLen && textSize)
+        {
+            //sizeTotal += curCharLen;
+            std::uint32_t ch32 = getChar32(text, textSize);
+
+            std::unordered_map<std::uint32_t, float_t>::const_iterator cit = cache.find(ch32);
+            if (cit!=cache.end())
+            {
+                widths.emplace_back(cit->second);
+            }
+            else
+            {
+                float_t w = 0.0f;
+                if (!getCharWidth(ch32, w))
+                {
+                    bRes = false;
+                    break;
+                }
+
+                cache[ch32] = w;
+                widths.emplace_back(w);
+            }
+
+            text      += curCharLen;
+            textSize  -= curCharLen;
+            curCharLen = getCharLen(text, textSize);
+        }
+
+        if (fontId>=0)
+        {
+            selectFont(prevFont);
+        }
+
+        return bRes;
+
+    }
 
     virtual DrawSize calcDrawnTextSizeExact (int   fontId         , const char*    text, std::size_t nChars) override
     {
-        std::string  strText  = (nChars==(std::size_t)-1) ? std::string(text) : std::string(text,nChars);
+        nChars = checkCalcStringSize(text, nChars);
+        std::string  strText  = std::string(text,nChars);
         std::wstring wStrText = decodeString(strText);
 
         return calcDrawnTextSizeExact(fontId, wStrText.data(), wStrText.size());
@@ -538,41 +627,16 @@ public:
         return brushIdx;
     }
 
-    template<typename LogfontStruct>
-    void fillLogfontStruct( LogfontStruct &lf, int height, int escapement, int orientation, int weight, marty_draw_context::FontStyleFlags fontStyleFlags )
-    {
-        std::memset(&lf, 0, sizeof(lf));
-
-        lf.lfHeight          = height      ;  // LONG высота, in logical units
-        lf.lfWidth           = 0           ;  // LONG
-        lf.lfEscapement      = escapement  ;  // LONG ориентация (всего текста), для TTF любой градус, для растровых - 0-90-180-270
-        lf.lfOrientation     = orientation ;  // LONG ориентация отельных символов
-        lf.lfWeight          = weight      ;  // LONG толщина (жыр)
-        lf.lfItalic          = (BYTE)((fontStyleFlags&FontStyleFlags::italic    ) != 0 ? TRUE : FALSE); // BYTE
-        lf.lfUnderline       = (BYTE)((fontStyleFlags&FontStyleFlags::underlined) != 0 ? TRUE : FALSE); // BYTE
-        lf.lfStrikeOut       = (BYTE)((fontStyleFlags&FontStyleFlags::strikeout ) != 0 ? TRUE : FALSE); // BYTE
-        lf.lfCharSet         = ANSI_CHARSET; // BYTE // !!!
-        lf.lfOutPrecision    = OUT_OUTLINE_PRECIS; // OUT_DEVICE_PRECIS; // OUT_TT_PRECIS; // OUT_OUTLINE_PRECIS; // OUT_TT_PRECIS; // BYTE
-        lf.lfClipPrecision   = CLIP_DEFAULT_PRECIS; // BYTE
-        lf.lfQuality         = CLEARTYPE_QUALITY; // DRAFT_QUALITY; // PROOF_QUALITY; // ANTIALIASED_QUALITY; // BYTE // !!!
-        lf.lfPitchAndFamily  = DEFAULT_PITCH | FF_DONTCARE; // FF_DECORATIVE; // BYTE
-
-        if (lf.lfHeight>0)
-           lf.lfHeight = -lf.lfHeight;
-
-        //lf.lfHeight = -lf.lfHeight;
-
-    }
 
     HFONT createFontImpl( int height, int escapement, int orientation, int weight, marty_draw_context::FontStyleFlags fontStyleFlags, const char *fontFace )
     {
         LOGFONTA lf;
-        fillLogfontStruct( lf, height, escapement, orientation, weight, fontStyleFlags );
+        fillLogfontStruct( lf, height, escapement, orientation, weight, fontStyleFlags, fontFace );
 
-        int iff=0;
-        for(; iff<(LF_FACESIZE-1) && *fontFace; ++iff)
-            lf.lfFaceName[iff] = fontFace[iff];
-        lf.lfFaceName[iff] = 0;
+        // int iff=0;
+        // for(; iff<(LF_FACESIZE-1) && fontFace[iff] /* *fontFace */ ; ++iff)
+        //     lf.lfFaceName[iff] = fontFace[iff];
+        // lf.lfFaceName[iff] = 0;
 
         return CreateFontIndirectA(&lf);
     }
@@ -580,19 +644,19 @@ public:
     HFONT createFontImpl( int height, int escapement, int orientation, int weight, marty_draw_context::FontStyleFlags fontStyleFlags, const wchar_t *fontFace )
     {
         LOGFONTW lf;
-        fillLogfontStruct( lf, height, escapement, orientation, weight, fontStyleFlags );
+        fillLogfontStruct( lf, height, escapement, orientation, weight, fontStyleFlags, fontFace );
 
-        int iff=0;
-        for(; iff<(LF_FACESIZE-1) && *fontFace; ++iff)
-            lf.lfFaceName[iff] = fontFace[iff];
-        lf.lfFaceName[iff] = 0;
+        // int iff=0;
+        // for(; iff<(LF_FACESIZE-1) && fontFace[iff] /* *fontFace */; ++iff)
+        //     lf.lfFaceName[iff] = fontFace[iff];
+        // lf.lfFaceName[iff] = 0;
 
         return CreateFontIndirectW(&lf);
     }
 
     virtual int createFont( float_t height, int escapement, int orientation, marty_draw_context::FontWeight weight, marty_draw_context::FontStyleFlags fontStyleFlags, const char *fontFace ) override
     {
-        HFONT hfont = createFontImpl( int(floatToInt(getScaledSize(DrawCoord(height,height)).x))
+        HFONT hfont = createFontImpl( int(floatToInt(getScaledSize(DrawCoord(height,height)).y))
                                     , escapement, orientation, (int)weight, fontStyleFlags, fontFace );
         if (hfont==0)
             return -1;
@@ -616,7 +680,7 @@ public:
 
     virtual int createFont( float_t height, int escapement, int orientation, marty_draw_context::FontWeight weight, marty_draw_context::FontStyleFlags fontStyleFlags, const wchar_t *fontFace ) override
     {
-        HFONT hfont = createFontImpl( int(floatToInt(getScaledSize(DrawCoord(height,height)).x))
+        HFONT hfont = createFontImpl( int(floatToInt(getScaledSize(DrawCoord(height,height)).y))
                                     , escapement, orientation, (int)weight, fontStyleFlags, fontFace );
         if (hfont==0)
             return -1;
