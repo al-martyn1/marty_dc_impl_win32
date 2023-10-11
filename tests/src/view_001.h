@@ -305,18 +305,57 @@ public:
                 DrawCoord retPos = pos;
 
                 #if 1
-                std::vector<marty_draw_context::DrawCoord::value_type> widths;
-                if (pDc->getCharWidths(widths, text, (std::size_t)-1, fontId))
-                {
-                    std::vector<marty_draw_context::DrawCoord::value_type>::const_iterator wit = widths.begin();
-                    std::size_t curCharLen = pDc->getCharLen(text);
-                    for(; curCharLen!=0 && wit!=widths.end(); ++wit, curCharLen = pDc->getCharLen(text))
-                    {
-                        pDc->textOut( pos, fontId, clr, std::wstring(text, curCharLen) );
-                        pos.x += *wit;
-                        text += curCharLen;
-                    }
-                }
+
+                std::uint32_t colors[8] = { (std::uint32_t)-1
+                                          , (std::uint32_t)-1
+                                          , (std::uint32_t)-1
+                                          , (std::uint32_t)-1
+                                          , (std::uint32_t)-1
+                                          , (std::uint32_t)-1
+                                          , (std::uint32_t)-1
+                                          , (std::uint32_t)-1
+                                          };
+
+                colors[0] = marty_draw_context::ColorRef::deserialize("GreenYellow").toUnsigned();
+                colors[1] = marty_draw_context::ColorRef::deserialize("Red").toUnsigned();
+                colors[2] = marty_draw_context::ColorRef::deserialize("Blue").toUnsigned();
+                colors[3] = marty_draw_context::ColorRef::deserialize("Grey").toUnsigned();
+                colors[4] = marty_draw_context::ColorRef::deserialize("Cyan").toUnsigned();
+                colors[5] = marty_draw_context::ColorRef::deserialize("DarkCyan").toUnsigned();
+                colors[6] = marty_draw_context::ColorRef::deserialize("MediumCyan").toUnsigned();
+                colors[7] = marty_draw_context::ColorRef::deserialize("Brown").toUnsigned();
+
+                
+                auto textColorSaver = marty_draw_context::TextColorSaver(pDc, clr ); // Устанавливаем дефолтный цвет текста, одновременно сохраняя текущий для последующего восстановления
+
+                std::size_t nCharsProcessed = 0;
+                std::size_t nSymbolsDrawn   = 0;
+                pDc->drawTextColored( pos, pos.x+120
+                                    , 0 // pNextPosX - не интересно
+                                    , 0 // pOverhang - не интересно
+                                    , marty_draw_context::DrawTextFlags::fitGlyphDefault // defMode stopOnLf
+                                    , text, (std::size_t)-1 // textSize
+                                    , &nCharsProcessed
+                                    , &colors[0], 8
+                                    , &nSymbolsDrawn
+                                    , 0 // stopChars
+                                    , fontId
+                                    );
+
+                // pDc->
+
+                // std::vector<marty_draw_context::DrawCoord::value_type> widths;
+                // if (pDc->getCharWidths(widths, text, (std::size_t)-1, fontId))
+                // {
+                //     std::vector<marty_draw_context::DrawCoord::value_type>::const_iterator wit = widths.begin();
+                //     std::size_t curCharLen = pDc->getCharLen(text);
+                //     for(; curCharLen!=0 && wit!=widths.end(); ++wit, curCharLen = pDc->getCharLen(text))
+                //     {
+                //         pDc->textOut( pos, fontId, clr, std::wstring(text, curCharLen) );
+                //         pos.x += *wit;
+                //         text += curCharLen;
+                //     }
+                // }
                 #endif
 
                 return retPos;
@@ -329,7 +368,7 @@ public:
 
             auto dPos = DrawCoord(18, 10);
             //auto pos  = DrawCoord(76, 14);
-            auto pos  = DrawCoord(76, 10)-dPos;
+            auto pos  = DrawCoord(76,  1)-dPos;
 
             // https://comp-security.net/%D1%83%D0%B4%D0%B0%D1%80%D0%B5%D0%BD%D0%B8%D0%B5-%D0%BD%D0%B0%D0%B4-%D0%B1%D1%83%D0%BA%D0%B2%D0%BE%D0%B9-%D0%BD%D0%B0-%D0%BA%D0%BB%D0%B0%D0%B2%D0%B8%D0%B0%D1%82%D1%83%D1%80%D0%B5/
             // Тут у нас строки с символом ударения U+02CA (а надо так-то U+0301), рисуется как говно, и это надо будет исправить
@@ -350,11 +389,11 @@ public:
             // Не очень, но жить можно, думаю, никто и не заметит.
 
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, timesFontId    , ColorRef{128,128,  0}, strTimes          );
-            pos = drawSampleText(pos+dPos, 3*dPos.y/4, arialFontId    , ColorRef{128,  0,  0}, L"Aˊrial A"       );
+            pos = drawSampleText(pos+dPos, 3*dPos.y/4, arialFontId    , ColorRef{128,  0,  0}, L"Arial A"       );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, courierFontId  , ColorRef{0  ,128,128}, L"Courier C"      );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, shellDlgFontId , ColorRef{128,  0,128}, L"MS Shell Dlg"   );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, shellDlg2FontId, ColorRef{0  ,  0,128}, L"MS Shell Dlg 2" );
-            pos = drawSampleText(pos+dPos, 3*dPos.y/4, lucidaFontId   , ColorRef{0  ,  0,128}, L"Lucída Consóle" );
+            pos = drawSampleText(pos+dPos, 3*dPos.y/4, lucidaFontId   , ColorRef{0  ,  0,128}, L"Lucida Console" );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, fixedsysFontId , ColorRef{0  ,  0,128}, L"Fixedsys" );
             //drawSampleText(pos+dPos*DrawCoord(2,2), pos.y, );
 

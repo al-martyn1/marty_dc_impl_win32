@@ -454,79 +454,52 @@ public:
 
     }
 
-    ///////////////
-    #if 0
-    virtual int selectFont( int fontId ) override
+    virtual bool getSimpleFontMetrics(SimpleFontMetrics &m, int fontId=-1) const override
     {
         if (fontId<0 || fontId>=(int)m_hFonts.size())
-            return -1;
+        {
+            fontId = m_curFontId;
+        }
 
-        std::swap(m_curFontId, fontId);
-
-        return fontId;
-    }
-
-    virtual int  getCurFont() override
-    {
-        return m_curFontId;
-    }
-
-
-    virtual bool textOut( const DrawCoord &pos, const std::wstring &text ) override
-    {
-        if (m_curFontId<0 || m_curFontId>=(int)m_hFonts.size())
-            return false;
-
-        Gdiplus::SolidBrush textBrush = Gdiplus::SolidBrush(Gdiplus::Color(m_textColor.r,m_textColor.g,m_textColor.b));
-
-        auto scaledPos = getScaledPos(pos);
-        Gdiplus::PointF posF = Gdiplus::PointF(floatToFloat(scaledPos.x),floatToFloat(scaledPos.y));
-        const Gdiplus::StringFormat* pStringFormat = Gdiplus::StringFormat::GenericTypographic();
-
-        m_g.SetTextRenderingHint(Gdiplus::TextRenderingHintAntiAlias);
-        m_g.DrawString( text.c_str(), -1, m_hFonts[(std::size_t)m_curFontId].get(), posF, pStringFormat, &textBrush );
-
-        return true;
-    }
-    #endif
-    ///////////////
-
-
-
-    //!!!
-    #if 0
-    virtual bool getCharWidth (std::uint32_t charCode, float_t &w) override
-    {
-        // FLOAT f = 0.0f;
-        // if (!::GetCharWidthFloatW(m_hdc, charCode, charCode, &f))
-        INT tmpW = 0;
-        if (!::GetCharWidth32W(m_hdc, charCode, charCode, &tmpW))
+        if (fontId<0 || fontId>=(int)m_hFonts.size())
         {
             return false;
         }
 
-        // float_t scale = 1.0;
-        // FontParamsW fpw;
-        // if (m_curFontId>=0 && getFontParamsById(m_curFontId, fpw))
-        // {
-        //     //scale = mapRawToLogicSize( DrawCoord{fpw.height,fpw.height} ).y;
-        //     //scale = getScaledSize( DrawCoord{fpw.height,fpw.height} ).y;
-        //     scale = fpw.height;
-        // }
-        //float_t scale = mapRawToLogicSize( DrawCoord{tmpW,tmpW} ).y;
-        
-        // w = mapRawToLogicSize( DrawCoord{f,f} ).y;
-        //bool getFontParamsById( int id, marty_draw_context::FontParamsW &fp ) override
-        //w = scale*f;
+        // Тут задают вопросы, как в GDI+ получить ширину символа - https://forums.codeguru.com/showthread.php?513528-GDI-MeasureString-and-character-width
+        // Похоже, что только через GDI, поэтому пока через GDI и делаю
+        std::map<int, marty_draw_context::FontParamsW>::const_iterator fpIt = fontsParamsById.find(fontId);
+        if (fpIt==fontsParamsById.end())
+        {
+            return false;
+        }
 
-        w = mapRawToLogicSize( DrawCoord{tmpW,tmpW} ).y;
+        LOGFONTW lf;
+        fillLogfontStruct( lf, fpIt->second );
+        HFONT hFont = CreateFontIndirectW(&lf);
+        if (!hFont)
+        {
+            return false;
+        }
 
-        return true;
+        HFONT hPrevFont = (HFONT)::SelectObject(m_hdc, (HGDIOBJ)hFont );
+
+
+        TEXTMETRICW textMetric;
+        bool bRes = ::GetTextMetrics(m_hdc, &textMetric) ? true : false;
+        if (bRes)
+        {
+            m.height    = mapRawToLogicSizeX(textMetric.tmHeight);
+            m.ascent    = mapRawToLogicSizeX(textMetric.tmAscent);
+            m.descent   = mapRawToLogicSizeX(textMetric.tmDescent);
+            m.overhang  = mapRawToLogicSizeX(textMetric.tmOverhang);
+        }
+
+        ::SelectObject(m_hdc, (HGDIOBJ)hPrevFont );
+        ::DeleteObject((HGDIOBJ)hFont);
+
+        return bRes;
     }
-    #endif
-
-    //!!!
-
 
     virtual DrawSize calcDrawnTextSizeExact (int   fontId         , const char*    text, std::size_t nChars) override
     {
@@ -935,6 +908,45 @@ public:
 
         return true;
     }
+
+    virtual bool textOut( const DrawCoord &pos, const wchar_t *text, std::size_t textSize=(std::size_t)-1 ) override
+    {
+        if (m_curFontId<0 || m_curFontId>=(int)m_hFonts.size())
+            return false;
+
+        textSize = checkCalcStringSize(text, textSize);
+        if (!textSize)
+        {
+            return true;
+        }
+
+        Gdiplus::SolidBrush textBrush = Gdiplus::SolidBrush(Gdiplus::Color(m_textColor.r,m_textColor.g,m_textColor.b));
+
+        auto scaledPos = getScaledPos(pos);
+        //DC_LOG()<<"textOut at "<<scaledPos<<"\n";
+        Gdiplus::PointF posF = Gdiplus::PointF(floatToFloat(scaledPos.x),floatToFloat(scaledPos.y));
+
+        // Gdiplus::StringFormat stringFormat = Gdiplus::StringFormat(0,0);
+        // stringFormat.SetAlignment(Gdiplus::StringAlignmentNear);
+        // stringFormat.SetLineAlignment(Gdiplus::StringAlignmentNear);
+        // stringFormat.SetFormatFlags(Gdiplus::StringFormatFlagsNoWrap);
+        // stringFormat.SetHotkeyPrefix(Gdiplus::HotkeyPrefixNone);
+
+        // https://stackoverflow.com/questions/54024997/how-to-properly-left-align-text-with-drawstring
+        // https://docs.microsoft.com/en-us/windows/win32/api/gdiplusstringformat/nf-gdiplusstringformat-stringformat-generictypographic
+
+        const Gdiplus::StringFormat* pStringFormat = Gdiplus::StringFormat::GenericTypographic();
+
+        //m_g.DrawString( text.c_str(), -1, m_hFonts[m_curFontId].get(), posF, &textBrush );
+        //m_g.DrawString( text.c_str(), -1, m_hFonts[m_curFontId].get(), posF, &stringFormat, &textBrush );
+
+        // https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-antialiasing-with-text-use
+        m_g.SetTextRenderingHint(Gdiplus::TextRenderingHintAntiAlias);
+        m_g.DrawString( text, (INT)textSize, m_hFonts[(std::size_t)m_curFontId].get(), posF, pStringFormat, &textBrush );
+
+        return true;
+    }
+
 
 
     virtual ColorRef setTextColor( std::uint8_t r, std::uint8_t g, std::uint8_t b ) override

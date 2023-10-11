@@ -367,6 +367,165 @@ protected:
 
     }
 
+    virtual bool drawTextColored( const DrawCoord               &startPos
+                                , const DrawCoord::value_type   &xPosMax
+                                , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
+                                , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+                                , DrawTextFlags                 flags
+                                , const wchar_t                 *text
+                                , std::size_t                   textSize=(std::size_t)-1
+                                , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                , const std::uint32_t           *pColors=0
+                                , std::size_t                   nColors=0
+                                , std::size_t                   *pSymbolsDrawn=0
+                                , const wchar_t                 *stopChars=0
+                                , int                           fontId=-1
+                                ) override
+    {
+        textSize = checkCalcStringSize(text, textSize);
+        if (!textSize)
+        {
+            return false;
+        }
+
+        if (fontId<0)
+        {
+            fontId = getCurFont();
+        }
+
+        auto fontSaver = FontSaver(this, fontId);
+
+
+        std::vector<DrawCoord::value_type> widths;
+        if (!getCharWidths(widths, text, textSize, fontId))
+        {
+            return false;
+        }
+
+        SimpleFontMetrics fontMetrics;
+        if (!getSimpleFontMetrics(fontMetrics, fontId))
+        {
+            return false;
+        }
+
+        std::wstring wstrStopChars;
+        if (stopChars)
+        {
+            wstrStopChars = stopChars;
+        }
+        else
+        {
+            if ((flags&DrawTextFlags::stopOnCr)!=0)
+            {
+                wstrStopChars.append(1u, L'\r');
+            }
+            if ((flags&DrawTextFlags::stopOnLf)!=0)
+            {
+                wstrStopChars.append(1u, L'\n');
+            }
+        }
+
+        size_t nCharsProcessed  = 0;
+        size_t nSymbolsDrawn     = 0;
+
+        DrawCoord pos = startPos;
+
+        std::vector<marty_draw_context::DrawCoord::value_type>::const_iterator wit = widths.begin();
+        std::size_t curCharLen = getCharLen(text, textSize);
+        for( ; textSize && curCharLen!=0 && wit!=widths.end() // && nCharsProcessed<textSize
+             ; ++wit, curCharLen = getCharLen(text, textSize)
+           )
+        {
+            ATLASSERT(curCharLen<=textSize);
+            if (curCharLen>textSize)
+            {
+                break;
+            }
+
+            const auto &curCharWidth = *wit;
+
+            auto testPosX = pos.x;
+
+            bool isCombining = curCharWidth<0.0001;
+
+            if (isCombining && (flags&DrawTextFlags::combiningAsSeparateGlyph)==0)
+            {
+                if (nSymbolsDrawn)
+                    --nSymbolsDrawn;
+            }
+
+            if ((flags&DrawTextFlags::fitGlyphStartPos)!=0)
+            {
+                // Стартовая позиция должна влезать в лимит
+            }
+            else
+            {
+                // Глиф должен влезать целиком, с учетом свеса
+                testPosX += curCharWidth;
+                // Если текущий символ нулевой ширины - то "свес" не добавляем, текущий символ должен быть отрисован
+                // А раз не добавляем свес, и ширина нулевая, то условие не отличается от предыдущего символа, и текущий тоже будет отрисован
+                // Если же ширина не нулевая, то для теста надо добавить свес
+                if (isCombining)
+                {
+                    testPosX += fontMetrics.overhang;
+                }
+            }
+
+            if (testPosX>=xPosMax)
+            {
+                break;
+            }
+
+            if ((flags&DrawTextFlags::calcOnly)==0)
+            {
+                // Не только считаем, но и рисуем
+
+                std::uint32_t curUintTextColor = (std::uint32_t)-1;
+                if (pColors && nSymbolsDrawn<nColors)
+                {
+                    curUintTextColor = pColors[nSymbolsDrawn];
+                }
+    
+                auto textColorSaver = (curUintTextColor==(std::uint32_t)-1)
+                                    ? TextColorSaver(this)
+                                    : TextColorSaver(this, ColorRef::fromUnsigned(curUintTextColor) )
+                                    ;
+
+                textOut(pos, text, curCharLen);
+            }
+
+            pos.x           += curCharWidth;
+            text            += curCharLen;
+            textSize        -= curCharLen;
+            nCharsProcessed += curCharLen;
+            ++nSymbolsDrawn;
+            
+        }
+
+        if (pNextPosX)
+        {
+            *pNextPosX = pos.x;
+        }
+
+        if (pOverhang)
+        {
+            *pOverhang = fontMetrics.overhang;
+        }
+
+        if (pCharsProcessed)
+        {
+            *pCharsProcessed = nCharsProcessed;
+        }
+
+        if (pSymbolsDrawn)
+        {
+            *pSymbolsDrawn = nSymbolsDrawn;
+        }
+        
+        return true;
+        
+    }
+
 
     virtual DrawingPrecise setDrawingPrecise(DrawingPrecise p) override
     {
@@ -1206,6 +1365,18 @@ protected:
     }
 
     virtual bool textOut( const DrawCoord &pos, const std::wstring &text ) = 0;
+    virtual bool textOut( const DrawCoord &pos, const wchar_t *text, std::size_t textSize=(std::size_t)-1 ) = 0;
+
+    virtual bool textOut( const DrawCoord &pos, const char    *text, std::size_t textSize=(std::size_t)-1 ) override
+    {
+        textSize = checkCalcStringSize(text, textSize);
+        if (!textSize)
+        {
+            return true;
+        }
+
+        return textOut(pos, std::string(text, textSize));
+    }
 
     virtual bool textOut( const DrawCoord &pos, const std::string &text ) override
     {

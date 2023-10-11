@@ -368,7 +368,7 @@ public:
         //bool getFontParamsById( int id, marty_draw_context::FontParamsW &fp ) override
         //w = scale*f;
 
-        w = mapRawToLogicSize( DrawCoord{tmpW,tmpW} ).y;
+        w = mapRawToLogicSizeX(tmpW);
 
         return true;
     }
@@ -433,6 +433,34 @@ public:
 
         return bRes;
 
+    }
+
+    virtual bool getSimpleFontMetrics(SimpleFontMetrics &m, int fontId=-1) const override
+    {
+        int prevFont = -1;
+        if (fontId>=0)
+        {
+            GdiDrawContext *pNcThis = const_cast<GdiDrawContext*>(this);
+            prevFont = pNcThis->selectFont(fontId);
+        }
+
+        TEXTMETRICW textMetric;
+        bool bRes = ::GetTextMetrics(m_hdc, &textMetric) ? true : false;
+        if (bRes)
+        {
+            m.height    = mapRawToLogicSizeX(textMetric.tmHeight);
+            m.ascent    = mapRawToLogicSizeX(textMetric.tmAscent);
+            m.descent   = mapRawToLogicSizeX(textMetric.tmDescent);
+            m.overhang  = mapRawToLogicSizeX(textMetric.tmOverhang);
+        }
+
+        if (fontId>=0)
+        {
+            GdiDrawContext *pNcThis = const_cast<GdiDrawContext*>(this);
+            pNcThis->selectFont(prevFont);
+        }
+
+        return bRes;
     }
 
     virtual DrawSize calcDrawnTextSizeExact (int   fontId         , const char*    text, std::size_t nChars) override
@@ -737,9 +765,26 @@ public:
 
     virtual bool textOut( const DrawCoord &pos, const std::wstring &text ) override
     {
+        if (text.empty())
+        {
+            return true;
+        }
+
         auto scaledPos = getScaledPos(pos);
         //DC_LOG()<<"textOut at "<<scaledPos<<"\n";
         return TextOutW(m_hdc, int(floatToInt(scaledPos.x)), int(floatToInt(scaledPos.y)), text.data(), (int)text.size() ) ? true : false;
+    }
+
+    virtual bool textOut( const DrawCoord &pos, const wchar_t *text, std::size_t textSize=(std::size_t)-1 ) override
+    {
+        textSize = checkCalcStringSize(text, textSize);
+        if (!textSize)
+        {
+            return true;
+        }
+
+        auto scaledPos = getScaledPos(pos);
+        return TextOutW(m_hdc, int(floatToInt(scaledPos.x)), int(floatToInt(scaledPos.y)), text, (int)textSize ) ? true : false;
     }
 
     virtual marty_draw_context::ColorRef setTextColor( std::uint8_t r, std::uint8_t g, std::uint8_t b ) override
