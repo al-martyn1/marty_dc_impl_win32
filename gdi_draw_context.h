@@ -344,6 +344,17 @@ public:
     {
     }
 
+    virtual int getCharWidthIntImpl(std::uint32_t ch32) const override
+    {
+        INT tmpW = 0;
+        if (!::GetCharWidth32W(m_hdc, ch32, ch32, &tmpW))
+        {
+            return 0;
+        }
+
+        return tmpW;
+    }
+
     bool getCharWidth (std::uint32_t charCode, float_t &w) const
     {
         // FLOAT f = 0.0f;

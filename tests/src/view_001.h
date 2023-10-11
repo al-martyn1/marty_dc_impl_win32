@@ -333,7 +333,7 @@ public:
                 pDc->drawTextColored( pos, pos.x+120
                                     , 0 // pNextPosX - не интересно
                                     , 0 // pOverhang - не интересно
-                                    , marty_draw_context::DrawTextFlags::fitGlyphDefault // defMode stopOnLf
+                                    , marty_draw_context::DrawTextFlags::fitGlyphDefault | marty_draw_context::DrawTextFlags::stopOnLf // defMode stopOnLf
                                     , text, (std::size_t)-1 // textSize
                                     , &nCharsProcessed
                                     , &colors[0], 8
@@ -392,7 +392,7 @@ public:
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, arialFontId    , ColorRef{128,  0,  0}, L"Arial A"       );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, courierFontId  , ColorRef{0  ,128,128}, L"Courier C"      );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, shellDlgFontId , ColorRef{128,  0,128}, L"MS Shell Dlg"   );
-            pos = drawSampleText(pos+dPos, 3*dPos.y/4, shellDlg2FontId, ColorRef{0  ,  0,128}, L"MS Shell Dlg 2" );
+            pos = drawSampleText(pos+dPos, 3*dPos.y/4, shellDlg2FontId, ColorRef{0  ,  0,128}, L"MS Shell Dlg 2\n222" );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, lucidaFontId   , ColorRef{0  ,  0,128}, L"Lucida Console" );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, fixedsysFontId , ColorRef{0  ,  0,128}, L"Fixedsys" );
             //drawSampleText(pos+dPos*DrawCoord(2,2), pos.y, );

@@ -367,6 +367,114 @@ protected:
 
     }
 
+    std::basic_string<std::uint32_t> makeString32(const wchar_t *text, std::size_t textSize=(std::size_t)-1) const
+    {
+        textSize = checkCalcStringSize(text, textSize);
+
+        std::basic_string<std::uint32_t> res;
+
+        std::size_t curCharLen = getCharLen(text, textSize);
+        while(curCharLen && textSize)
+        {
+            std::uint32_t ch32 = getChar32(text, textSize);
+            res.append(1,ch32);
+            text      += curCharLen;
+            textSize  -= curCharLen;
+            curCharLen = getCharLen(text, textSize);
+        }
+
+        return res;
+
+    }
+
+    std::basic_string<std::uint32_t> makeString32(const std::wstring &text) const
+    {
+        return makeString32(text.c_str(), text.size());
+    }
+    
+
+    virtual int getCharWidthIntImpl(std::uint32_t ch) const = 0;
+
+
+    std::wstring makeStopCharsString(DrawTextFlags flags, const wchar_t *stopChars) const
+    {
+        std::wstring wstrStopChars;
+        if (stopChars)
+        {
+            wstrStopChars = stopChars;
+        }
+        else
+        {
+            if ((flags&DrawTextFlags::stopOnCr)!=0)
+            {
+                wstrStopChars.append(1u, L'\r');
+            }
+            if ((flags&DrawTextFlags::stopOnLf)!=0)
+            {
+                wstrStopChars.append(1u, L'\n');
+            }
+        }
+    
+        return wstrStopChars;
+    }
+
+    std::basic_string<std::uint32_t> makeStopCharsString32(DrawTextFlags flags, const wchar_t *stopChars) const
+    {
+        return makeString32(makeStopCharsString(flags, stopChars));
+    }
+
+
+    //! Длина текста в символах с учетом суррогатных пар и с учетом (или нет) комбайнинг символов
+    virtual std::size_t getTextCharsLenEx(DrawTextFlags flags, const wchar_t *text, std::size_t textSize=(std::size_t)-1, const wchar_t *skipChars=0) const override
+    {
+        textSize = checkCalcStringSize(text, textSize);
+        if (!textSize)
+        {
+            return textSize;
+        }
+
+        std::basic_string<std::uint32_t> wstrSkipChars32 = makeStopCharsString32(flags, skipChars);
+
+
+        std::size_t sizeTotal = 0u;
+
+        std::size_t curCharLen = getCharLen(text, textSize);
+        while(curCharLen && textSize)
+        {
+            //sizeTotal += curCharLen;
+            bool isCombining = false;
+            std::uint32_t ch32 = getChar32(text, textSize);
+            auto tmpW = getCharWidthIntImpl(ch32);
+            if (tmpW==0)
+            {
+                isCombining = true;
+            }
+
+            if (isCombining && (flags&DrawTextFlags::combiningAsSeparateGlyph)==0)
+            {
+            }
+            else
+            {
+                std::string::size_type chPos32 = wstrSkipChars32.find(ch32,0);
+                if (chPos32!=std::string::npos)
+                {
+                    // found skip char
+                }
+                else
+                {
+                    ++sizeTotal;
+                }
+            }
+            
+            text      += curCharLen;
+            textSize  -= curCharLen;
+            curCharLen = getCharLen(text, textSize);
+        }
+
+        return sizeTotal;
+    
+    }
+
     virtual bool drawTextColored( const DrawCoord               &startPos
                                 , const DrawCoord::value_type   &xPosMax
                                 , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
@@ -408,22 +516,7 @@ protected:
             return false;
         }
 
-        std::wstring wstrStopChars;
-        if (stopChars)
-        {
-            wstrStopChars = stopChars;
-        }
-        else
-        {
-            if ((flags&DrawTextFlags::stopOnCr)!=0)
-            {
-                wstrStopChars.append(1u, L'\r');
-            }
-            if ((flags&DrawTextFlags::stopOnLf)!=0)
-            {
-                wstrStopChars.append(1u, L'\n');
-            }
-        }
+        std::basic_string<std::uint32_t> wstrStopChars32 = makeStopCharsString32(flags, stopChars);
 
         size_t nCharsProcessed  = 0;
         size_t nSymbolsDrawn     = 0;
@@ -441,6 +534,14 @@ protected:
             {
                 break;
             }
+
+            std::uint32_t ch32 = getChar32(text, textSize);
+            std::string::size_type chPos32 = wstrStopChars32.find(ch32,0);
+            if (chPos32!=std::string::npos)
+            {
+                break; // found stop char
+            }
+
 
             const auto &curCharWidth = *wit;
 
