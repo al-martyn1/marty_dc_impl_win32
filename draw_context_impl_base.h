@@ -475,20 +475,20 @@ protected:
     
     }
 
-    virtual bool drawTextColored( const DrawCoord               &startPos
-                                , const DrawCoord::value_type   &xPosMax
-                                , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
-                                , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
-                                , DrawTextFlags                 flags
-                                , const wchar_t                 *text
-                                , std::size_t                   textSize=(std::size_t)-1
-                                , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                , const std::uint32_t           *pColors=0
-                                , std::size_t                   nColors=0
-                                , std::size_t                   *pSymbolsDrawn=0
-                                , const wchar_t                 *stopChars=0
-                                , int                           fontId=-1
-                                ) override
+    virtual bool drawTextColoredEx( const DrawCoord               &startPos
+                                  , const DrawCoord::value_type   &widthLim
+                                  , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
+                                  , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+                                  , DrawTextFlags                 flags
+                                  , const wchar_t                 *text
+                                  , std::size_t                   textSize=(std::size_t)-1
+                                  , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                  , const std::uint32_t           *pColors=0
+                                  , std::size_t                   nColors=0
+                                  , std::size_t                   *pSymbolsDrawn=0
+                                  , const wchar_t                 *stopChars=0
+                                  , int                           fontId=-1
+                                  ) override
     {
         textSize = checkCalcStringSize(text, textSize);
         if (!textSize)
@@ -522,6 +522,7 @@ protected:
         size_t nSymbolsDrawn     = 0;
 
         DrawCoord pos = startPos;
+        DrawCoord::value_type xPosMax = pos.x + widthLim;
 
         std::vector<marty_draw_context::DrawCoord::value_type>::const_iterator wit = widths.begin();
         std::size_t curCharLen = getCharLen(text, textSize);
@@ -627,6 +628,31 @@ protected:
         
     }
 
+    virtual bool drawTextColored  ( const DrawCoord               &startPos
+                                  , const DrawCoord::value_type   &widthLim
+                                  , DrawTextFlags                 flags
+                                  , const wchar_t                 *text
+                                  , std::size_t                   textSize=(std::size_t)-1
+                                  , const std::uint32_t           *pColors=0
+                                  , std::size_t                   nColors=0
+                                  , const wchar_t                 *stopChars=0
+                                  , int                           fontId=-1
+                                  ) override
+    {
+        return drawTextColoredEx( startPos, widthLim
+                                , 0 // pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
+                                , 0 // pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+                                , flags
+                                , text
+                                , textSize
+                                , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                , pColors
+                                , nColors
+                                , 0 // pSymbolsDrawn=0
+                                , stopChars
+                                , fontId
+                                );
+    }
 
     virtual DrawingPrecise setDrawingPrecise(DrawingPrecise p) override
     {

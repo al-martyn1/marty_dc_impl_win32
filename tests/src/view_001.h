@@ -330,17 +330,17 @@ public:
 
                 std::size_t nCharsProcessed = 0;
                 std::size_t nSymbolsDrawn   = 0;
-                pDc->drawTextColored( pos, pos.x+120
-                                    , 0 // pNextPosX - не интересно
-                                    , 0 // pOverhang - не интересно
-                                    , marty_draw_context::DrawTextFlags::fitGlyphDefault | marty_draw_context::DrawTextFlags::stopOnLf // defMode stopOnLf
-                                    , text, (std::size_t)-1 // textSize
-                                    , &nCharsProcessed
-                                    , &colors[0], 8
-                                    , &nSymbolsDrawn
-                                    , 0 // stopChars
-                                    , fontId
-                                    );
+                pDc->drawTextColoredEx( pos, /* pos.x+ */ 120
+                                      , 0 // pNextPosX - не интересно
+                                      , 0 // pOverhang - не интересно
+                                      , marty_draw_context::DrawTextFlags::fitGlyphDefault | marty_draw_context::DrawTextFlags::stopOnLf // defMode stopOnLf
+                                      , text, (std::size_t)-1 // textSize
+                                      , &nCharsProcessed
+                                      , &colors[0], 8
+                                      , &nSymbolsDrawn
+                                      , 0 // stopChars
+                                      , fontId
+                                      );
 
                 // pDc->
 
