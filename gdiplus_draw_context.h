@@ -1252,7 +1252,7 @@ public:
 
         DrawCoord leftTopSc           = getScaledPos(leftTop         );
         DrawCoord rightBottomSc       = getScaledPos(rightBottom     );
-        DrawCoord whSc = DrawCoord{ rightBottomSc.x-leftTopSc.x+1, rightBottomSc.y-leftTopSc.y+1 };
+        DrawCoord whSc = DrawCoord{ rightBottomSc.x-leftTopSc.x, rightBottomSc.y-leftTopSc.y };
 
         if (m_curPenId<0)
             return false;
@@ -1286,7 +1286,7 @@ public:
         DrawCoord leftTopSc           = getScaledPos(leftTop         );
         DrawCoord rightBottomSc       = getScaledPos(rightBottom     );
 
-        DrawCoord whSc = DrawCoord{ rightBottomSc.x-leftTopSc.x+1, rightBottomSc.y-leftTopSc.y+1 };
+        DrawCoord whSc = DrawCoord{ rightBottomSc.x-leftTopSc.x, rightBottomSc.y-leftTopSc.y };
 
         auto res = m_g.FillRectangle( m_hBrushes[(std::size_t)m_curBrushId].get()
                                 , floatToFloat(leftTopSc.x)

@@ -150,15 +150,32 @@ function Game::onPaint(dc)
 {
     local D = Drawing;
 
+    dc.setOffset(D.Coords(10,10));
+
+    local scale = 5;
+    dc.setScale(D.Scale(scale,scale));
+
+
     //local drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.SmoothingPrecise);
     local drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.PixelPrecise);
 
     local framePen  = dc.createSolidPen(D.PenParams(borderPenWidth, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Blue);
 
-    dc.setOffset(D.Coords(10,10));
+    local pixelPen  = dc.createSolidPen(D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Purple);
+    dc.selectPen(pixelPen);
 
-    local scale = 5;
-    dc.setScale(D.Scale(scale,scale));
+    local rectLt = D.Coords(130,0);
+    local rectSz = D.Coords(5,5);
+    dc.rect(rectLt, rectLt+rectSz);
+
+    local sz1px = dc.mapRawToLogicSize(D.Coords(1,1));
+    local sz2px = dc.mapRawToLogicSize(D.Coords(2,2));
+    local sz3px = dc.mapRawToLogicSize(D.Coords(3,3));
+    //dc.rect(rectLt+sz2px, rectLt+rectSz-sz2px);
+
+    local gradientParams = D.GradientParams(D.Colors.Green, D.Colors.Blue, D.Colors.Red, 0.5);
+    dc.fillGradientRect(rectLt+sz1px, rectLt+rectSz-sz2px, gradientParams, D.GradientType.Vertical, true);
+    // bool fillGradientRect(DrawingCoords leftTop, DrawingCoords rightBottom, DrawingGradientParams gradientParams, int gradientType, bool excludeFrame) const
 
 
     dc.selectPen(framePen);

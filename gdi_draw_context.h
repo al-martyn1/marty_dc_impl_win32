@@ -1140,96 +1140,6 @@ public:
     }
 
 
-    // У RoundRect'ов очень плохо с симетричностью
-    // Тут про GDI+ - https://www.codeproject.com/Articles/27228/A-class-for-creating-round-rectangles-in-GDI-with
-
-    virtual bool fillRoundRect( const DrawCoord::value_type &cornersR
-                          , const DrawCoord             &leftTop
-                          , const DrawCoord             &rightBottom
-                          , bool                         drawFrame
-                          ) override
-    {
-        MARTY_ARG_USED(drawFrame);
-
-        // auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
-        // auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
-        // auto rMax  = std::min(wh_2.x, wh_2.y);
-        // auto r     = std::min(rMax, cornersR);
-        //  
-        // auto ltSc = getScaledPos(leftTop    );
-        // auto rbSc = getScaledPos(rightBottom);
-        //  
-        // auto rEllipseSc = getScaledSize(DrawCoord{r,r});
-
-        auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
-        auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
-        //auto rMax  = std::min(wh_2.x, wh_2.y);
-        //auto r     = std::min(rMax, cornersR);
-
-        auto ltSc      = getScaledPos(leftTop    );
-        auto rbSc      = getScaledPos(rightBottom);
-        auto whSc      = DrawCoord(rbSc.x - ltSc.x, rbSc.y - ltSc.y);
-        auto whSc_2    = DrawCoord(floatToInt(whSc.x)/2, floatToInt(whSc.y)/2);
-        auto whScMaxR  = std::min(whSc_2.x, whSc_2.y);
-        auto whScR     = std::min(whScMaxR, getScaledSize(DrawCoord{cornersR,cornersR}).x);
-
-        //auto rEllipseSc = getScaledSize(DrawCoord{r,r});
-
-        auto finalR = floatToInt(whScR);
-        auto finalD = 2*finalR;
-
-        HPEN prevPen = 0;
-        if (!drawFrame)
-        {
-            HPEN transperrantPen = (HPEN)::GetStockObject(NULL_PEN);
-            prevPen         = (HPEN)SelectObject( m_hdc, (HGDIOBJ)transperrantPen);
-        }
-        auto res = ::RoundRect( m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y)
-                              //, floatToInt(rEllipseSc.x), floatToInt(rEllipseSc.y)
-                              , finalD, finalD
-                              ) ? true : false;
-        if (!drawFrame)
-        {
-            SelectObject( m_hdc, (HGDIOBJ)prevPen);
-        }
-
-        return res;
-    }
-
-    virtual bool roundRect( const DrawCoord::value_type &cornersR
-                          , const DrawCoord             &leftTop
-                          , const DrawCoord             &rightBottom
-                          ) override
-    {
-        auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
-        auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
-        //auto rMax  = std::min(wh_2.x, wh_2.y);
-        //auto r     = std::min(rMax, cornersR);
-
-        auto ltSc      = getScaledPos(leftTop    );
-        auto rbSc      = getScaledPos(rightBottom);
-        auto whSc      = DrawCoord(rbSc.x - ltSc.x, rbSc.y - ltSc.y);
-        auto whSc_2    = DrawCoord(floatToInt(whSc.x)/2, floatToInt(whSc.y)/2);
-        auto whScMaxR  = std::min(whSc_2.x, whSc_2.y);
-        auto whScR     = std::min(whScMaxR, getScaledSize(DrawCoord{cornersR,cornersR}).x);
-
-        //auto rEllipseSc = getScaledSize(DrawCoord{r,r});
-
-        auto finalR = floatToInt(whScR);
-        auto finalD = 2*finalR;
-
-        HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
-        HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
-        // https://www.functionx.com/bcb/gdi/circleshapes.htm
-        auto res = RoundRect( m_hdc, floatToInt(ltSc.x), floatToInt(ltSc.y), floatToInt(rbSc.x), floatToInt(rbSc.y)
-                            // , floatToInt(rEllipseSc.x), floatToInt(rEllipseSc.y)
-                            , finalD, finalD
-                            ) ? true : false;
-        SelectObject( m_hdc, (HGDIOBJ)prevBrush);
-     
-        return res;
-    }
-
     virtual bool rect( const DrawCoord             &leftTop
                      , const DrawCoord             &rightBottom
                      ) override
@@ -1239,11 +1149,52 @@ public:
 
         HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
         HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
-        ::Rectangle(m_hdc, floatToInt(leftTopSc.x), floatToInt(leftTopSc.y), floatToInt(rightBottomSc.x), floatToInt(rightBottomSc.y));
+
+        // The rectangle that is drawn excludes the bottom and right edges.
+        ::Rectangle( m_hdc
+                   , floatToInt(leftTopSc.x)
+                   , floatToInt(leftTopSc.y)
+                   , floatToInt(rightBottomSc.x) + 1
+                   , floatToInt(rightBottomSc.y) + 1
+                   );
         SelectObject( m_hdc, (HGDIOBJ)prevBrush);
 
         return true;
     }
+
+    virtual bool roundRect( const DrawCoord::value_type &cornersR
+                          , const DrawCoord             &leftTop
+                          , const DrawCoord             &rightBottom
+                          ) override
+    {
+        auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
+        auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
+
+        auto ltSc      = getScaledPos(leftTop    );
+        auto rbSc      = getScaledPos(rightBottom);
+        auto whSc      = DrawCoord(rbSc.x - ltSc.x, rbSc.y - ltSc.y);
+        auto whSc_2    = DrawCoord(floatToInt(whSc.x)/2, floatToInt(whSc.y)/2);
+        auto whScMaxR  = std::min(whSc_2.x, whSc_2.y);
+        auto whScR     = std::min(whScMaxR, getScaledSize(DrawCoord{cornersR,cornersR}).x);
+
+        auto finalR = floatToInt(whScR);
+        auto finalD = 2*finalR;
+
+        HBRUSH transperrantBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
+        HBRUSH prevBrush         = (HBRUSH)SelectObject( m_hdc, (HGDIOBJ)transperrantBrush);
+        // https://www.functionx.com/bcb/gdi/circleshapes.htm
+        auto res = RoundRect( m_hdc
+                            , floatToInt(ltSc.x)
+                            , floatToInt(ltSc.y)
+                            , floatToInt(rbSc.x)+1
+                            , floatToInt(rbSc.y)+1
+                            , finalD, finalD
+                            ) ? true : false;
+        SelectObject( m_hdc, (HGDIOBJ)prevBrush);
+     
+        return res;
+    }
+
 
     // У RoundRect'ов очень плохо с симетричностью
     // Тут про GDI+ - https://www.codeproject.com/Articles/27228/A-class-for-creating-round-rectangles-in-GDI-with
@@ -1258,180 +1209,76 @@ public:
         DrawCoord leftTopSc     = getScaledPos(leftTop         );
         DrawCoord rightBottomSc = getScaledPos(rightBottom     );
 
-        HPEN prevPen = 0;
         if (!drawFrame)
         {
-            HPEN transperrantPen = (HPEN)::GetStockObject(NULL_PEN);
-            prevPen         = (HPEN)SelectObject( m_hdc, (HGDIOBJ)transperrantPen);
+            ::RECT rc;
+            rc.left   = floatToInt(leftTopSc.x);
+            rc.top    = floatToInt(leftTopSc.y);
+            rc.right  = floatToInt(rightBottomSc.x)+1;
+            rc.bottom = floatToInt(rightBottomSc.y)+1;
+            ::FillRect(m_hdc, &rc, static_cast<HBRUSH>( GetCurrentObject(m_hdc, OBJ_BRUSH) ) );
         }
-        ::Rectangle(m_hdc, floatToInt(leftTopSc.x), floatToInt(leftTopSc.y), floatToInt(rightBottomSc.x), floatToInt(rightBottomSc.y));
-        if (!drawFrame)
+        else
         {
-            SelectObject( m_hdc, (HGDIOBJ)prevPen);
+            ::Rectangle( m_hdc
+                       , floatToInt(leftTopSc.x)
+                       , floatToInt(leftTopSc.y)
+                       , floatToInt(rightBottomSc.x)+1
+                       , floatToInt(rightBottomSc.y)+1
+                       );
         }
 
         return true;
     }
 
+    // У RoundRect'ов очень плохо с симетричностью
+    // Тут про GDI+ - https://www.codeproject.com/Articles/27228/A-class-for-creating-round-rectangles-in-GDI-with
 
-
-    #if 0
-    virtual bool ellipticArcTo( const DrawCoord &leftTop
-                              , const DrawCoord &rightBottom
-                              , const DrawCoord &arcStartRefPoint
-                              , const DrawCoord &arcEndRefPoint
-                              , bool             directionCounterclockwise
-                              ) override
-    {
-
-
-                            if (!leftTop || !rightBottom || !arcStart || !arcEnd) return EC_INVALID_PARAM;
-                            CPoint ltPos, rbPos, asPos, aePos;
-
-                            coordToDcCoord( ltPos, *leftTop     );
-                            coordToDcCoord( rbPos, *rightBottom );
-                            coordToDcCoord( asPos, *arcStart    );
-                            coordToDcCoord( aePos, *arcEnd      );
-
-                            // direction : 0 - clockwise, 1 counterclockwise
-                            SetArcDirection( hdc, direction>0 ? AD_COUNTERCLOCKWISE : AD_CLOCKWISE );
-                            Arc( hdc, ltPos.x, ltPos.y, rbPos.x, rbPos.y
-                               , asPos.x, asPos.y, aePos.x, aePos.y
-                               );
-                            return EC_OK;
-
-    }
-
-    // Implemented offten with serios of the lineTo and ellipticArcTo calls
-    virtual bool roundRect( const DrawCoord             &leftTop
+    virtual bool fillRoundRect( const DrawCoord::value_type &cornersR
+                          , const DrawCoord             &leftTop
                           , const DrawCoord             &rightBottom
-                          , const DrawCoord::value_type &cornersR
+                          , bool                         drawFrame
                           ) override
-
-    #endif
-
-
-    #if 0
-    virtual bool arcTo ( const DrawCoord &to, const DrawCoord &centerPos ) override
     {
-        ATLASSERT(m_pathStarted!=false);
+        MARTY_ARG_USED(drawFrame);
 
-        /*
-        BOOL ArcTo( [in] HDC hdc,      // A handle to the device context where drawing takes place.
+        auto wh    = DrawCoord(rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
+        auto wh_2  = DrawCoord(wh.x/2.0, wh.y/2.0);
 
-                    // left, top, right, bottom of bounding rectangle
-                    [in] int left,     // The x-coordinate, in logical units, of the upper-left corner of the bounding rectangle.
-                    [in] int top,      // The y-coordinate, in logical units, of the upper-left corner of the bounding rectangle.
-                    [in] int right,    // The x-coordinate, in logical units, of the lower-right corner of the bounding rectangle.
-                    [in] int bottom,   // The y-coordinate, in logical units, of the lower-right corner of the bounding rectangle.
+        auto ltSc      = getScaledPos(leftTop    );
+        auto rbSc      = getScaledPos(rightBottom);
+        auto whSc      = DrawCoord(rbSc.x - ltSc.x, rbSc.y - ltSc.y);
+        auto whSc_2    = DrawCoord(floatToInt(whSc.x)/2, floatToInt(whSc.y)/2);
+        auto whScMaxR  = std::min(whSc_2.x, whSc_2.y);
+        auto whScR     = std::min(whScMaxR, getScaledSize(DrawCoord{cornersR,cornersR}).x);
 
-                    // the endpoint of the starting point radial
-                    [in] int xr1,      // The x-coordinate, in logical units, of the endpoint of the radial defining the starting point of the arc.
-                    [in] int yr1,      // The y-coordinate, in logical units, of the endpoint of the radial defining the starting point of the arc.
+        auto finalR = floatToInt(whScR);
+        auto finalD = 2*finalR;
 
-                    // the endpoint of the ending point radial
-                    [in] int xr2,      // The x-coordinate, in logical units, of the endpoint of the radial defining the ending point of the arc.
-                    [in] int yr2       // The y-coordinate, in logical units, of the endpoint of the radial defining the ending point of the arc.
-                  );
-        */
+        int addRb = 1;
 
-        auto scaledCoordTo    = m_scale*to;
-        auto scaledCenterPos  = m_scale*centerPos;
+        HPEN prevPen = 0;
+        if (!drawFrame)
+        {
+            HPEN transperrantPen = (HPEN)::GetStockObject(NULL_PEN);
+            prevPen         = (HPEN)SelectObject( m_hdc, (HGDIOBJ)transperrantPen);
+            ++addRb;
+        }
+        auto res = ::RoundRect( m_hdc
+                              , floatToInt(ltSc.x)
+                              , floatToInt(ltSc.y)
+                              , floatToInt(rbSc.x)+addRb
+                              , floatToInt(rbSc.y)+addRb
+                              , finalD, finalD
+                              ) ? true : false;
+        if (!drawFrame)
+        {
+            SelectObject( m_hdc, (HGDIOBJ)prevPen);
+        }
 
-        return false;
-
+        return res;
     }
-    #endif
 
-#if 0
-
-#ifndef M_PI
-    #define M_PI       3.14159265358979323846
-#endif
-
-
-// Win GDI
-
-                        CLIMETHOD(drawEllipticArc) (THIS_ const STRUCT_CLI_DRAWING_CPOINT*    leftTop /* [in,ref] ::cli::drawing::CPoint  leftTop  */
-                                                        , const STRUCT_CLI_DRAWING_CPOINT*    rightBottom /* [in,ref] ::cli::drawing::CPoint  rightBottom  */
-                                                        , const STRUCT_CLI_DRAWING_CPOINT*    arcStart /* [in,ref] ::cli::drawing::CPoint  arcStart  */
-                                                        , const STRUCT_CLI_DRAWING_CPOINT*    arcEnd /* [in,ref] ::cli::drawing::CPoint  arcEnd  */
-                                                        , BOOL    direction /* [in] bool  direction  */
-                                                   )
-                           {
-                            if (!leftTop || !rightBottom || !arcStart || !arcEnd) return EC_INVALID_PARAM;
-                            CPoint ltPos, rbPos, asPos, aePos;
-
-                            coordToDcCoord( ltPos, *leftTop     );
-                            coordToDcCoord( rbPos, *rightBottom );
-                            coordToDcCoord( asPos, *arcStart    );
-                            coordToDcCoord( aePos, *arcEnd      );
-
-                            // direction : 0 - clockwise, 1 counterclockwise
-                            SetArcDirection( hdc, direction>0 ? AD_COUNTERCLOCKWISE : AD_CLOCKWISE );
-                            Arc( hdc, ltPos.x, ltPos.y, rbPos.x, rbPos.y
-                               , asPos.x, asPos.y, aePos.x, aePos.y
-                               );
-                            return EC_OK;
-                           }
-
-
-
-
-
-// Wx
-
-
-                        double getDegreesAngleHelper( const CPoint &center, const CPoint &point )
-                           {
-                            CPoint distance;
-                            distance.x = point.x - center.x;
-                            distance.y = point.y - center.y;
-                            //double radius = sqrt( (double)(distance.x*distance.x) + (double)(distance.y*distance.y) );
-                            //double x = distance.x;
-                            //double y = distance.y;
-                            return atan2((double)distance.y, (double)distance.x) * 180 / M_PI; // - 90.0;
-                           }
-
-                        CLIMETHOD(drawEllipticArc) (THIS_ const STRUCT_CLI_DRAWING_CPOINT*    leftTop /* [in,ref] ::cli::drawing::CPoint  leftTop  */
-                                                        , const STRUCT_CLI_DRAWING_CPOINT*    rightBottom /* [in,ref] ::cli::drawing::CPoint  rightBottom  */
-                                                        , const STRUCT_CLI_DRAWING_CPOINT*    arcStart /* [in,ref] ::cli::drawing::CPoint  arcStart  */
-                                                        , const STRUCT_CLI_DRAWING_CPOINT*    arcEnd /* [in,ref] ::cli::drawing::CPoint  arcEnd  */
-                                                        , BOOL    direction /* [in] bool  direction  */
-                                                   )
-                           {
-                            if (!leftTop || !rightBottom || !arcStart || !arcEnd) return EC_INVALID_PARAM;
-                            CPoint ltPos, rbPos, asPos, aePos;
-
-                            coordToDcCoord( ltPos, *leftTop     );
-                            coordToDcCoord( rbPos, *rightBottom );
-                            coordToDcCoord( asPos, *arcStart    );
-                            coordToDcCoord( aePos, *arcEnd      );
-
-                            CPoint ellipseSize;
-                            ellipseSize.x = rbPos.x - ltPos.x + 1;
-                            ellipseSize.y = rbPos.y - ltPos.y + 1;
-                            CPoint ellipseCenter;
-                            ellipseCenter.x = ltPos.x + ellipseSize.x/2;
-                            ellipseCenter.y = ltPos.y + ellipseSize.y/2;
-
-                            double startAngle = getDegreesAngleHelper( ellipseCenter, asPos );
-                            double endAngle   = getDegreesAngleHelper( ellipseCenter, aePos );
-                            // direction : 0 - clockwise, 1 counterclockwise
-                            if (!direction)
-                               {
-                                startAngle = -startAngle;
-                                endAngle   = -endAngle;
-                               }
-
-                            pdc->DrawEllipticArc( wxCoord(ltPos.x), wxCoord(ltPos.y)
-                                                , wxCoord(ellipseSize.x), wxCoord(ellipseSize.y)
-                                                , startAngle, endAngle
-                                                );
-                            return EC_OK;
-                           }
-
-#endif
 
 
 }; // class GdiDrawContext

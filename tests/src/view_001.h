@@ -59,7 +59,7 @@ typedef marty_draw_context::GdiPlusDrawContext                GdiPlusDrawContext
 #define TEST_DC_GRADIENT_CIRCLE
 #define TEST_DC_LINEJOINSTYLE
 #define TEST_DC_ARCTO
-
+#define TEST_DC_GRADIENTRECT_WITH_RECT_FRAME
 
 
 
@@ -144,13 +144,15 @@ public:
 
         //auto scale = 1.4;
         //auto scale = 8;
-        auto scale = 6;
-        //idc.setScale(DrawScale(30,30));
-        //idc.setScale(DrawScale(10,10));
 
+        auto scale  = 5;
+        auto offset = 2;
+        // auto scale  = 1;
+        // auto offset = 0;
+        
         IDrawContext *pDc = &idc;
 
-        pDc->setOffset(DrawScale(1.4,1.4));
+        pDc->setOffset(DrawScale(offset,offset));
         pDc->setScale(DrawScale(scale,scale));
         pDc->setPenScale(scale);
 
@@ -283,6 +285,135 @@ public:
 
         #endif
 
+        #if defined(TEST_DC_GRADIENTRECT_WITH_RECT_FRAME)
+        {
+            // auto scale  = 5;
+            // auto offset = 2;
+
+            #if defined(TEST_DC_GRADIENT_RECT) || defined(TEST_DC_GRADIENT_ROUNDRECT)
+
+                auto startPos = DrawCoord(180, 0);
+
+            #else
+
+                auto startPos = DrawCoord(0, 0);
+
+            #endif
+            
+
+            using namespace marty_draw_context;
+            auto pixelPen = pDc->createSolidPen( 0 , LineEndcapStyle::round, LineJoinStyle::round, 0x80, 0, 0x80 ); // Purple
+            auto prevPen  = pDc->selectPen(pixelPen);
+
+            GradientParams gradientParams;
+            gradientParams.colorBegin = ColorRef::deserialize("Green");
+            gradientParams.colorMid   = ColorRef::deserialize("Blue");
+            gradientParams.colorEnd   = ColorRef::deserialize("Red");
+            gradientParams.midPoint   = 0.5;
+
+            auto dx = DrawCoord( 12,  0);
+            auto dy = DrawCoord(  0, 12);
+
+            auto rectLt = startPos; // (2*5+130*5, 2*5) = (660, 10)
+            auto rectSz = DrawCoord( 10,10); // (5*5,5*5) = (25, 25)
+            auto rectRb = rectLt+rectSz    ; // (685, 35)
+
+            pDc->rect(rectLt, rectRb);
+
+            auto sz1px = pDc->mapRawToLogicSize(DrawCoord(1,1));
+            auto sz2px = pDc->mapRawToLogicSize(DrawCoord(2,2));
+            auto sz3px = pDc->mapRawToLogicSize(DrawCoord(3,3));
+
+            auto rectGrLt = rectLt+sz2px;
+            auto rectGrRb = rectRb-sz2px;
+
+            pDc->fillGradientRect(rectGrLt, rectGrRb, gradientParams, GradientType::vertical, false);
+
+
+            rectLt   += dy;
+            rectRb   += dy;
+            pDc->fillRect(rectLt, rectRb, false);
+
+            rectGrLt += dy;
+            rectGrRb += dy;
+            pDc->fillGradientRect(rectGrLt, rectGrRb, gradientParams, GradientType::vertical, false);
+
+
+            rectLt   += dy;
+            rectRb   += dy;
+            pDc->fillRect(rectLt, rectRb, true);
+
+            rectGrLt += dy;
+            rectGrRb += dy;
+            pDc->fillGradientRect(rectGrLt, rectGrRb, gradientParams, GradientType::vertical, false);
+
+
+
+            rectLt   += dy;
+            rectRb   += dy;
+            pDc->roundRect(2, rectLt, rectRb);
+
+            rectGrLt += dy;
+            rectGrRb += dy;
+            pDc->fillGradientRect(rectGrLt, rectGrRb, gradientParams, GradientType::vertical, false);
+
+
+            rectLt   += dy;
+            rectRb   += dy;
+            pDc->fillRoundRect(2, rectLt, rectRb, false);
+
+            rectGrLt += dy;
+            rectGrRb += dy;
+            pDc->fillGradientRect(rectGrLt, rectGrRb, gradientParams, GradientType::vertical, false);
+
+
+            rectLt   += dy;
+            rectRb   += dy;
+            pDc->fillRoundRect(2, rectLt, rectRb, true);
+
+            rectGrLt += dy;
+            rectGrRb += dy;
+            pDc->fillGradientRect(rectGrLt, rectGrRb, gradientParams, GradientType::vertical, false);
+
+
+
+    // virtual bool roundRect( const DrawCoord::value_type &cornersR
+    //                       , const DrawCoord             &leftTop
+    //                       , const DrawCoord             &rightBottom
+    //                       ) override
+
+    // virtual bool fillRoundRect( const DrawCoord::value_type &cornersR
+    //                       , const DrawCoord             &leftTop
+    //                       , const DrawCoord             &rightBottom
+    //                       , bool                         drawFrame
+    //                       ) override
+
+
+
+
+
+            pDc->selectPen(prevPen);
+
+        }
+        #endif
+        #if 0
+        local pixelPen  = dc.createSolidPen(D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Purple);
+        dc.selectPen(pixelPen);
+    
+        local rectLt = D.Coords(130,0);
+        local rectSz = D.Coords(5,5);
+        dc.rect(rectLt, rectLt+rectSz);
+    
+        local sz1px = dc.mapRawToLogicSize(D.Coords(1,1));
+        local sz2px = dc.mapRawToLogicSize(D.Coords(2,2));
+        local sz3px = dc.mapRawToLogicSize(D.Coords(3,3));
+        //dc.rect(rectLt+sz2px, rectLt+rectSz-sz2px);
+    
+        local gradientParams = D.GradientParams(D.Colors.Green, D.Colors.Blue, D.Colors.Red, 0.5);
+        dc.fillGradientRect(rectLt+sz1px, rectLt+rectSz-sz2px, gradientParams, D.GradientType.Vertical, true);
+        // bool fillGradientRect(DrawingCoords leftTop, DrawingCoords rightBottom, DrawingGradientParams gradientParams, int gradientType, bool excludeFrame) const
+        #endif
+
 
         #ifdef TEST_DC_FONTS
 
@@ -387,6 +518,8 @@ public:
             // ударением строчная i - то точка заменяется на символ ударения.
             // Если рисуем по буквам сами - то рисуется i с точкой, и над точкой ещё символ ударения
             // Не очень, но жить можно, думаю, никто и не заметит.
+
+            // https://reactos.org/wiki/RC_File_Standards
 
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, timesFontId    , ColorRef{128,128,  0}, strTimes          );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, arialFontId    , ColorRef{128,  0,  0}, L"Arial A"       );
