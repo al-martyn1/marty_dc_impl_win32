@@ -168,14 +168,10 @@ function Game::onPaint(dc)
     local rectSz = D.Coords(5,5);
     dc.rect(rectLt, rectLt+rectSz);
 
-    local sz1px = dc.mapRawToLogicSize(D.Coords(1,1));
     local sz2px = dc.mapRawToLogicSize(D.Coords(2,2));
-    local sz3px = dc.mapRawToLogicSize(D.Coords(3,3));
-    //dc.rect(rectLt+sz2px, rectLt+rectSz-sz2px);
 
     local gradientParams = D.GradientParams(D.Colors.Green, D.Colors.Blue, D.Colors.Red, 0.5);
-    dc.fillGradientRect(rectLt+sz1px, rectLt+rectSz-sz2px, gradientParams, D.GradientType.Vertical, true);
-    // bool fillGradientRect(DrawingCoords leftTop, DrawingCoords rightBottom, DrawingGradientParams gradientParams, int gradientType, bool excludeFrame) const
+    dc.fillGradientRect(rectLt+sz2px, rectLt+rectSz-sz2px, gradientParams, D.GradientType.Vertical, false); // or true
 
 
     dc.selectPen(framePen);
