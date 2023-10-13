@@ -498,8 +498,16 @@ public:
         RECT clientRect{0,0};
         ::GetClientRect(m_hWnd, &clientRect);
 
-        auto cx = clientRect.right  - clientRect.left + 1;
-        auto cy = clientRect.bottom - clientRect.top  + 1;
+        auto cx = clientRect.right  - clientRect.left; // + 1;
+        auto cy = clientRect.bottom - clientRect.top ; // + 1;
+
+
+        enum resolution
+        {
+            w = 800,
+            h = 600
+        };
+
 
 
         // HDC memDc = ::CreateCompatibleDC(dc.m_hDC);
@@ -515,7 +523,9 @@ public:
         clRect.right  = cx;
         clRect.bottom = cy;
         //::FillRect(memDc, &clRect, (HBRUSH)COLOR_WINDOW);
-        memDc.FillRect(&clRect, (HBRUSH)COLOR_WINDOW);
+        //memDc.FillRect(&clRect, (HBRUSH)COLOR_WINDOW);
+        memDc.FillRect(&clRect, (HBRUSH)COLOR_HOTLIGHT);
+        
 
         #if 0
         ::BitBlt( memDc     // A handle to the destination device context.
@@ -575,8 +585,8 @@ public:
             RECT clientRect{0,0};
             ::GetClientRect(m_hWnd, &clientRect);
 
-            auto cx = clientRect.right  - clientRect.left + 1;
-            auto cy = clientRect.bottom - clientRect.top  + 1;
+            auto cx = clientRect.right  - clientRect.left; // + 1;
+            auto cy = clientRect.bottom - clientRect.top ; // + 1;
             // lout << "OnPaint: cx: " << cx << ", cy: " << cy <<"\n";
             sqDc.ctxSizeX = (int)(cx);
             sqDc.ctxSizeY = (int)(cy);
