@@ -523,8 +523,8 @@ public:
         clRect.right  = cx;
         clRect.bottom = cy;
         //::FillRect(memDc, &clRect, (HBRUSH)COLOR_WINDOW);
-        //memDc.FillRect(&clRect, (HBRUSH)COLOR_WINDOW);
-        memDc.FillRect(&clRect, (HBRUSH)COLOR_HOTLIGHT);
+        memDc.FillRect(&clRect, (HBRUSH)COLOR_WINDOW);
+        //memDc.FillRect(&clRect, (HBRUSH)COLOR_HOTLIGHT);
         
 
         #if 0
