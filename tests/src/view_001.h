@@ -508,7 +508,7 @@ public:
             // и 1027 (0x403) - Г с акцентом (Cyrillic Capital Letter Gje)
             // Какая-то хуйня
             // Поэтому ручками вставим конкретный символ
-            std::wstring strTimes = L"Times T";
+            std::wstring strTimes = L"Times T 11 AY F, F. FA P, P. PA";
             // Вставка после 2го символа, вставляем один символ
 	        // strTimes.insert(2u, 1u, (wchar_t)0x2CA); // Тут вставляется не комбайнинг акцент
             strTimes.insert(2u, 1u, (wchar_t)0x301); // Работает гуд

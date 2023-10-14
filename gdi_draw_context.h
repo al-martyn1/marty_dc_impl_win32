@@ -446,6 +446,55 @@ public:
 
     }
 
+    virtual bool getKerningPairs(std::vector<KerningPair> &pairs, int fontId=-1) const override
+    {
+        int prevFont = -1;
+        if (fontId>=0)
+        {
+            GdiDrawContext *pNcThis = const_cast<GdiDrawContext*>(this);
+            prevFont = pNcThis->selectFont(fontId);
+        }
+
+        bool bRes = false;
+        try
+        {
+            //pairs.clear();
+            std::vector<KERNINGPAIR> kp;
+            std::size_t numPairs = (std::size_t)GetKerningPairsW(m_hdc, 0, 0);
+            if (numPairs==0)
+            {
+                pairs.clear();
+            }
+            else
+            {
+                kp.resize(numPairs);
+                numPairs = (std::size_t)GetKerningPairsW(m_hdc, (DWORD)numPairs, &kp[0]);
+                numPairs = std::min(numPairs, kp.size());
+
+                pairs.clear();
+                pairs.reserve(numPairs);
+                for(std::size_t i=0u; i!=numPairs; ++i)
+                {
+                    pairs.emplace_back(KerningPair{(std::uint32_t)kp[i].wFirst, (std::uint32_t)kp[i].wSecond, mapRawToLogicSizeX(kp[i].iKernAmount)});
+                }
+            }
+
+            bRes = true;
+        }
+        catch(...)
+        {
+            return false;
+        }
+
+        if (fontId>=0)
+        {
+            GdiDrawContext *pNcThis = const_cast<GdiDrawContext*>(this);
+            pNcThis->selectFont(prevFont);
+        }
+
+        return bRes;
+    }
+
     virtual bool getSimpleFontMetrics(SimpleFontMetrics &m, int fontId=-1) const override
     {
         int prevFont = -1;

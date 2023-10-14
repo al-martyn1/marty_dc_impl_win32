@@ -403,18 +403,21 @@ protected:
         {
             wstrStopChars = stopChars;
         }
-        else
+
+        
+        if ((flags&DrawTextFlags::stopOnCr)!=0)
         {
-            if ((flags&DrawTextFlags::stopOnCr)!=0)
-            {
-                wstrStopChars.append(1u, L'\r');
-            }
-            if ((flags&DrawTextFlags::stopOnLf)!=0)
-            {
-                wstrStopChars.append(1u, L'\n');
-            }
+            wstrStopChars.append(1u, L'\r');
         }
-    
+        if ((flags&DrawTextFlags::stopOnLf)!=0)
+        {
+            wstrStopChars.append(1u, L'\n');
+        }
+        if ((flags&DrawTextFlags::stopOnTab)!=0)
+        {
+            wstrStopChars.append(1u, L'\n');
+        }
+
         return wstrStopChars;
     }
 
@@ -475,21 +478,65 @@ protected:
     
     }
 
-    virtual bool drawTextColoredEx( const DrawCoord               &startPos
-                                  , const DrawCoord::value_type   &widthLim
-                                  , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
-                                  , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
-                                  , DrawTextFlags                 flags
-                                  , const wchar_t                 *text
-                                  , std::size_t                   textSize=(std::size_t)-1
-                                  , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                  , const std::uint32_t           *pColors=0
-                                  , std::size_t                   nColors=0
-                                  , std::size_t                   *pSymbolsDrawn=0
-                                  , const wchar_t                 *stopChars=0
-                                  , int                           fontId=-1
-                                  ) override
+    bool getKerningPairsSet(std::unordered_set<KerningPair> &pairs, int fontId=-1) const
     {
+        std::vector<KerningPair> kerningPairs;
+        if (!getKerningPairs(kerningPairs, fontId))
+        {
+            return false;
+        }
+
+        pairs.clear();
+
+        for(const auto &kp : kerningPairs)
+        {
+            pairs.insert(kp);
+        }
+
+        return true;
+    }
+
+    DrawCoord::value_type getKerningValue( const std::unordered_set<KerningPair> &pairs
+                                         , std::uint32_t chFirst 
+                                         , std::uint32_t chSecond
+                                         ) const
+    {
+        if (chFirst==0 || chSecond==0)
+        {
+            return (DrawCoord::value_type)0;
+        }
+
+        KerningPair kpKey;
+        kpKey.chFirst  = chFirst ;
+        kpKey.chSecond = chSecond;
+
+        std::unordered_set<KerningPair>::const_iterator pit = pairs.find(kpKey);
+        if (pit==pairs.end())
+        {
+            return (DrawCoord::value_type)0;
+        }
+
+        return pit->kernAmount;
+    }
+    
+    bool drawTextColoredExImpl( const std::unordered_set<KerningPair> &kerningPairs
+                              , const DrawCoord               &startPos
+                              , const DrawCoord::value_type   &widthLim
+                              , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
+                              , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+                              , DrawTextFlags                 flags
+                              , const wchar_t                 *text
+                              , std::size_t                   textSize=(std::size_t)-1
+                              , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                              , const std::uint32_t           *pColors=0
+                              , std::size_t                   nColors=0
+                              , std::size_t                   *pSymbolsDrawn=0
+                              , const wchar_t                 *stopChars=0
+                              , int                           fontId=-1
+                              )
+    {
+        MARTY_IDC_ARG_USED(kerningPairs);
+
         textSize = checkCalcStringSize(text, textSize);
         if (!textSize)
         {
@@ -519,7 +566,8 @@ protected:
         std::basic_string<std::uint32_t> wstrStopChars32 = makeStopCharsString32(flags, stopChars);
 
         size_t nCharsProcessed  = 0;
-        size_t nSymbolsDrawn     = 0;
+        size_t nSymbolsDrawn    = 0;
+        std::uint32_t prevCh32  = 0;
 
         DrawCoord pos = startPos;
         DrawCoord::value_type xPosMax = pos.x + widthLim;
@@ -543,39 +591,47 @@ protected:
                 break; // found stop char
             }
 
-
             const auto &curCharWidth = *wit;
-
-            auto testPosX = pos.x;
-
             bool isCombining = curCharWidth<0.0001;
 
-            if (isCombining && (flags&DrawTextFlags::combiningAsSeparateGlyph)==0)
+            if (!isCombining && (flags&DrawTextFlags::kerningDisable)==0)
             {
-                if (nSymbolsDrawn)
-                    --nSymbolsDrawn;
+                pos.x += getKerningValue(kerningPairs, prevCh32, ch32);
             }
 
-            if ((flags&DrawTextFlags::fitGlyphStartPos)!=0)
+            if ((flags&DrawTextFlags::fitWidthDisable)==0) // Флаг не установлен, значит, ограничение по длине действует
             {
-                // Стартовая позиция должна влезать в лимит
-            }
-            else
-            {
-                // Глиф должен влезать целиком, с учетом свеса
-                testPosX += curCharWidth;
-                // Если текущий символ нулевой ширины - то "свес" не добавляем, текущий символ должен быть отрисован
-                // А раз не добавляем свес, и ширина нулевая, то условие не отличается от предыдущего символа, и текущий тоже будет отрисован
-                // Если же ширина не нулевая, то для теста надо добавить свес
-                if (isCombining)
+                auto testPosX = pos.x;
+                
+    
+                if (isCombining && (flags&DrawTextFlags::combiningAsSeparateGlyph)==0)
                 {
-                    testPosX += fontMetrics.overhang;
+                    if (nSymbolsDrawn)
+                        --nSymbolsDrawn;
                 }
-            }
+    
+                if ((flags&DrawTextFlags::fitGlyphStartPos)!=0)
+                {
+                    // Стартовая позиция должна влезать в лимит
+                }
+                else
+                {
+                    // Глиф должен влезать целиком, с учетом свеса
+                    testPosX += curCharWidth;
+                    // Если текущий символ нулевой ширины - то "свес" не добавляем, текущий символ должен быть отрисован
+                    // А раз не добавляем свес, и ширина нулевая, то условие не отличается от предыдущего символа, и текущий тоже будет отрисован
+                    // Если же ширина не нулевая, то для теста надо добавить свес
+                    if (isCombining)
+                    {
+                        testPosX += fontMetrics.overhang;
+                    }
+                }
+    
+                if (testPosX>=xPosMax)
+                {
+                    break;
+                }
 
-            if (testPosX>=xPosMax)
-            {
-                break;
             }
 
             if ((flags&DrawTextFlags::calcOnly)==0)
@@ -601,6 +657,14 @@ protected:
             textSize        -= curCharLen;
             nCharsProcessed += curCharLen;
             ++nSymbolsDrawn;
+            if (isCombining)
+            {
+                prevCh32     = 0;
+            }
+            else
+            {
+                prevCh32     = ch32;
+            }
             
         }
 
@@ -626,6 +690,31 @@ protected:
         
         return true;
         
+    }
+
+    virtual bool drawTextColoredEx( const DrawCoord               &startPos
+                                  , const DrawCoord::value_type   &widthLim
+                                  , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
+                                  , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+                                  , DrawTextFlags                 flags
+                                  , const wchar_t                 *text
+                                  , std::size_t                   textSize=(std::size_t)-1
+                                  , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                  , const std::uint32_t           *pColors=0
+                                  , std::size_t                   nColors=0
+                                  , std::size_t                   *pSymbolsDrawn=0
+                                  , const wchar_t                 *stopChars=0
+                                  , int                           fontId=-1
+                                  ) override
+    {
+        std::unordered_set<KerningPair> kerningPairs;
+        getKerningPairsSet(kerningPairs, fontId);
+
+        return drawTextColoredExImpl( kerningPairs
+                                    , startPos, widthLim, pNextPosX, pOverhang, flags
+                                    , text, textSize, pCharsProcessed, pColors, nColors
+                                    , pSymbolsDrawn, stopChars, fontId
+                                    );
     }
 
     virtual bool drawTextColored  ( const DrawCoord               &startPos
@@ -1979,6 +2068,7 @@ protected:
                                        offsX = rectSize.x - marginX - textWidth;
                                        break;
 
+            case HorAlign::width  :    [[fallthrough]];
             case HorAlign::invalid:    [[fallthrough]];
 
             default: {}
