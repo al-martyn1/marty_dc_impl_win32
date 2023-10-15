@@ -397,6 +397,126 @@ protected:
 
     virtual int getCharWidthIntImpl(std::uint32_t ch) const = 0;
 
+    virtual bool isAnySpaceChar(std::uint32_t ch) const override
+    {
+        // https://www.compart.com/en/unicode/category/Zs
+        // U+0020 SP     Space (SP)
+        // U+00A0 NBSP   No-Break Space (NBSP)
+        // U+1680 ?      Ogham Space Mark
+        // U+2000        En Quad
+        // U+2001        Em Quad
+        // U+2002        En Space
+        // U+2003        Em Space
+        // U+2004        Three-Per-Em Space
+        // U+2005        Four-Per-Em Space
+        // U+2006        Six-Per-Em Space
+        // U+2007        Figure Space
+        // U+2008        Punctuation Space
+        // U+2009        Thin Space
+        // U+200A        Hair Space
+        // U+202F NNBSP  Narrow No-Break Space (NNBSP)
+        // U+205F MMSP   Medium Mathematical Space (MMSP)
+        // U+3000 ?      Ideographic Space
+
+        if (ch==0x0020u || ch==0x00A0u || ch==0x1680u || ch==0x202Fu || ch==0x205Fu || ch==0x3000u)
+        {
+            return true;
+        }
+
+        if (ch>=0x2000u && ch<=0x200Au)
+        {
+            return true;
+        }
+
+        return false;
+
+    }
+
+    virtual bool isAnyNonBreakingSpaceChar(std::uint32_t ch) const override
+    {
+        // https://en.wikipedia.org/wiki/Non-breaking_space
+        // U+00A0   NO-BREAK SPACE (&nbsp;, &NonBreakingSpace;)
+        // See also
+        // U+202F   NARROW NO-BREAK SPACE
+
+        return ch==0x00A0u || ch==0x202Fu;
+    }
+
+    virtual bool isAnyTabChar(std::uint32_t ch) const override
+    {
+        return ch==(std::uint32_t)'\t';
+    }
+
+    
+    virtual bool isAnyLineBreakChar(std::uint32_t ch) const override
+    {
+        // https://en.wikipedia.org/wiki/Newline#Unicode
+        if ( ch==0x000Au // U+000A LINE FEED
+          || ch==0x000Bu // U+000B VERTICAL TABULATION
+          || ch==0x000Cu // U+000C FORM FEED
+          || ch==0x000Du // U+000D CARRIAGE RETURN
+          || ch==0x0085u // U+0085 NEXT LINE
+          || ch==0x2028u // U+2028 LINE SEPARATOR
+          || ch==0x2029u // U+2029 PARAGRAPH SEPARATOR
+           )
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    virtual bool isAnyWhiteSpaceChar(std::uint32_t ch) const override
+    {
+        return isAnySpaceChar(ch) || isAnyTabChar(ch) || isAnyLineBreakChar(ch);
+    }
+
+    virtual std::size_t getLineBreakLen(const wchar_t *text, std::size_t textSize=(std::size_t)-1) const override //!< Длина символа LineBreak в wchar_t'ах, 0 - достигли конца строки или символ не LineBreak
+    {
+        textSize = checkCalcStringSize(text, textSize);
+
+        if (textSize==0)
+        {
+            return 0u; // точно не перевод строки
+        }
+
+        if (!isAnyLineBreakChar((std::uint32_t)(*text)))
+        {
+            return 0u; // точно не перевод строки
+        }
+
+        // Точно какой-то перевод строки
+        // Check for CR+LF: CR (U+000D) followed by LF (U+000A)
+
+        if ( *text!=0x000Du )// U+000D CARRIAGE RETURN
+        {
+            return 1u; // Не CR
+        }
+
+        // Whe are here only if CR found
+
+        // Check for CR LF
+        if (textSize<2) // 0 or 1
+        {
+            return 1u; // CR at end of text
+        }
+
+        if ( *(text+1)!=0x000Au // U+000A LINE FEED
+           )
+        {
+            return 1u; // only CR found
+        }
+        
+        return 2u; // CR LF found
+    }
+
+    virtual bool isLineBreak(const wchar_t *text, std::size_t textSize=(std::size_t)-1) const override
+    {
+        std::size_t lineBreakLen = getLineBreakLen(text, textSize);
+        return lineBreakLen!=0;
+    }
+
+
 
     std::wstring makeStopCharsString(DrawTextFlags flags, const wchar_t *stopChars) const
     {
@@ -792,10 +912,17 @@ protected:
 
     #if 0
     bool drawParaColoredImpl( const std::unordered_set<KerningPair> &kerningPairs
-                            , const DrawCoord               &startPos
-                            , const DrawCoord               &limits // vertical and horizontal, relative to start pos
-                            , const DrawCoord::value_type   &lineSpacing
-                            , const DrawCoord::value_type   &paraIndent
+                            , const DrawCoord                       &startPos
+                            , const DrawCoord                       &limits // vertical and horizontal, relative to start pos
+                            , const DrawCoord::value_type           &lineSpacing
+                            , const DrawCoord::value_type           &paraIndent
+                            , DrawTextFlags                         flags
+                            , HorAlign                              horAlign
+                            , const wchar_t                         *text
+                            , std::size_t                           textSize=(std::size_t)-1
+                            , const std::uint32_t                   *pColors=0
+                            , std::size_t                           nColors=0
+                            , int                                   fontId=-1
 
                             )
     {
