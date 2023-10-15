@@ -520,24 +520,12 @@ protected:
 
     std::wstring makeStopCharsString(DrawTextFlags flags, const wchar_t *stopChars) const
     {
+        MARTY_IDC_ARG_USED(flags);
+
         std::wstring wstrStopChars;
         if (stopChars)
         {
             wstrStopChars = stopChars;
-        }
-
-        
-        if ((flags&DrawTextFlags::stopOnCr)!=0)
-        {
-            wstrStopChars.append(1u, L'\r');
-        }
-        if ((flags&DrawTextFlags::stopOnLf)!=0)
-        {
-            wstrStopChars.append(1u, L'\n');
-        }
-        if ((flags&DrawTextFlags::stopOnTab)!=0)
-        {
-            wstrStopChars.append(1u, L'\n');
         }
 
         return wstrStopChars;
@@ -706,6 +694,7 @@ protected:
 
         size_t nCharsProcessed  = 0;
         size_t nSymbolsDrawn    = 0;
+        size_t nColorIndex      = 0;
         std::uint32_t prevCh32  = 0;
 
         DrawCoord pos = startPos;
@@ -732,6 +721,17 @@ protected:
                 break; // found stop char
             }
 
+            if ((flags&DrawTextFlags::stopOnLineBreaks)!=0 && isAnyLineBreakChar(ch32))
+            {
+                break; // stop on line break
+            }
+
+            if ((flags&DrawTextFlags::stopOnTabs)!=0 && isAnyTabChar(ch32))
+            {
+                break; // stop on tab char
+            }
+
+
             const auto &curCharWidth = *wit;
             bool isCombining = curCharWidth<0.0001;
 
@@ -745,10 +745,17 @@ protected:
                 auto testPosX = pos.x;
                 
     
-                if (isCombining && (flags&DrawTextFlags::combiningAsSeparateGlyph)==0)
+                if (isCombining)
                 {
-                    if (nSymbolsDrawn)
-                        --nSymbolsDrawn;
+                    if ((flags&DrawTextFlags::combiningAsSeparateGlyph)==0)
+                    {
+                        if (nSymbolsDrawn)
+                            --nSymbolsDrawn;
+                    }
+
+                    if (nColorIndex)
+                        --nColorIndex;
+
                 }
 
                 if (drawEllipsis)
@@ -786,9 +793,9 @@ protected:
                 // Не только считаем, но и рисуем
 
                 std::uint32_t curUintTextColor = (std::uint32_t)-1;
-                if (pColors && nSymbolsDrawn<nColors)
+                if (pColors && nColorIndex<nColors)
                 {
-                    curUintTextColor = pColors[nSymbolsDrawn];
+                    curUintTextColor = pColors[nColorIndex];
                 }
     
                 auto textColorSaver = (curUintTextColor==(std::uint32_t)-1)
@@ -804,6 +811,12 @@ protected:
             textSize        -= curCharLen;
             nCharsProcessed += curCharLen;
             ++nSymbolsDrawn;
+
+            if (!isAnyWhiteSpaceChar(ch32))
+            {
+                ++nColorIndex;
+            }
+
             if (isCombining)
             {
                 prevCh32     = 0;
@@ -818,9 +831,9 @@ protected:
         if (breakOnLimit && drawEllipsis && (flags&DrawTextFlags::calcOnly)==0)
         {
             std::uint32_t curUintTextColor = (std::uint32_t)-1;
-            if (pColors && nSymbolsDrawn<nColors)
+            if (pColors && nColorIndex<nColors)
             {
-                curUintTextColor = pColors[nSymbolsDrawn];
+                curUintTextColor = pColors[nColorIndex];
             }
 
             auto textColorSaver = (curUintTextColor==(std::uint32_t)-1)

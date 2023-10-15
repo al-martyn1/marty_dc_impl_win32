@@ -466,7 +466,7 @@ public:
                 pDc->drawTextColoredEx( pos, /* pos.x+ */ 60
                                       , 0 // pNextPosX - не интересно
                                       , 0 // pOverhang - не интересно
-                                      , DrawTextFlags::fitGlyphDefault | DrawTextFlags::stopOnLf | DrawTextFlags::endEllipsis | DrawTextFlags::kerningDisable // defMode stopOnLf endEllipsis fitWidthDisable
+                                      , DrawTextFlags::fitGlyphDefault | DrawTextFlags::endEllipsis | DrawTextFlags::kerningDisable // defMode endEllipsis fitWidthDisable
                                       , text, (std::size_t)-1 // textSize
                                       , &nCharsProcessed
                                       , &colors[0], 8
