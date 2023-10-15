@@ -810,7 +810,8 @@ protected:
             nCharsProcessed += curCharLen;
             ++nSymbolsDrawn;
 
-            if (!isAnyWhiteSpaceChar(ch32))
+            const bool forceSpacesColoring = (flags&DrawTextFlags::forceSpacesColoring)!=0;
+            if (!isAnyWhiteSpaceChar(ch32) || forceSpacesColoring)
             {
                 ++nColorIndex;
             }
