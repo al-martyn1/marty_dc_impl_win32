@@ -375,10 +375,48 @@ public:
             return false;
         }
 
-        w = mapRawToLogicSize( DrawCoord{tmpW,tmpW} ).y;
+        w = mapRawToLogicSizeX( tmpW );
 
         return true;
     }
+
+    virtual bool getCharWidth (std::uint32_t charCode, float_t &w, int fontId /* =-1 */ ) const override
+    {
+        if (fontId<0 || fontId>=(int)m_hFonts.size())
+        {
+            fontId = m_curFontId;
+        }
+
+        if (fontId<0 || fontId>=(int)m_hFonts.size())
+        {
+            return false;
+        }
+
+        std::map<int, marty_draw_context::FontParamsW>::const_iterator fpIt = fontsParamsById.find(fontId);
+        if (fpIt==fontsParamsById.end())
+        {
+            return false;
+        }
+
+        LOGFONTW lf;
+        fillLogfontStruct( lf, fpIt->second );
+        HFONT hFont = CreateFontIndirectW(&lf);
+        if (!hFont)
+        {
+            return false;
+        }
+
+        HFONT hPrevFont = (HFONT)::SelectObject(m_hdc, (HGDIOBJ)hFont );
+
+        bool bRes = getCharWidth (charCode, w);
+
+        ::SelectObject(m_hdc, (HGDIOBJ)hPrevFont );
+        ::DeleteObject((HGDIOBJ)hFont);
+
+        return bRes;
+
+    }
+
 
     virtual bool getCharWidths(std::vector<float_t> &widths, const wchar_t *text, std::size_t textSize=(std::size_t)-1, int fontId=-1 /* use current font */ ) const override
     {

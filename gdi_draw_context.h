@@ -384,6 +384,28 @@ public:
         return true;
     }
 
+    virtual bool getCharWidth (std::uint32_t charCode, float_t &w, int fontId /* =-1 */ ) const override
+    {
+        int prevFont = -1;
+        if (fontId>=0)
+        {
+            GdiDrawContext *pNcThis = const_cast<GdiDrawContext*>(this);
+            prevFont = pNcThis->selectFont(fontId);
+        }
+
+        bool bRes = getCharWidth (charCode, w);
+
+        if (fontId>=0)
+        {
+            GdiDrawContext *pNcThis = const_cast<GdiDrawContext*>(this);
+            pNcThis->selectFont(prevFont);
+        }
+
+        return bRes;
+
+    }
+
+
     virtual bool getCharWidths(std::vector<float_t> &widths, const wchar_t *text, std::size_t textSize=(std::size_t)-1, int fontId=-1 /* use current font */ ) const override
     {
         textSize = checkCalcStringSize(text, textSize);

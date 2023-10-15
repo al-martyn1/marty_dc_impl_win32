@@ -322,8 +322,6 @@ protected:
         return sizeTotal;
     }
 
-    virtual bool getCharWidth (std::uint32_t charCode, float_t &w) const = 0;
-
     //! Возвращает Unicode символ, формируя его (возможно) из суррогатной пары
     virtual std::uint32_t getChar32(const wchar_t *text, std::size_t textSize=(std::size_t)-1) const override
     {
