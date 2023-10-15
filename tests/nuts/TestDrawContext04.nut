@@ -83,6 +83,7 @@ function Game::onUpdate(tickDelta)
     }
 
     ySpeed = -keySpeed(Vk.Code.Up);
+    //ySpeed = -keySpeed(Vk.Code.Key0);
     if (ySpeed==0)
     {
         ySpeed = keySpeed(Vk.Code.Down);

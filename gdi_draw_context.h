@@ -355,7 +355,7 @@ public:
         return tmpW;
     }
 
-    bool getCharWidth (std::uint32_t charCode, float_t &w) const
+    virtual bool getCharWidth (std::uint32_t charCode, float_t &w) const override
     {
         // FLOAT f = 0.0f;
         // if (!::GetCharWidthFloatW(m_hdc, charCode, charCode, &f))

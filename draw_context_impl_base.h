@@ -322,6 +322,8 @@ protected:
         return sizeTotal;
     }
 
+    virtual bool getCharWidth (std::uint32_t charCode, float_t &w) const = 0;
+
     //! Возвращает Unicode символ, формируя его (возможно) из суррогатной пары
     virtual std::uint32_t getChar32(const wchar_t *text, std::size_t textSize=(std::size_t)-1) const override
     {
@@ -535,7 +537,24 @@ protected:
                               , int                           fontId=-1
                               )
     {
-        MARTY_IDC_ARG_USED(kerningPairs);
+        //MARTY_IDC_ARG_USED(kerningPairs);
+
+        // https://www.compart.com/en/unicode/U+2026
+        static wchar_t ellipsisStr[2] = { 0x2026u, 0 };
+
+        bool drawEllipsis = (flags&DrawTextFlags::endEllipsis)!=0;
+        float_t ellipsisWidth = (float_t)0;
+
+        if ((flags&DrawTextFlags::fitWidthDisable)!=0) // ограничение под длине запрещено
+        {
+            drawEllipsis = false; // если нет лимита по длине, значит и элипсис не рисуется
+        }
+
+        if (drawEllipsis)
+        {
+            std::uint32_t elCh32 = getChar32(&ellipsisStr[0], 1u);
+            getCharWidth(elCh32, ellipsisWidth);
+        }
 
         textSize = checkCalcStringSize(text, textSize);
         if (!textSize)
@@ -571,6 +590,8 @@ protected:
 
         DrawCoord pos = startPos;
         DrawCoord::value_type xPosMax = pos.x + widthLim;
+
+        bool breakOnLimit = false;
 
         std::vector<marty_draw_context::DrawCoord::value_type>::const_iterator wit = widths.begin();
         std::size_t curCharLen = getCharLen(text, textSize);
@@ -609,6 +630,11 @@ protected:
                     if (nSymbolsDrawn)
                         --nSymbolsDrawn;
                 }
+
+                if (drawEllipsis)
+                {
+                    testPosX += ellipsisWidth;
+                }
     
                 if ((flags&DrawTextFlags::fitGlyphStartPos)!=0)
                 {
@@ -629,6 +655,7 @@ protected:
     
                 if (testPosX>=xPosMax)
                 {
+                    breakOnLimit = true;
                     break;
                 }
 
@@ -667,6 +694,26 @@ protected:
             }
             
         }
+
+        if (breakOnLimit && drawEllipsis && (flags&DrawTextFlags::calcOnly)==0)
+        {
+            std::uint32_t curUintTextColor = (std::uint32_t)-1;
+            if (pColors && nSymbolsDrawn<nColors)
+            {
+                curUintTextColor = pColors[nSymbolsDrawn];
+            }
+
+            auto textColorSaver = (curUintTextColor==(std::uint32_t)-1)
+                                ? TextColorSaver(this)
+                                : TextColorSaver(this, ColorRef::fromUnsigned(curUintTextColor) )
+                                ;
+
+            textOut(pos, ellipsisStr, 1);
+        }
+
+        // if (drawEllipsis) // ellipsisWidth
+
+
 
         if (pNextPosX)
         {
@@ -742,6 +789,37 @@ protected:
                                 , fontId
                                 );
     }
+
+    #if 0
+    bool drawParaColoredImpl( const std::unordered_set<KerningPair> &kerningPairs
+                            , const DrawCoord               &startPos
+                            , const DrawCoord               &limits // vertical and horizontal, relative to start pos
+                            , const DrawCoord::value_type   &lineSpacing
+                            , const DrawCoord::value_type   &paraIndent
+
+                            )
+    {
+
+        return false;
+    }
+    #endif
+
+    // bool drawTextColoredExImpl( const std::unordered_set<KerningPair> &kerningPairs
+    //                           , const DrawCoord               &startPos
+    //                           , const DrawCoord::value_type   &widthLim
+    //                           , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
+    //                           , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+    //                           , DrawTextFlags                 flags
+    //                           , const wchar_t                 *text
+    //                           , std::size_t                   textSize=(std::size_t)-1
+    //                           , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+    //                           , const std::uint32_t           *pColors=0
+    //                           , std::size_t                   nColors=0
+    //                           , std::size_t                   *pSymbolsDrawn=0
+    //                           , const wchar_t                 *stopChars=0
+    //                           , int                           fontId=-1
+    //                           )
+
 
     virtual DrawingPrecise setDrawingPrecise(DrawingPrecise p) override
     {
@@ -1036,7 +1114,12 @@ protected:
         for(const auto &m : markers)
         {
             auto sz = DrawCoord(m.size,m.size);
-            rect( m.pos-sz, m.pos+sz+_1 );
+            // auto iszSc = floatToInt(getScaledSizeX(sz));
+            // if ((iszSc&1)==0)
+            // {
+            //     sz += _1;
+            // }
+            rect( m.pos-sz, m.pos+sz - _1 );
         }
 
 

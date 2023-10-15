@@ -429,6 +429,8 @@ public:
 
             auto drawSampleTextImpl = [&]( DrawCoord pos, marty_draw_context::DrawCoord::value_type dy, int fontId, const ColorRef &clr, const wchar_t *text)
             {
+                using marty_draw_context::DrawTextFlags;
+
                 pDc->textOut(pos, fontId, clr, text);
 
                 pos.y += dy;
@@ -461,10 +463,10 @@ public:
 
                 std::size_t nCharsProcessed = 0;
                 std::size_t nSymbolsDrawn   = 0;
-                pDc->drawTextColoredEx( pos, /* pos.x+ */ 120
+                pDc->drawTextColoredEx( pos, /* pos.x+ */ 60
                                       , 0 // pNextPosX - не интересно
                                       , 0 // pOverhang - не интересно
-                                      , marty_draw_context::DrawTextFlags::fitGlyphDefault | marty_draw_context::DrawTextFlags::stopOnLf // defMode stopOnLf
+                                      , DrawTextFlags::fitGlyphDefault | DrawTextFlags::stopOnLf | DrawTextFlags::endEllipsis | DrawTextFlags::kerningDisable // defMode stopOnLf endEllipsis fitWidthDisable
                                       , text, (std::size_t)-1 // textSize
                                       , &nCharsProcessed
                                       , &colors[0], 8
