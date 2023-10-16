@@ -53,6 +53,7 @@ typedef marty_draw_context::GdiPlusDrawContext                GdiPlusDrawContext
 #define TEST_DC_SNAKE
 
 #define TEST_DC_FONTS
+#define TEST_DC_DRAW_PARA
 #define TEST_DC_SPIDERS
 #define TEST_DC_GRADIENT_RECT
 #define TEST_DC_GRADIENT_ROUNDRECT
@@ -195,6 +196,8 @@ public:
                                           , marty_draw_context::FontStyleFlags::italic // normal
                                           };
         marty_draw_context::FontParamsA genericFontParamsH20 = genericFontParamsH8; genericFontParamsH20.height = 20;
+        marty_draw_context::FontParamsA genericFontParamsH4  = genericFontParamsH8; genericFontParamsH4 .height =  4;
+        marty_draw_context::FontParamsA genericFontParamsH3  = genericFontParamsH8; genericFontParamsH3 .height =  3;
 
         
 
@@ -208,6 +211,9 @@ public:
         auto shellDlg2FontId = pDc->createFont( genericFontParamsH8, "MS Shell Dlg 2" );
         auto lucidaFontId    = pDc->createFont( genericFontParamsH8, "Lucida Console" );
         auto fixedsysFontId  = pDc->createFont( genericFontParamsH8, "Fixedsys" );
+
+        //auto timesSmallFontId = pDc->createFont( genericFontParamsH4, "Times New Roman");
+        auto timesSmallFontId = pDc->createFont( genericFontParamsH3, "Times New Roman");
 
 
         auto labelsFontId  = pDc->createFont( genericFontParamsH20, "Courier New"    );
@@ -417,14 +423,6 @@ public:
 
         #ifdef TEST_DC_FONTS
 
-            // //pDc->textOut( DrawCoord(0,0), arialFontId, ColorRef{128,0,0}, "Arial at (0,0)" );
-            // pDc->textOut( DrawCoord( 76,14), arialFontId, ColorRef{128,0,0}, "Arial\nA" );
-            // pDc->textOut( DrawCoord( 94,28), timesFontId, ColorRef{128,128,0}, "Times\nT" );
-            // pDc->textOut( DrawCoord(112,42), courierFontId, ColorRef{0,128,128}, "Courier\nC" );
-
-            //NOTE: !!! GDI ignores \n, but GDI doesn't
-            //pDc->textOut( DrawCoord(0,0), arialFontId, ColorRef{128,0,0}, "Arial at (0,0)" );
-            //                      +18 +14 
         {
 
             auto drawSampleTextImpl = [&]( DrawCoord pos, marty_draw_context::DrawCoord::value_type dy, int fontId, const ColorRef &clr, const wchar_t *text)
@@ -474,21 +472,6 @@ public:
                                       , 0 // stopChars
                                       , fontId
                                       );
-
-                // pDc->
-
-                // std::vector<marty_draw_context::DrawCoord::value_type> widths;
-                // if (pDc->getCharWidths(widths, text, (std::size_t)-1, fontId))
-                // {
-                //     std::vector<marty_draw_context::DrawCoord::value_type>::const_iterator wit = widths.begin();
-                //     std::size_t curCharLen = pDc->getCharLen(text);
-                //     for(; curCharLen!=0 && wit!=widths.end(); ++wit, curCharLen = pDc->getCharLen(text))
-                //     {
-                //         pDc->textOut( pos, fontId, clr, std::wstring(text, curCharLen) );
-                //         pos.x += *wit;
-                //         text += curCharLen;
-                //     }
-                // }
                 #endif
 
                 return retPos;
@@ -540,6 +523,7 @@ public:
             // pDc->textOut( DrawCoord(148, 70), shellDlg2FontId, ColorRef{0  ,  0,128}, L"MS Shell Dlg 2" );
 
         #endif
+
 
 
         marty_draw_context::DrawCoord normalKeySize = { normalKeySize1, normalKeySize1 };
@@ -890,28 +874,68 @@ public:
 
         #endif // #ifdef TEST_DC_ARCTO
 
-        // auto spiderBasePos  = DrawCoord(14,85);
-        // test_drawSpider(pDc, spiderBasePos+DrawCoord( 30*0, 0), spiderCellSize, penId, cosmeticPenId, underwood::FlagSpider1   , true, true);
-        // test_drawSpider(pDc, spiderBasePos+DrawCoord( 30*1, 0), spiderCellSize, penId, cosmeticPenId, underwood::FlagSpider2   , true, true);
-        // test_drawSpider(pDc, spiderBasePos+DrawCoord( 30*2, 0), spiderCellSize, penId, cosmeticPenId, underwood::FlagSpiderBoth, true, true);
-        // pDc->markersDraw(cosmeticPenId2);
+
+
+        #ifdef TEST_DC_DRAW_PARA
+        {
+            // https://ru.wikipedia.org/wiki/Lorem_ipsum
+            std::wstring loremIpsumTiny = L"Lorem\tipsum\tdolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor";
+
+            std::wstring loremIpsumShort = L"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor "
+                                    L"incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud "
+                                    L"exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure "
+                                    L"dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
+                                    L"Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt "
+                                    L"mollit anim id est laborum.";
+            std::wstring loremIpsumLong = L"Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium "
+                                    L"doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventore veritatis "
+                                    L"et quasi architecto beatae vitae dicta sunt, explicabo. Nemo enim ipsam voluptatem, "
+                                    L"quia voluptas sit, aspernatur aut odit aut fugit, sed quia consequuntur magni dolores "
+                                    L"eos, qui ratione voluptatem sequi nesciunt, neque porro quisquam est, qui dolorem ipsum, "
+                                    L"quia dolor sit, amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora "
+                                    L"incidunt, ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, "
+                                    L"quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea "
+                                    L"commodi consequatur? Quis autem vel eum iure reprehenderit, qui in ea voluptate velit "
+                                    L"esse, quam nihil molestiae consequatur, vel illum, qui dolorem eum fugiat, quo voluptas "
+                                    L"nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus, qui blanditiis "
+                                    L"praesentium voluptatum deleniti atque corrupti, quos dolores et quas molestias excepturi "
+                                    L"sint, obcaecati cupiditate non provident, similique sunt in culpa, qui officia deserunt "
+                                    L"mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et "
+                                    L"expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio, cumque nihil "
+                                    L"impedit, quo minus id, quod maxime placeat, facere possimus, omnis voluptas assumenda est, "
+                                    L"omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum "
+                                    L"necessitatibus saepe eveniet, ut et voluptates repudiandae sint et molestiae non recusandae. "
+                                    L"Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores "
+                                    L"alias consequatur aut perferendis doloribus asperiores repellat.";
+
+            using namespace marty_draw_context;
+
+            auto pos                       = DrawCoord(60, 40);
+            auto paraLimits                = DrawCoord(70, 200);
+            DrawCoord::value_type nextPosY = 0;
+            DrawCoord::value_type tabStopPositions[] = {3,10,20,40};
+
+            pDc->drawParaColoredEx( pos, paraLimits, &nextPosY
+                                  , (DrawCoord::value_type)0.2  // lineSpacing
+                                  , (DrawCoord::value_type)0.5  // paraIndent
+                                  , (DrawCoord::value_type)2.0  // tabSize
+                                  , DrawTextFlags::fitGlyphDefault | DrawTextFlags::fitHeightDisable
+                                  , HorAlign::left
+                                  , VertAlign::top
+                                  , loremIpsumTiny.c_str(), loremIpsumTiny.size() // loremIpsumShort.c_str(), loremIpsumShort.size() // (std::size_t)-1
+                                  , 0 // pCharsProcessed
+                                  , 0 // pColors
+                                  , 0 // nColors
+                                  , &tabStopPositions[0]
+                                  , 4
+                                  , timesSmallFontId
+                                  );
+
+        }
+        #endif
 
 
 
-
-
-        //DrawCoord::value_type iconBottomCurrentPos = iconBasePos.y + iconSummaryPosY + iconHeight+iconInterval;
-
-#if 0
-        pDc->fillGradientRect( const DrawCoord             &leftTop
-                                 , const DrawCoord             &rightBottom
-                                 , const ColorRef              &gradientColorBegin
-                                 , const ColorRef              &gradientColorMid
-                                 , const ColorRef              &gradientColorEnd
-                                 , const DrawCoord::value_type &gradientMidPoint
-                                 , bool                        excludeFrame
-                     ) override
-#endif
 
     }
 
