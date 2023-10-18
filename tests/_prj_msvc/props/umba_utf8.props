@@ -4,6 +4,7 @@
     <ClCompile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <!-- /source-charset:utf-8 /execution-charset:utf-8 -->
+      <!-- https://learn.microsoft.com/en-us/cpp/build/reference/utf-8-set-source-and-executable-character-sets-to-utf-8?view=msvc-170 -->
     </ClCompile>
   </ItemDefinitionGroup>
 
