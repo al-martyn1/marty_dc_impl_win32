@@ -2,6 +2,8 @@
 
   <Import Project=".\props\umba_stdcpp17.props" />
   <!-- Import Project=".\props\umba_stdcpp20.props" /-->
+
+  <Import Project=".\props\umba_utf8.props" />
   
   <Import Project=".\umba_warnings.props" />
 
