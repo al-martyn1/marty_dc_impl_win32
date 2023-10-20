@@ -179,11 +179,11 @@ public:
 
 
                 ssq::sqstring preparedScriptText1 = _SC("Game <- {}")
-                                                  + marty_vk::simplesquirrel::enumsExposeMakeScript("Vk")
                                                   + marty_draw_context::simplesquirrel::performBinding(vm, sqScript, "Drawing")
+                                                  + marty_vk::simplesquirrel::enumsExposeMakeScript("Vk")
                                                   ;
-                // lout << encoding::toUtf8(preparedScriptText1);
-                // lout << "\n----------\n\n";
+                lout << encoding::toUtf8(preparedScriptText1);
+                lout << "\n----------\n\n";
     
                 ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
     
@@ -227,9 +227,9 @@ public:
             else // loaded
             {
                 try{
-                    ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onLoad");
+                    ssq::Function sqOnLoad = marty_simplesquirrel::findFunc(vm, "Game.onLoad");
     
-                    auto res = vm.callFunc(sqOnPaint, vm,  /* appHost, */  bFirstTime);
+                    auto res = vm.callFunc(sqOnLoad, vm,  /* appHost, */  bFirstTime);
     
                     bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onLoad returned"));
                     if (needUpdate)
@@ -333,8 +333,8 @@ public:
 
                 try
                 {
-                    ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onUpdate");
-                    auto res = vm.callFunc(sqOnPaint, vm,  /* appHost,  */ tickDelta);
+                    ssq::Function sqOnUpdate = marty_simplesquirrel::findFunc(vm, "Game.onUpdate");
+                    auto res = vm.callFunc(sqOnUpdate, vm,  /* appHost,  */ tickDelta);
     
                     bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onUpdate returned"));
                     //needUpdate = true;
@@ -421,9 +421,9 @@ public:
         MARTY_ARG_USED(nFlags);
 
         try{
-            ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onKeyEvent");
+            ssq::Function sqOnKeyEvent = marty_simplesquirrel::findFunc(vm, "Game.onKeyEvent");
 
-            auto res = vm.callFunc(sqOnPaint, vm,  /* appHost,  */ bDown, nChar, nRepCnt);
+            auto res = vm.callFunc(sqOnKeyEvent, vm,  /* appHost,  */ bDown, nChar, nRepCnt);
 
             bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onKeyEvent returned"));
             if (needUpdate)

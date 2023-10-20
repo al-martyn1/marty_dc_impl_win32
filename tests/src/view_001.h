@@ -466,6 +466,7 @@ public:
                                       , 0 // pOverhang - не интересно
                                       , DrawTextFlags::fitGlyphDefault | DrawTextFlags::endEllipsis | DrawTextFlags::kerningDisable // defMode endEllipsis fitWidthDisable
                                       , text, (std::size_t)-1 // textSize
+                                      , 0 // lastCharProcessed
                                       , &nCharsProcessed
                                       , &colors[0], 8
                                       , &nSymbolsDrawn
@@ -879,7 +880,7 @@ public:
         #ifdef TEST_DC_DRAW_PARA
         {
             // https://ru.wikipedia.org/wiki/Lorem_ipsum
-            std::wstring loremIpsumTiny = L"Lorem\tipsum\tdolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor";
+            std::wstring loremIpsumTiny = L"Lo—rem   \tip–sum\t\tdolor — sit – amet, consectetur adipiscing elit, sed do eiusmod tempor";
 
             std::wstring loremIpsumShort = L"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor "
                                     L"incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud "
@@ -908,7 +909,8 @@ public:
                                     L"Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores "
                                     L"alias consequatur aut perferendis doloribus asperiores repellat.";
 
-            using namespace marty_draw_context;
+            #include "hogwarts.h"
+
 
             auto pos                       = DrawCoord(60, 40);
             auto paraLimits                = DrawCoord(70, 200);

@@ -274,6 +274,197 @@ void test_drawSnake_10_60(marty_draw_context::IDrawContext *pDc, marty_draw_cont
 }
 
 
+inline
+bool isWordLetter(wchar_t ch)
+{
+    return (ch>=L'a' && ch<=L'z')
+        || (ch>=L'A' && ch<=L'Z');
+        ;
+}
+
+inline
+std::wstring simple_text_compress( const std::wstring &str, std::vector<std::wstring> &words
+                                 , std::map<char, std::size_t> &charCounts
+                                 , std::size_t &nWords, std::size_t &nChars, std::size_t &nPackedChars
+                                 )
+{
+    std::unordered_map<std::wstring, std::size_t>    wordMap;
+
+    auto getWordIndexFromDict = [&](std::size_t startPos, std::size_t curPos) -> std::size_t
+    {
+        if (startPos!=curPos)
+        {
+            auto word = std::wstring(str, startPos, curPos - startPos);
+            std::unordered_map<std::wstring, std::size_t>::const_iterator wit = wordMap.find(word);
+            if (wit==wordMap.end())
+            {
+                auto res = words.size();
+                words.emplace_back(word);
+                wordMap[word] = res;
+                return res;
+            }
+            else
+            {
+                return wit->second;
+            }
+        }
+
+        throw std::runtime_error("Something goes wrong");
+    };
+
+    nWords  = 0;
+    nChars  = 0;
+    nPackedChars = 0;
+    std::size_t startPos = 0;
+    std::size_t curPos   = 0;
+    std::wstring compressedText;
+    //bool collect
+
+    auto addWordCompressed = [&]()
+    {
+        if (startPos!=curPos)
+        {
+            // что-то было накоплено
+            std::size_t idx = getWordIndexFromDict(startPos, curPos);
+            
+            // Добавляем индекс слова в словаре, флаг 0x8000u указывает, что данный элемент - слово из словаря, а не отдельный символ
+            compressedText.append(1, (wchar_t)(0x0800u | idx));
+
+            ++nWords;
+
+            startPos = curPos;
+        }
+    };
+
+    auto addCharsCompressed = [&]()
+    {
+        // Пары: ", ", ". ", "? ", "! " - итого - 4
+        // Одиночные символы: " " (пробел), ",", ".", "?", "!", "(", ")", "[", "]", "{", "}" 
+
+        // Собрали статистику
+        // 37615 байт текста
+        // ' ' (32) - 6133
+        // ',' (44) - 395
+        // '.' (46) - 295
+        // Если код программы, то наверное ещё будут регулярно встречаться символы: ":", ";"
+        // Остальные символы на уровне погрешности
+
+        // у нас 12 бит на символ, 
+        // 8 бит - код символ, осталось 4 бита
+        // 1 бит - признак того, что у нас слово, а не отдельный символ
+        // Итого у нас есть три бита, чтобы закодировать наиболее частотные символы
+        // 0b000 - признак того, что следом идёт байт с символом
+        // 0b001 - пробел, второго байта нет
+        // 0b010 - ',', второго байта нет
+        // 0b011 - '.', второго байта нет
+        // 0b100 - ":", второго байта нет
+        // 0b101 - ";", второго байта нет
+        // 0b110 - резерв
+        // 0b111 - резерв
+
+        for(auto i=startPos; i!=curPos; ++i)
+        {
+            auto wch = str[i];
+            // compressedText.append(1, wch); // старая логика посимвольного добавления обычных карактеров
+            char ch = (char)wch;
+            charCounts[ch]++;
+            ++nPackedChars; // считаем заранее, что упакованый символ
+            switch(wch)
+            {
+                case L' ': compressedText.append(1, (wchar_t)(0x0100u | wch)); break;
+                case L',': compressedText.append(1, (wchar_t)(0x0200u | wch)); break;
+                case L'.': compressedText.append(1, (wchar_t)(0x0300u | wch)); break;
+                case L':': compressedText.append(1, (wchar_t)(0x0400u | wch)); break;
+                case L';': compressedText.append(1, (wchar_t)(0x0500u | wch)); break;
+                default:
+                    ++nPackedChars; // Откатили
+                    ++nChars;
+                    compressedText.append(1, wch);
+            }
+        }
+
+        startPos = curPos;
+
+    };
+
+
+    bool collectWord = false;
+
+    while(curPos!=str.size())
+    {
+        auto wch = str[curPos];
+
+        if (collectWord)
+        {
+            if (isWordLetter(wch))
+            {
+                // Ничего не делаем
+            }
+            else // попался небуквенный символ 
+            {
+                addWordCompressed(); // добавляем слово, если было что добавить
+                collectWord = false;
+            }
+        }
+        else // collect chars mode
+        {
+            if (isWordLetter(wch))
+            {
+                addCharsCompressed(); // добавляем буквы, если было что добавить
+                collectWord = true;
+            }
+            else // попался небуквенный символ 
+            {
+                // Ничего не делаем
+            }
+        }
+
+        ++curPos; // накапливаем
+
+    }
+
+    if (startPos!=curPos)
+    {
+        if (collectWord)
+        {
+            addWordCompressed();
+        }
+        else
+        {
+            addCharsCompressed();
+        }
+    }
+
+    return compressedText;
+
+}
+
+// Считаем размер wchar_t как 1 байт, потом что на самом деле идея для однобайтных кодировок
+inline
+std::size_t calcWordsBytes(const std::vector<std::wstring> &words, marty::Decimal &avgWordLen)
+{
+    std::size_t res = 0;
+
+    std::size_t sumLen = 0;
+
+    for( const auto & w : words)
+    {
+        res    += w.size() + 1;
+        sumLen += w.size();
+    }
+
+    if (words.size())
+    {
+        avgWordLen = (marty::Decimal)sumLen / (marty::Decimal)words.size();
+    }
+    else
+    {
+        avgWordLen = 0;
+    }
+
+    return res;
+}
+
 
 
 

@@ -395,6 +395,18 @@ protected:
 
     virtual int getCharWidthIntImpl(std::uint32_t ch) const = 0;
 
+    virtual bool isArabicDigitChar(std::uint32_t ch) const override
+    {
+        return (ch>=(std::uint32_t)'0' && ch<=(std::uint32_t)'9');
+    }
+
+    virtual bool isLatinLetterChar(std::uint32_t ch) const override
+    {
+        return (ch>=(std::uint32_t)'a' && ch<=(std::uint32_t)'z')
+            || (ch>=(std::uint32_t)'A' && ch<=(std::uint32_t)'Z');
+            ;
+    }
+
     virtual bool isAnyBreakingSpaceChar(std::uint32_t ch) const override
     {
         // https://www.compart.com/en/unicode/category/Zs
@@ -447,7 +459,60 @@ protected:
         return ch==(std::uint32_t)'\t';
     }
 
-    
+    // Дефис - https://symbl.cc/ru/2010/
+    // Тире, короткое тире, минус, дефис - https://webstyle.sfu-kras.ru/tire-defis
+    // Чёрточки: только ли тире, минус и дефис? - https://habr.com/ru/articles/20588/
+    // HYPHEN-MINUS - https://util.unicode.org/UnicodeJsps/character.jsp?a=002D
+    // https://www.compart.com/en/unicode/category/Pd
+    // List of Unicode Characters of Category “Dash Punctuation” - https://www.compart.com/en/unicode/category/Pd
+    // https://ru.wikipedia.org/wiki/%D0%94%D0%B5%D1%84%D0%B8%D1%81
+
+
+
+    virtual bool isAnyNonBreakingDashChar(std::uint32_t ch) const override
+    {
+        return ch==0x2011u; // U+2011 ‑ Non-Breaking Hyphen
+    }
+
+    bool isAnyBreakingDashChar(std::uint32_t ch) const override
+    {
+        if ( ch==0x002Du  // U+002D  - Hyphen-Minus
+          || ch==0x058Au  // U+058A  ? Armenian Hyphen
+          || ch==0x05BEu  // U+05BE  ? Hebrew Punctuation Maqaf
+          || ch==0x1400u  // U+1400  ? Canadian Syllabics Hyphen
+          || ch==0x1806u  // U+1806  ? Mongolian Todo Soft Hyphen
+          || ch==0x2010u  // U+2010  - Hyphen
+          || ch==0x2012u  // U+2012  - Figure Dash
+          || ch==0x2013u  // U+2013  – En Dash
+          || ch==0x2014u  // U+2014  — Em Dash
+          || ch==0x2015u  // U+2015  - Horizontal Bar
+          || ch==0x2E17u  // U+2E17  ? Double Oblique Hyphen
+          || ch==0x2E1Au  // U+2E1A  ? Hyphen with Diaeresis
+          || ch==0x2E3Au  // U+2E3A  ? Two-Em Dash
+          || ch==0x2E3Bu  // U+2E3B  ? Three-Em Dash
+          || ch==0x2E40u  // U+2E40  ? Double Hyphen
+          || ch==0x301Cu  // U+301C  ? Wave Dash
+          || ch==0x3030u  // U+3030  ? Wavy Dash
+          || ch==0x30A0u  // U+30A0  ? Katakana-Hiragana Double Hyphen
+          || ch==0xFE31u  // U+FE31  ? Presentation Form For Vertical Em Dash
+          || ch==0xFE32u  // U+FE32  ? Presentation Form For Vertical En Dash
+          || ch==0xFE58u  // U+FE58  ? Small Em Dash
+          || ch==0xFE63u  // U+FE63  ? Small Hyphen-Minus
+          || ch==0xFF0Du  // U+FF0D  - Fullwidth Hyphen-Minus
+          || ch==0x10EADu // U+10EAD ?? Yezidi Hyphenation Mark
+           )
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    bool isAnyDashChar(std::uint32_t ch) const override
+    {
+        return isAnyNonBreakingDashChar(ch) || isAnyBreakingDashChar(ch);
+    }
+
     virtual bool isAnyLineBreakChar(std::uint32_t ch) const override
     {
         // https://en.wikipedia.org/wiki/Newline#Unicode
@@ -606,10 +671,10 @@ protected:
         return true;
     }
 
-    DrawCoord::value_type getKerningValue( const std::unordered_set<KerningPair> &pairs
+    virtual DrawCoord::value_type getKerningValue( const std::unordered_set<KerningPair> &pairs
                                          , std::uint32_t chFirst 
                                          , std::uint32_t chSecond
-                                         ) const
+                                         ) const override
     {
         if (chFirst==0 || chSecond==0)
         {
@@ -638,6 +703,7 @@ protected:
                               , DrawTextFlags                 flags
                               , const wchar_t                 *text
                               , std::size_t                   textSize=(std::size_t)-1
+                              , std::uint32_t                 *pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
                               , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
                               , const std::uint32_t           *pColors=0
                               , std::size_t                   nColors=0
@@ -691,6 +757,11 @@ protected:
         size_t nSymbolsDrawn    = 0;
         size_t nColorIndex      = 0;
         std::uint32_t prevCh32  = 0;
+        std::uint32_t ch32      = 0;
+        if (pLastCharProcessed)
+        {
+            prevCh32 = *pLastCharProcessed;
+        }
 
         DrawCoord pos = startPos;
         DrawCoord::value_type xPosMax = pos.x + widthLim;
@@ -709,7 +780,7 @@ protected:
                 break;
             }
 
-            std::uint32_t ch32 = getChar32(text, textSize);
+            ch32 = getChar32(text, textSize);
             std::string::size_type chPos32 = wstrStopChars32.find(ch32,0);
             if (chPos32!=std::string::npos)
             {
@@ -729,6 +800,11 @@ protected:
 
             const auto &curCharWidth = *wit;
             bool isCombining = curCharWidth<0.0001;
+
+            if (pLastCharProcessed && !isCombining)
+            {
+                *pLastCharProcessed = ch32;
+            }
 
             if (!isCombining && (flags&DrawTextFlags::kerningDisable)==0)
             {
@@ -854,6 +930,11 @@ protected:
             *pOverhang = fontMetrics.overhang;
         }
 
+        // if (pLastCharProcessed)
+        // {
+        //     *pLastCharProcessed = ch32;
+        // }
+
         if (pCharsProcessed)
         {
             *pCharsProcessed = nCharsProcessed;
@@ -875,6 +956,7 @@ protected:
                                   , DrawTextFlags                 flags
                                   , const wchar_t                 *text
                                   , std::size_t                   textSize=(std::size_t)-1
+                                  , std::uint32_t                 *pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
                                   , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
                                   , const std::uint32_t           *pColors=0
                                   , std::size_t                   nColors=0
@@ -894,7 +976,7 @@ protected:
 
         return drawTextColoredExImpl( kerningPairs, fontMetrics
                                     , startPos, widthLim, pNextPosX, pOverhang, flags
-                                    , text, textSize, pCharsProcessed, pColors, nColors
+                                    , text, textSize, pLastCharProcessed, pCharsProcessed, pColors, nColors
                                     , pSymbolsDrawn, stopChars, fontId
                                     );
     }
@@ -916,6 +998,7 @@ protected:
                                 , flags
                                 , text
                                 , textSize
+                                , 0 // pLastCharProcessed
                                 , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
                                 , pColors
                                 , nColors
@@ -925,15 +1008,399 @@ protected:
                                 );
     }
 
+    struct CharInfo
+    {
+        std::size_t                idx;
+        std::size_t                len; // длина в тексте в wchar'ах
+        bool                       bCombining;
+        DrawCoord::value_type      width;
+        DrawCoord::value_type      kerningValue; // в паре с предыдущим символом
+    };
+
+    enum class TpType // TextPortionType
+    {
+        invalid,
+        space,
+        text,
+        tab
+    };
+
+    struct TextPortionInfo
+    {
+        TpType                      tpType   ;
+        std::wstring_view           text     ;
+        std::vector<CharInfo>       charInfos;
+        DrawCoord::value_type       width    ;
+        DrawCoord::value_type       overhang ;
+
+
+        void updateCharInfos( IDrawContext *pdc
+                            , const std::unordered_set<KerningPair> &kerningPairs
+                            //, const SimpleFontMetrics               &fontMetrics
+                            , DrawTextFlags                         flags
+                            )
+        {
+            // MARTY_IDC_ARG_USED(flags);
+            // MARTY_IDC_ARG_USED(fontMetrics);
+
+            const wchar_t *pText = text.data();
+            std::size_t textSize = text.size();
+            std::size_t idx = 0;
+            charInfos.clear();
+            charInfos.reserve(textSize);
+
+            std::uint32_t prevCh32  = 0;
+            std::uint32_t ch32      = 0;
+
+
+            std::size_t curCharLen = pdc->getCharLen(pText, textSize);
+            for( ; textSize && curCharLen!=0
+                 ; curCharLen = pdc->getCharLen(pText, textSize)
+               )
+            {
+                ATLASSERT(curCharLen<=textSize);
+                if (curCharLen>textSize)
+                {
+                    break;
+                }
+      
+                ch32 = pdc->getChar32(pText, textSize);
+
+                DrawCoord::value_type charWidth = 0;
+                if (!pdc->getCharWidth(ch32, charWidth))
+                {
+                    // ASSERTнуться или просто игнорим?
+                }
+
+                bool isCombining = charWidth<0.0001;
+
+                DrawCoord::value_type kerningValue = 0;
+
+                if (!isCombining && (flags&DrawTextFlags::kerningDisable)==0)
+                {
+                    kerningValue = pdc->getKerningValue(kerningPairs, prevCh32, ch32);
+                }
+
+                charInfos.emplace_back(CharInfo{idx, curCharLen, isCombining, charWidth, kerningValue});
+
+
+                pText    += curCharLen;
+                textSize -= curCharLen;
+                idx      += curCharLen;
+                prevCh32  = ch32      ;
+
+            }
+
+        } // updateCharInfos
+
+
+        void updateWidthOnly(const SimpleFontMetrics &fontMetrics)
+        {
+            overhang = fontMetrics.overhang;
+
+            width = 0;
+
+            for(const auto &ci : charInfos)
+            {
+                width += ci.width;
+                width += ci.kerningValue;
+            }
+        }
+
+
+        void updateWidth( IDrawContext *pdc
+                        , const std::unordered_set<KerningPair> &kerningPairs
+                        , DrawTextFlags                         flags
+                        , const SimpleFontMetrics               &fontMetrics
+                        )
+        {
+            updateCharInfos(pdc, kerningPairs, flags);
+            updateWidthOnly(fontMetrics);
+        }
+
+
+        std::size_t getNumberOfCharsFitWidth(DrawCoord::value_type lim) const
+        {
+            std::size_t            chIdx = 0;
+            DrawCoord::value_type  w     = 0;
+
+            lim -= overhang;
+
+            for(; chIdx!=charInfos.size(); ++chIdx)
+            {
+                const CharInfo &ci = charInfos[chIdx];
+                w += ci.kerningValue;
+                w += ci.width;
+
+                if (w>lim)
+                {
+                   break;
+                }
+            }
+
+            // Могли остаться символы, которые не прибавляют длины выводимому тексту
+            for(; chIdx!=charInfos.size(); ++chIdx)
+            {
+                if (!charInfos[chIdx].bCombining)
+                {
+                    break;
+                }
+            }
+
+            return chIdx;
+
+        } // getNumberOfCharsFitWidth
+
+
+    }; // struct TextPortionInfo
+
+
+    bool drawParaColoredExImpl2( const std::unordered_set<KerningPair> &kerningPairs
+                               , const SimpleFontMetrics               &fontMetrics
+                               , std::vector<TextPortionInfo>          textPortions
+                               , const DrawCoord                       &startPos
+                               , const DrawCoord                       &limits       //!< Limits, vertical and horizontal, relative to start pos
+                               , DrawCoord::value_type                 *pNextPosY    //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                               , const  DrawCoord::value_type          &lineSpacing  //!< Extra space between lines of text
+                               , const  DrawCoord::value_type          &paraIndent   //!< Indent on the first line
+                               , DrawCoord::value_type                 tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
+                               , DrawTextFlags                         flags
+                               , HorAlign                              horAlign
+                               , VertAlign                             vertAlign
+                               , const wchar_t                         *text
+                               , std::size_t                           textSize=(std::size_t)-1
+                               , const std::uint32_t                   *pColors=0
+                               , std::size_t                           nColors=0
+                               , DrawCoord::value_type                 *pTabStopPositions=0        //!< Relative to start pos X coord
+                               , std::size_t                           nTabStopPositions=0
+                               , int                                   fontId=-1
+                               )
+    {
+        MARTY_IDC_ARG_USED(kerningPairs     );
+        MARTY_IDC_ARG_USED(fontMetrics      );
+        MARTY_IDC_ARG_USED(textPortions     );
+        MARTY_IDC_ARG_USED(startPos         );
+        MARTY_IDC_ARG_USED(limits           );
+        MARTY_IDC_ARG_USED(pNextPosY        );
+        MARTY_IDC_ARG_USED(lineSpacing      );
+        MARTY_IDC_ARG_USED(paraIndent       );
+        MARTY_IDC_ARG_USED(tabSize          );
+        MARTY_IDC_ARG_USED(flags            );
+        MARTY_IDC_ARG_USED(horAlign         );
+        MARTY_IDC_ARG_USED(vertAlign        );
+        MARTY_IDC_ARG_USED(text             );
+        MARTY_IDC_ARG_USED(textSize         );
+        MARTY_IDC_ARG_USED(pColors          );
+        MARTY_IDC_ARG_USED(nColors          );
+        MARTY_IDC_ARG_USED(pTabStopPositions);
+        MARTY_IDC_ARG_USED(nTabStopPositions);
+        MARTY_IDC_ARG_USED(fontId           );
+
+        DrawCoord::value_type spaceWidth = 0;
+        getCharWidth((std::uint32_t)' ', spaceWidth);
+        if (tabSize<0)
+        {
+            tabSize = -tabSize * spaceWidth;
+        }
+
+        // Для каждого фрагмента у нас есть его ширина
+        // Теперь надо выводить текст
+        // Замечания
+        //   Пробелы выводим сколько есть, но пропускаем в начале строки и не выводим в конце
+        //   Если слово не первое в строке, и не влезает в остаток строки, то переносим его на следующую строку
+        //   Если слово - первое в строке, и не влезает в строку, то обрезаем его сколько влезло, остаток переносим на следующую строку
+        //   Выравнивание по левому краю можно рисовать сразу
+        //   Выравнивание по центру, по правому краю и по ширине нужно рисовать только после того, 
+        //     как посчитаны все слова в строке, и известно, сколько осталось пустого места
+        //
+
+        std::size_t lineNumber     = 0;
+        std::size_t wordsDrawn     = 0;
+        std::size_t tpIdx          = 0;
+        std::size_t tabNumber      = 0;
+        DrawCoord::value_type limX = startPos.x + limits.x;
+        DrawCoord::value_type limY = startPos.y + limits.y;
+        DrawCoord   pos            = startPos;
+        pos.x                     += paraIndent; // Для первой строки сразу добавлям отступ параграфа
+
+        const bool keepLtSpaces = (flags&DrawTextFlags::keepLtSpaces)!=0;
+
+        MARTY_IDC_ARG_USED(limX);
+        MARTY_IDC_ARG_USED(limY);
+
+        auto skipSpaces = [&]()
+        {
+            if (keepLtSpaces)
+            {
+                return;
+            }
+
+            while(tpIdx!=textPortions.size())
+            {
+                if (textPortions[tpIdx].tpType!=TpType::space)
+                    break;
+                ++tpIdx;
+            }
+        };
+
+        auto nextLine = [&]()
+        {
+            ++lineNumber;
+            wordsDrawn = 0;
+            tabNumber  = 0;
+            pos.x      = startPos.x;
+            pos.y     += fontMetrics.height; // lineSpacing тут не добавляем
+            skipSpaces();
+        };
+
+        auto getTabStopPosX = [&]()
+        {
+            if (pTabStopPositions && tabNumber<nTabStopPositions)
+            {
+                // Если заданы таб позиции и не вылезли за их количество, то берём относительную позицию из массива и прибавляем к координате левого края
+                return startPos.x + pTabStopPositions[tabNumber++];
+            }
+            else
+            {
+                // Если не заданы таб позиции или 
+                tabNumber++;
+                return pos.x + tabSize;
+            }
+        };
+
+        //DrawCoord::value_type
+
+
+        if (horAlign==HorAlign::left)
+        {
+            skipSpaces();
+
+            while(tpIdx!=textPortions.size())
+            {
+                // Готовы рисовать
+                // Рисуем строку
+
+                while(true) // Пока строка не закончена
+                {
+                    const TextPortionInfo &tpi = textPortions[tpIdx];
+                    if (tpi.tpType==TpType::space)
+                    {
+                        if (!keepLtSpaces)
+                        {
+                            pos.x += tpi.width;
+                            // Больше ничего не делаем, пробел же
+                        }
+                        else
+                        {
+                            // тут надо проверить лимит и нарисовать/пропустить нужное число пробелов
+                            // и при необходимости перенести строку
+                        }
+                    }
+                    else if (tpi.tpType==TpType::tab)
+                    {
+                        pos.x = getTabStopPosX();
+                        // Больше ничего не делаем, просто табуляция
+                    }
+                    else if (tpi.tpType==TpType::text)
+                    {
+                        auto startX = pos.x;
+                        auto endX   = startX + tpi.width + tpi.overhang;
+
+                        // Какие у нас варианты
+                        // 1) Начальная точка вышла за пределы - тут мы вообще ничего сделать не можем, надо переносить на следующую строку
+
+                        bool limReached = false;
+
+                        // if (startX>=limX)
+                        if (endX>=limX) // 
+                        {
+                            limReached = true;
+                        }
+
+
+                        #if 0
+                        tpi.overhang
+                        std::size_t getNumberOfCharsFitWidth(DrawCoord::value_type lim) const
+
+
+                        std::size_t nSymbolsDrawn = 0;
+
+                        bool bRes = drawTextColoredEx( pos
+                                  , const DrawCoord::value_type   &widthLim
+                                  , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
+                                  , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+                                  , DrawTextFlags                 flags
+                                  , const wchar_t                 *text
+                                  , std::size_t                   textSize=(std::size_t)-1
+                                  , std::uint32_t                 *pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
+                                  , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                  , const std::uint32_t           *pColors=0
+                                  , std::size_t                   nColors=0
+                                  , std::size_t                   *pSymbolsDrawn=0
+                                  , const wchar_t                 *stopChars=0
+                                  , int                           fontId=-1
+                                  ) = 0;
+                        #endif
+
+                    }
+                    else
+                    {
+                        ATLASSERT(0);
+                        throw std::runtime_error("Something goes wrong");
+                    }
+                }
+            }
+
+
+#if 0
+    enum class TpType // TextPortionType
+    {
+        invalid,
+        space,
+        text,
+        tab
+    };
+
+    struct TextPortionInfo
+    {
+        TpType                      tpType   ;
+        std::wstring_view           text     ;
+        std::vector<CharInfo>       charInfos;
+        DrawCoord::value_type       width    ;
+        DrawCoord::value_type       overhang ;
+#endif
+
+
+        }
+        else if (horAlign==HorAlign::center)
+        {
+        }
+        else if (horAlign==HorAlign::right)
+        {
+        }
+        else if (horAlign==HorAlign::width)
+        {
+        }
+        else
+        {
+            ATLASSERT(0);
+            throw std::runtime_error("Invalid HorAlign value");
+        }
+
+        // textOut(startPos, text, textSize);
+
+        return true; // 
+        
+    }
 
     bool drawParaColoredExImpl( const std::unordered_set<KerningPair> &kerningPairs
                               , const SimpleFontMetrics               &fontMetrics
-                              , const DrawCoord                       &startPos
-                              , const DrawCoord                       &limits       //!< Limits, vertical and horizontal, relative to start pos
+                              , DrawCoord                             startPos
+                              , DrawCoord                             limits       //!< Limits, vertical and horizontal, relative to start pos
                               , DrawCoord::value_type                 *pNextPosY    //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
                               , const DrawCoord::value_type           &lineSpacing  //!< Extra space between lines of text
                               , const DrawCoord::value_type           &paraIndent   //!< Indent on the first line
-                              , const DrawCoord::value_type           &tabSize      //!< Size used for tabs if tabStops are over
+                              , const DrawCoord::value_type           &tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
                               , DrawTextFlags                         flags
                               , HorAlign                              horAlign
                               , VertAlign                             vertAlign
@@ -950,57 +1417,35 @@ protected:
         textSize = checkCalcStringSize(text, textSize);
 
         // Нужно разбить на слова
-        MARTY_IDC_ARG_USED(kerningPairs     );
-        MARTY_IDC_ARG_USED(fontMetrics      );
+        #if 0
+        //MARTY_IDC_ARG_USED(kerningPairs     );
+        //MARTY_IDC_ARG_USED(fontMetrics      );
         MARTY_IDC_ARG_USED(startPos         );
         MARTY_IDC_ARG_USED(limits           );
         MARTY_IDC_ARG_USED(pNextPosY        );
         MARTY_IDC_ARG_USED(lineSpacing      );
         MARTY_IDC_ARG_USED(paraIndent       );
         MARTY_IDC_ARG_USED(tabSize          );
-        MARTY_IDC_ARG_USED(flags            );
+        //MARTY_IDC_ARG_USED(flags            );
         MARTY_IDC_ARG_USED(horAlign         );
         MARTY_IDC_ARG_USED(vertAlign        );
-        MARTY_IDC_ARG_USED(text             );
-        MARTY_IDC_ARG_USED(textSize         );
+        //MARTY_IDC_ARG_USED(text             );
+        //MARTY_IDC_ARG_USED(textSize         );
         MARTY_IDC_ARG_USED(pCharsProcessed  );
         MARTY_IDC_ARG_USED(pColors          );
         MARTY_IDC_ARG_USED(nColors          );
-        MARTY_IDC_ARG_USED(pTabStopPositions);
-        MARTY_IDC_ARG_USED(nTabStopPositions);
-        MARTY_IDC_ARG_USED(fontId           );
-
-
-        enum class TpType // TextPortionType
-        {
-            space,
-            text,
-            tab
-        };
-
-        // enum ReadState
-        // {
-        //     stReadSpaces,
-        //     stReadTabs,
-        //     stReadText
-        // };
-
-        struct TextPortionInfo
-        {
-            TpType                  tpType;
-            std::wstring_view       text  ;
-
-        };
-
+        //MARTY_IDC_ARG_USED(pTabStopPositions);
+        //MARTY_IDC_ARG_USED(nTabStopPositions);
+        //MARTY_IDC_ARG_USED(fontId           );
+        #endif
 
         std::vector<TextPortionInfo>  textPortions;
 
         bool         stopParse = false;
         //ReadState           st = stReadSpaces;
-        const wchar_t *tpStart = text;
-        TpType       curTpType = TpType::space;
+        const wchar_t *tpStart = text; // сохранили на будущее
 
-        auto putCurTextPortion = [&]() // std::uint32_t ch32, std::size_t charLen
+        auto putCurTextPortion = [&](TpType curTpType) // std::uint32_t ch32, std::size_t charLen
         {
             std::size_t sz = (std::size_t)(text-tpStart);
             if (sz)
@@ -1031,6 +1476,9 @@ protected:
             }
         };
 
+        TpType       curTpType = TpType::space;
+
+
         while(!stopParse)
         {
             std::size_t charLen = getCharLen(text, textSize);
@@ -1058,16 +1506,23 @@ protected:
                     {
                         incTextPtr(charLen); // двигаем указатель текущего текста и всё - режим не сменился, ничего не надо делать
                     }
+                    else if (isAnyBreakingDashChar(ch32))
+                    {
+                        putCurTextPortion(curTpType);
+                        // curTpType не меняем
+                        incTextPtr(charLen); // двигаем указатель текущего текста
+                        putCurTextPortion(TpType::text); // дефисы по одному добавляем как текст
+                    }
                     else if (isAnyTabChar(ch32))
                     {
-                        putCurTextPortion();
+                        putCurTextPortion(curTpType);
                         curTpType = TpType::tab;
                         incTextPtr(charLen); // двигаем указатель текущего текста
-                        putCurTextPortion(); // табы по одному добавляем
+                        putCurTextPortion(curTpType); // табы по одному добавляем
                     }
                     else // какой-то текст
                     {
-                        putCurTextPortion();
+                        putCurTextPortion(curTpType);
                         curTpType = TpType::text;
                         incTextPtr(charLen); // двигаем указатель текущего текста
                     }
@@ -1078,16 +1533,21 @@ protected:
                 {
                     if (isAnyBreakingSpaceChar(ch32))
                     {
-                        putCurTextPortion();
+                        putCurTextPortion(curTpType);
                         curTpType = TpType::space;
                         incTextPtr(charLen); // двигаем указатель текущего текста
                     }
+                    else if (isAnyBreakingDashChar(ch32))
+                    {
+                        incTextPtr(charLen); // двигаем указатель текущего текста
+                        putCurTextPortion(TpType::text); // добавляем дефис вместе с предыдущим текстом, разбивая слово с дефисом на части
+                    }
                     else if (isAnyTabChar(ch32))
                     {
-                        putCurTextPortion();
+                        putCurTextPortion(curTpType);
                         curTpType = TpType::tab;
                         incTextPtr(charLen); // двигаем указатель текущего текста
-                        putCurTextPortion(); // табы по одному добавляем
+                        putCurTextPortion(curTpType); // табы по одному добавляем
                     }
                     else // какой-то текст
                     {
@@ -1100,35 +1560,177 @@ protected:
                 {
                     if (isAnyBreakingSpaceChar(ch32))
                     {
-                        putCurTextPortion();
+                        putCurTextPortion(curTpType);
                         curTpType = TpType::space;
                         incTextPtr(charLen); // двигаем указатель текущего текста
                     }
+                    else if (isAnyBreakingDashChar(ch32))
+                    {
+                        putCurTextPortion(curTpType);
+                        // curTpType не меняем
+                        incTextPtr(charLen); // двигаем указатель текущего текста
+                        putCurTextPortion(TpType::text); // дефисы по одному добавляем как текст
+                    }
                     else if (isAnyTabChar(ch32))
                     {
-                        putCurTextPortion();
+                        putCurTextPortion(curTpType);
                         incTextPtr(charLen); // двигаем указатель текущего текста
-                        putCurTextPortion(); // табы по одному добавляем
+                        putCurTextPortion(curTpType); // табы по одному добавляем
                     }
                     else // какой-то текст
                     {
-                        putCurTextPortion();
+                        putCurTextPortion(curTpType);
                         curTpType = TpType::text;
                         incTextPtr(charLen); // двигаем указатель текущего текста
                     }
                 }
                 break;
+
+                case TpType::invalid: [[fallthrough]];
+
+                default: 
+                {
+                    ATLASSERT(0);
+                }
             }
         
         }
 
-        putCurTextPortion();
+        putCurTextPortion(curTpType);
 
-        // std::wstring_view 
+        //-------
 
-        // textOut(startPos, text, textSize);
+        // У нас есть строка, разбитая по словам
+        // Нам надо вычислить отображаемую длину (ширину) каждого слова.
+        // Может возникать ситуация, когда надо будет слово дополнительно разбить на части, так как оно всё равно не влезает.
+        // Для каждого символа надо вычислить ширину, кернинг с предыдущим символом (для первого - 0)
+        // Также надо запомнить индекс символа в строке и его длину в исходном тексте в wchar'ах
 
-        return false;
+        if (fontId<0)
+        {
+            fontId = getCurFont();
+        }
+
+        auto fontSaver = FontSaver(this, fontId);
+
+        // DrawCoord::value_type spaceWidth = 0;
+        // pdc->getCharWidth((std::uint32_t)' ', spaceWidth);
+        // if (tabSize<0)
+        // {
+        //     tabSize = -tabSize * spaceWidth;
+        // }
+
+        //std::vector<TextPortionInfo>  textPortions;
+        for(auto &tp : textPortions)
+        {
+            // Также обновляет charInfos
+            tp.updateWidth(this, kerningPairs, flags, fontMetrics);
+        }
+
+        //-------
+
+        if (pTabStopPositions && nTabStopPositions)
+        {
+            // Мы не умеем делать tab стопы, если выравнивание идёт не по левому краю
+            horAlign = HorAlign::left;
+        }
+
+
+        if ((flags&DrawTextFlags::fitHeightDisable)!=0)
+        {
+            // По вертикали вписываться не надо, нет лимита
+            // Раз нет лимита по высоте - то нет и выравнивания по вертикали
+        
+            vertAlign = VertAlign::top;
+        }
+
+        // Отсекаем некорректные значения
+        if (vertAlign!=VertAlign::center && vertAlign!=VertAlign::bottom)
+        {
+            vertAlign = VertAlign::top;
+        }
+
+
+        //const DrawCoord pos = startPos;
+
+        if (vertAlign==VertAlign::center || vertAlign==VertAlign::bottom)
+        {
+            DrawCoord::value_type nextPosY = startPos.y;
+            // Нам нужно узнать реальную высоту, которую занимает параграф
+            bool bRes = drawParaColoredExImpl2( kerningPairs, fontMetrics, textPortions
+                                              , startPos, limits
+                                              , &nextPosY
+                                              , lineSpacing  //!< Extra space between lines of text
+                                              , paraIndent   //!< Indent on the first line
+                                              , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
+                                              , flags | DrawTextFlags::fitHeightDisable | DrawTextFlags::calcOnly // установили флаг "нет лимита по высоте" и "только калькуляция", вроде ничего больше не надо
+                                              , horAlign
+                                              , VertAlign::top
+                                              , text
+                                              , textSize
+                                              , 0 // const std::uint32_t                   *pColors=0
+                                              , 0 // nColors=0
+                                              , pTabStopPositions        //!< Relative to start pos X coord
+                                              , nTabStopPositions
+                                              , fontId
+                                              );
+
+            if (!bRes)
+            {
+                return bRes;
+            }
+
+            auto actualParaHeight = nextPosY - startPos.y;
+            auto limDelta = limits.y - actualParaHeight; // предплагаем, что лимит (куда надо вписать параграф) больше, чем реальная высота параграфа
+
+            if (vertAlign==VertAlign::center)
+            {
+                limDelta /= 2; // Если надо выровнять посередине, то сдвигаем вниз только на половину дельты
+            }
+
+            if (limDelta<0)
+            {
+                limDelta = 0; // смещение не может быть меньше нуля
+            }
+
+            startPos.y += limDelta; // сместили вниз
+
+            // Лимиты относительные, относительно стартовой позиции. Если позицию сместили вниз, то лимит надо уменьшить, 
+            // чтобы абсолютное значение осталось тем же
+            limits  .y -= limDelta;
+
+        }
+
+
+        bool bRes = drawParaColoredExImpl2( kerningPairs, fontMetrics, textPortions
+                                          , startPos, limits
+                                          , pNextPosY
+                                          , lineSpacing  //!< Extra space between lines of text
+                                          , paraIndent   //!< Indent on the first line
+                                          , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
+                                          , flags
+                                          , horAlign
+                                          , VertAlign::top
+                                          , text
+                                          , textSize
+                                          , pColors
+                                          , nColors
+                                          , pTabStopPositions        //!< Relative to start pos X coord
+                                          , nTabStopPositions
+                                          , fontId
+                                          );
+
+        if (!bRes)
+        {
+            return bRes;
+        }
+
+        if (pCharsProcessed)
+        {
+            *pCharsProcessed = (std::size_t)(text - tpStart);
+        }
+
+        return bRes;
     }
 
 
