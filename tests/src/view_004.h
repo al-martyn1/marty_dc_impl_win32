@@ -39,6 +39,8 @@
 #include "nutHelpers.h"
 
 
+// #define LOG_SQUIRREL_SOURCES
+
 
 typedef marty_draw_context::DrawCoord                         DrawCoord                 ;
 typedef marty_draw_context::DrawSize                          DrawSize                  ;
@@ -182,8 +184,13 @@ public:
                                                   + marty_draw_context::simplesquirrel::performBinding(vm, sqScript, "Drawing")
                                                   + marty_vk::simplesquirrel::enumsExposeMakeScript("Vk")
                                                   ;
-                lout << encoding::toUtf8(preparedScriptText1);
-                lout << "\n----------\n\n";
+
+                #if defined(DEBUG) || defined(_DEBUG)
+                    #if defined(LOG_SQUIRREL_SOURCES)
+                        lout << encoding::toUtf8(preparedScriptText1);
+                        lout << "\n----------\n\n";
+                    #endif
+                #endif
     
                 ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
     
