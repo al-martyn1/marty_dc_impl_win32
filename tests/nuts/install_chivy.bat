@@ -1,0 +1,1 @@
+@if exist Belka.Chivy.demo.nut copy /Y Belka.Chivy.demo.nut TestDrawContext04.nut

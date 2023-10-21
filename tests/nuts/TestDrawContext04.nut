@@ -156,6 +156,8 @@ function Game::onPaint(dc)
     local scale = 5;
     dc.setScale(D.Scale(scale,scale));
 
+    local px1 = dc.getPixelSize();
+
 
     //local drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.SmoothingPrecise);
     local drawingPrecise = dc.setDrawingPrecise(D.DrawingPrecise.PixelPrecise);

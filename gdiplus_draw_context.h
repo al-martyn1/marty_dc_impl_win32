@@ -1441,7 +1441,8 @@ public:
         }
         */
 
-        if (!bStroke)
+        //if (!bStroke)
+        if (bFill)
             closeFigure();
 
         if (bFill)

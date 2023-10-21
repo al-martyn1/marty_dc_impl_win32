@@ -1974,6 +1974,22 @@ protected:
         return tmp / m_scale.y;
     }
 
+    virtual DrawCoord             getPixelSize()  const override
+    {
+        return mapRawToLogicSize(DrawCoord{1,1});
+    }
+
+    virtual DrawCoord::value_type getPixelSizeX() const override
+    {
+        return mapRawToLogicSizeX(1);
+    }
+
+    virtual DrawCoord::value_type getPixelSizeY() const override
+    {
+        return mapRawToLogicSizeY(1);
+    }
+
+
     virtual marty_draw_context::DrawScale setScale( const marty_draw_context::DrawScale &scale ) override
     {
         auto prev = m_scale;
