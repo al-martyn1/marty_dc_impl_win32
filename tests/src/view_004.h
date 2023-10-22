@@ -124,7 +124,7 @@ public:
 
     UINT_PTR           mainTimerId    = 0;
     std::uint32_t      lastTimerTick  = 0;
-    bool               loadingFailed = false;
+    bool               scriptSomethingFailed = false;
 
 
     std::uint32_t getTickDelta()
@@ -225,6 +225,7 @@ public:
     {
         auto msg = getExceptionString(e);
         umba::lout << msg << "\n";
+        umba::lout.flush();
         setStatusText(msg);
     }
 
@@ -232,6 +233,7 @@ public:
     {
         auto msg = getExceptionString();
         umba::lout << msg << "\n";
+        umba::lout.flush();
         setStatusText(msg);
     }
 
@@ -295,7 +297,8 @@ public:
 
         #endif
 
-        loadingFailed = false;
+        bool scriptSomethingFailedPrev = scriptSomethingFailed;
+        scriptSomethingFailed = false;
 
         if (!sqScript.empty())
         {
@@ -310,16 +313,21 @@ public:
 
 
                 ssq::sqstring preparedScriptText1 = _SC("Game <- {}")
-                                                  + marty_draw_context::simplesquirrel::performBinding(vm, sqScript, "Drawing")
                                                   + marty_vk::simplesquirrel::enumsExposeMakeScript("Vk")
+                                                  + marty_draw_context::simplesquirrel::performBinding(vm, sqScript, "Drawing")
                                                   ;
 
-                #if defined(DEBUG) || defined(_DEBUG)
-                    #if defined(LOG_SQUIRREL_SOURCES)
-                        lout << encoding::toUtf8(preparedScriptText1);
-                        lout << "\n----------\n\n";
-                    #endif
-                #endif
+                if (scriptSomethingFailedPrev)
+                {
+                    lout << encoding::toUtf8(preparedScriptText1);
+                    lout << "\n----------\n\n";
+                }
+                // #if defined(DEBUG) || defined(_DEBUG)
+                //     #if defined(LOG_SQUIRREL_SOURCES)
+                //         lout << encoding::toUtf8(preparedScriptText1);
+                //         lout << "\n----------\n\n";
+                //     #endif
+                // #endif
     
                 ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
     
@@ -328,10 +336,10 @@ public:
                 setStatusReady();
                 
             } 
-            MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(loadingFailed)
+            MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
             
 
-            if (loadingFailed)
+            if (scriptSomethingFailed)
             {
                 if (mainTimerId)
                 {
@@ -355,7 +363,7 @@ public:
 
                     setStatusReady();
                 } 
-                MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS()
+                MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
 
                 mainTimerId = ::SetTimer(m_hWnd, 1, 25 /* ms */ , 0);
 
@@ -423,7 +431,7 @@ public:
         using umba::lout;
         using namespace umba::omanip;
 
-        if (loadingFailed)
+        if (scriptSomethingFailed)
         {
             return;
         }
@@ -457,7 +465,7 @@ public:
                 setStatusReady();
 
             } 
-            MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS()
+            MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
 
             if (timerHandlerFails)
             {
@@ -511,7 +519,7 @@ public:
 
         MARTY_ARG_USED(nFlags);
 
-        if (loadingFailed)
+        if (scriptSomethingFailed)
         {
             return;
         }
@@ -530,19 +538,62 @@ public:
             setStatusReady();
 
         } 
-        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS()
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
         
     }
+
+
+    marty_draw_context::simplesquirrel::DrawingCoords getClientSize() const
+    {
+        marty_draw_context::simplesquirrel::DrawingCoords sz;
+
+        RECT clientRect{0,0};
+        ::GetClientRect(m_hWnd, &clientRect);
+
+        auto cx = clientRect.right  - clientRect.left; // + 1;
+        auto cy = clientRect.bottom - clientRect.top ; // + 1;
+        // lout << "OnPaint: cx: " << cx << ", cy: " << cy <<"\n";
+        sz.x = (float)(cx);
+        sz.y = (float)(cy);
+
+        return sz;
+    }
+
 
     void OnSize(UINT nType, CSize size)
     {
         MARTY_ARG_USED(nType);
         MARTY_ARG_USED(size);
 
-        if (loadingFailed)
+        if (scriptSomethingFailed)
         {
             return;
         }
+
+        try
+        {
+           try
+           {
+                ssq::Function sqOnSizeEvent = marty_simplesquirrel::findFunc(vm, "Game.onWindowSize");
+
+                marty_draw_context::simplesquirrel::DrawingCoords sz = getClientSize();
+    
+                auto res = vm.callFunc(sqOnSizeEvent, vm,  /* appHost,  */ (int)nType, sz);
+    
+                bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onWindowSize returned"));
+                if (needUpdate)
+                {
+                    invalidateClientArea();
+                }
+    
+                setStatusReady();
+           
+           }
+           catch (ssq::NotFoundException&)
+           {}
+
+        } 
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
 
     }
 
@@ -551,10 +602,35 @@ public:
         MARTY_ARG_USED(fwSide);
         MARTY_ARG_USED(pRect);
 
-        if (loadingFailed)
+        if (scriptSomethingFailed)
         {
             return;
         }
+
+        try
+        {
+           try
+           {
+                ssq::Function sqOnSizeEvent = marty_simplesquirrel::findFunc(vm, "Game.onWindowSizing");
+
+                marty_draw_context::simplesquirrel::DrawingCoords sz = getClientSize();
+    
+                auto res = vm.callFunc(sqOnSizeEvent, vm,  /* appHost,  */ (int)fwSide, sz);
+    
+                bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onWindowSizing returned"));
+                if (needUpdate)
+                {
+                    invalidateClientArea();
+                }
+    
+                setStatusReady();
+           
+           }
+           catch (ssq::NotFoundException&)
+           {}
+
+        } 
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
 
     }
 
@@ -678,7 +754,7 @@ public:
         using umba::lout;
         using namespace umba::omanip;
 
-        if (loadingFailed)
+        if (scriptSomethingFailed)
         {
             return;
         }
@@ -711,7 +787,7 @@ public:
             setStatusReady();
 
         } 
-        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS()
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
         
 
         auto endTick = umba::time_service::getCurTimeMs();

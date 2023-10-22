@@ -184,7 +184,7 @@ function Game::onPaint(dc)
     dc.selectPen(circlePen);
     dc.circle(pos, puckR);
 
-    local genericFontParamsH20 = D.FontParams(2  , D.FontWeight.Normal, D.FontStyleFlags.None, "Arial");
+    local genericFontParamsH20 = D.FontParams(2  , D.FontWeight.Normal, D.FontStyleFlags.Normal, "Arial");
     local arialFontId          = dc.createFontWithFace( genericFontParamsH20 , "Arial"          );
 
 
