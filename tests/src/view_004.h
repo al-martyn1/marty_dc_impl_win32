@@ -124,6 +124,7 @@ public:
 
     UINT_PTR           mainTimerId    = 0;
     std::uint32_t      lastTimerTick  = 0;
+    bool               loadingFailed = false;
 
 
     std::uint32_t getTickDelta()
@@ -143,6 +144,134 @@ public:
     {
         lastTimerTick = ::GetTickCount();
     }
+
+    HWND findStatusBar() const
+    {
+        HWND hwndParent = ::GetParent(m_hWnd);
+
+        // ID status bar 0x0000E801
+        // class is "msctls_statusbar32"
+
+        return ::FindWindowExA(hwndParent, 0, "msctls_statusbar32", 0);
+    }
+
+    void setStatusText(const std::string &t) const
+    {
+        HWND hwndStatusBar = findStatusBar();
+        ::SetWindowTextW(hwndStatusBar, encoding::fromUtf8(t).c_str());
+    }
+
+    void setStatusReady() const
+    {
+        setStatusText("Ready");
+    }
+
+    template<typename ExceptiuonType>
+    std::string getExceptionString(const char *title, const ExceptiuonType &e) const
+    {
+        MARTY_ARG_USED(title);
+
+        std::string resStr;
+
+        #if 0
+        if (title)
+        {
+            resStr.append(title);
+        }
+
+        if (!resStr.empty())
+        {
+            resStr.append(": ");
+        }
+        #endif
+
+        resStr.append(e.what());
+
+        return resStr;
+    }
+
+    std::string getExceptionString(const ssq::CompileException &e) const
+    {
+        return getExceptionString("Failed to load file", e);
+    }
+
+    std::string getExceptionString(const ssq::TypeException &e) const
+    {
+        return getExceptionString("Type error", e);
+    }
+
+    std::string getExceptionString(const ssq::RuntimeException &e) const
+    {
+        return getExceptionString("Runtime error", e);
+    }
+
+    std::string getExceptionString(const ssq::NotFoundException &e) const
+    {
+        return getExceptionString("Not found", e);
+    }
+
+    std::string getExceptionString(const std::out_of_range &e) const
+    {
+        return getExceptionString("Out of range", e);
+    }
+
+    std::string getExceptionString() const
+    {
+        return std::string("Unknown error");
+    }
+
+    template<typename ExceptiuonType>
+    void logException(const ExceptiuonType &e)
+    {
+        auto msg = getExceptionString(e);
+        umba::lout << msg << "\n";
+        setStatusText(msg);
+    }
+
+    void logException()
+    {
+        auto msg = getExceptionString();
+        umba::lout << msg << "\n";
+        setStatusText(msg);
+    }
+
+    #define MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION_EX(exceptionType, actionFailed)       \
+        catch(const exceptionType &e)                                                           \
+        {                                                                                       \
+            logException(e);                                                                    \
+            actionFailed = true;                                                                \
+        }
+
+    #define MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(actionFailed)                     \
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION_EX(ssq::CompileException, actionFailed)   \
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION_EX(ssq::TypeException, actionFailed)      \
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION_EX(ssq::RuntimeException, actionFailed)   \
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION_EX(ssq::NotFoundException, actionFailed)  \
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION_EX(std::out_of_range, actionFailed)       \
+        catch(...)                                                                              \
+        {                                                                                       \
+            logException();                                                                     \
+            actionFailed = true;                                                                \
+        }
+
+    #define MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION(exceptionType)                        \
+        catch(const exceptionType &e)                                                           \
+        {                                                                                       \
+            logException(e);                                                                    \
+        }
+
+    #define MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS()                                    \
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION(ssq::CompileException)                    \
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION(ssq::TypeException)                       \
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION(ssq::RuntimeException)                    \
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION(ssq::NotFoundException)                   \
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION(std::out_of_range)                        \
+        catch(...)                                                                              \
+        {                                                                                       \
+            logException();                                                                     \
+        }
+
+
 
 
     void reloadScript( bool bFirstTime = false)
@@ -166,7 +295,7 @@ public:
 
         #endif
 
-        bool loadingFailed = false;
+        loadingFailed = false;
 
         if (!sqScript.empty())
         {
@@ -195,32 +324,12 @@ public:
                 ssq::Script script = vm.compileSource(preparedScriptText1.c_str(), sqScriptFilename.c_str());
     
                 vm.run(script);
-                
-            } catch (ssq::CompileException& e) {
-                lout << "Failed to run file: " << e.what() << "\n";
-                loadingFailed = true;
-                //return -1;
-            } catch (ssq::TypeException& e) {
-                lout << "Something went wrong passing objects: " << e.what() << "\n";
-                loadingFailed = true;
-                //return -1;
-            } catch (ssq::RuntimeException& e) {
-                lout << "Something went wrong during execution: " << e.what() << "\n";
-                loadingFailed = true;
-                //return -1;
-            } catch (ssq::NotFoundException& e) {
-                lout << e.what() << "\n";
-                loadingFailed = true;
-                //return -1;
-            } catch (std::out_of_range& e) {
-                lout << e.what() << "\n";
-                //return -1;
-            } catch (...) {
-                lout << "Unknown error" << "\n";
-                loadingFailed = true;
-                //return -1;
-            }
 
+                setStatusReady();
+                
+            } 
+            MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(loadingFailed)
+            
 
             if (loadingFailed)
             {
@@ -243,27 +352,10 @@ public:
                     {
                         invalidateClientArea();
                     }
-        
-                } catch (ssq::CompileException& e) {
-                    lout << "Failed to run file: " << e.what() << "\n";
-                    //return -1;
-                } catch (ssq::TypeException& e) {
-                    lout << "Something went wrong passing objects: " << e.what() << "\n";
-                    //return -1;
-                } catch (ssq::RuntimeException& e) {
-                    lout << "Something went wrong during execution: " << e.what() << "\n";
-                    //return -1;
-                } catch (ssq::NotFoundException& e) {
-                    lout << e.what() << "\n";
-                    //return -1;
-                } catch (std::out_of_range& e) {
-                    lout << e.what() << "\n";
-                    //return -1;
-                } catch (...) {
-                    lout << "Unknown error" << "\n";
-                    //return -1;
-                }
 
+                    setStatusReady();
+                } 
+                MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS()
 
                 mainTimerId = ::SetTimer(m_hWnd, 1, 25 /* ms */ , 0);
 
@@ -305,6 +397,8 @@ public:
         MSG_WM_TIMER(OnTimer)
         MSG_WM_KEYDOWN(OnKeyDown)
         MSG_WM_KEYUP(OnKeyUp)
+        MSG_WM_SIZE(OnSize)
+        MSG_WM_SIZING(OnSizing)
         CHAIN_MSG_MAP(CScrollWindowImpl<CBitmapView>);
     END_MSG_MAP()
 
@@ -328,6 +422,11 @@ public:
     {
         using umba::lout;
         using namespace umba::omanip;
+
+        if (loadingFailed)
+        {
+            return;
+        }
 
         if (nIDEvent==mainTimerId)
         {
@@ -355,25 +454,10 @@ public:
                 catch (ssq::NotFoundException&)
                 {}
 
-            } catch (ssq::CompileException& e) {
-                lout << "Failed to run file: " << e.what() << "\n";
-                //return -1;
-            } catch (ssq::TypeException& e) {
-                lout << "Something went wrong passing objects: " << e.what() << "\n";
-                //return -1;
-            } catch (ssq::RuntimeException& e) {
-                lout << "Something went wrong during execution: " << e.what() << "\n";
-                //return -1;
-            } catch (ssq::NotFoundException& e) {
-                lout << e.what() << "\n";
-                //return -1;
-            } catch (std::out_of_range& e) {
-                lout << e.what() << "\n";
-                //return -1;
-            } catch (...) {
-                lout << "Unknown error" << "\n";
-                //return -1;
-            }
+                setStatusReady();
+
+            } 
+            MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS()
 
             if (timerHandlerFails)
             {
@@ -427,6 +511,11 @@ public:
 
         MARTY_ARG_USED(nFlags);
 
+        if (loadingFailed)
+        {
+            return;
+        }
+
         try{
             ssq::Function sqOnKeyEvent = marty_simplesquirrel::findFunc(vm, "Game.onKeyEvent");
 
@@ -438,22 +527,35 @@ public:
                 invalidateClientArea();
             }
 
-        } catch (ssq::CompileException& e) {
-            lout << "Failed to run file: " << e.what() << "\n";
-            //return -1;
-        } catch (ssq::TypeException& e) {
-            lout << "Something went wrong passing objects: " << e.what() << "\n";
-            //return -1;
-        } catch (ssq::RuntimeException& e) {
-            lout << "Something went wrong during execution: " << e.what() << "\n";
-            //return -1;
-        } catch (ssq::NotFoundException& e) {
-            lout << e.what() << "\n";
-            //return -1;
-        } catch (...) {
-            lout << "Unknown error" << "\n";
-            //return -1;
+            setStatusReady();
+
+        } 
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS()
+        
+    }
+
+    void OnSize(UINT nType, CSize size)
+    {
+        MARTY_ARG_USED(nType);
+        MARTY_ARG_USED(size);
+
+        if (loadingFailed)
+        {
+            return;
         }
+
+    }
+
+    void OnSizing(UINT fwSide, LPRECT pRect)
+    {
+        MARTY_ARG_USED(fwSide);
+        MARTY_ARG_USED(pRect);
+
+        if (loadingFailed)
+        {
+            return;
+        }
+
     }
 
     LRESULT OnEraseBackground(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -576,6 +678,11 @@ public:
         using umba::lout;
         using namespace umba::omanip;
 
+        if (loadingFailed)
+        {
+            return;
+        }
+
         auto startTick = umba::time_service::getCurTimeMs();
 
         try{
@@ -601,22 +708,11 @@ public:
             vm.callFunc(sqOnPaint, vm,  /* appHost,  */ &sqDc);
             //vm.callFunc(sqOnPaint, vm, sqDc);
 
-        } catch (ssq::CompileException& e) {
-            lout << "Failed to run file: " << e.what() << "\n";
-            //return -1;
-        } catch (ssq::TypeException& e) {
-            lout << "Something went wrong passing objects: " << e.what() << "\n";
-            //return -1;
-        } catch (ssq::RuntimeException& e) {
-            lout << "Something went wrong during execution: " << e.what() << "\n";
-            //return -1;
-        } catch (ssq::NotFoundException& e) {
-            lout << e.what() << "\n";
-            //return -1;
-        } catch (...) {
-            lout << "Unknown error" << "\n";
-            //return -1;
-        }
+            setStatusReady();
+
+        } 
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS()
+        
 
         auto endTick = umba::time_service::getCurTimeMs();
 
