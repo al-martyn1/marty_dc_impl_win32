@@ -560,7 +560,7 @@ public:
     }
 
 
-    void OnSize(UINT nType, WTL::CSize size)
+    void OnSize(UINT nType, ::CSize size)
     {
         MARTY_ARG_USED(nType);
         MARTY_ARG_USED(size);
