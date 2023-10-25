@@ -196,10 +196,8 @@ public:
                                           , marty_draw_context::FontStyleFlags::italic // normal
                                           };
         marty_draw_context::FontParamsA genericFontParamsH20 = genericFontParamsH8; genericFontParamsH20.height = 20;
-        marty_draw_context::FontParamsA genericFontParamsH4  = genericFontParamsH8; genericFontParamsH4 .height =  4;
         marty_draw_context::FontParamsA genericFontParamsH3  = genericFontParamsH8; genericFontParamsH3 .height =  3;
-
-        
+        marty_draw_context::FontParamsA genericFontParamsH4  = genericFontParamsH8; genericFontParamsH4 .height =  4;
 
 
         auto arialFontId     = pDc->createFont( genericFontParamsH8, "Arial"          );
@@ -213,7 +211,8 @@ public:
         auto fixedsysFontId  = pDc->createFont( genericFontParamsH8, "Fixedsys" );
 
         //auto timesSmallFontId = pDc->createFont( genericFontParamsH4, "Times New Roman");
-        auto timesSmallFontId = pDc->createFont( genericFontParamsH3, "Times New Roman");
+        auto timesSmallFont3Id = pDc->createFont( genericFontParamsH3, "Times New Roman");
+        auto timesSmallFont4Id = pDc->createFont( genericFontParamsH4, "Times New Roman");
 
 
         auto labelsFontId  = pDc->createFont( genericFontParamsH20, "Courier New"    );
@@ -221,6 +220,8 @@ public:
         MARTY_ARG_USED(timesFontId  );
         MARTY_ARG_USED(courierFontId);
         MARTY_ARG_USED(labelsFontId );
+        MARTY_ARG_USED(timesSmallFont3Id);
+        MARTY_ARG_USED(timesSmallFont4Id);
 
         auto penId         = pDc->selectNewSolidPen( PenParamsWithColor{ 0.5, LineEndcapStyle::round, LineJoinStyle::round, ColorRef{0, 168, 0} } );
         MARTY_ARG_USED(penId);
@@ -420,6 +421,25 @@ public:
         // bool fillGradientRect(DrawingCoords leftTop, DrawingCoords rightBottom, DrawingGradientParams gradientParams, int gradientType, bool excludeFrame) const
         #endif
 
+        std::uint32_t letterColors[8] = { (std::uint32_t)-1
+                                        , (std::uint32_t)-1
+                                        , (std::uint32_t)-1
+                                        , (std::uint32_t)-1
+                                        , (std::uint32_t)-1
+                                        , (std::uint32_t)-1
+                                        , (std::uint32_t)-1
+                                        , (std::uint32_t)-1
+                                        };
+
+        letterColors[0] = marty_draw_context::ColorRef::deserialize("GreenYellow").toUnsigned();
+        letterColors[1] = marty_draw_context::ColorRef::deserialize("Red").toUnsigned();
+        letterColors[2] = marty_draw_context::ColorRef::deserialize("Blue").toUnsigned();
+        letterColors[3] = marty_draw_context::ColorRef::deserialize("Grey").toUnsigned();
+        letterColors[4] = marty_draw_context::ColorRef::deserialize("Cyan").toUnsigned();
+        letterColors[5] = marty_draw_context::ColorRef::deserialize("DarkCyan").toUnsigned();
+        letterColors[6] = marty_draw_context::ColorRef::deserialize("MediumCyan").toUnsigned();
+        letterColors[7] = marty_draw_context::ColorRef::deserialize("Brown").toUnsigned();
+
 
         #ifdef TEST_DC_FONTS
 
@@ -437,24 +457,6 @@ public:
 
                 #if 1
 
-                std::uint32_t colors[8] = { (std::uint32_t)-1
-                                          , (std::uint32_t)-1
-                                          , (std::uint32_t)-1
-                                          , (std::uint32_t)-1
-                                          , (std::uint32_t)-1
-                                          , (std::uint32_t)-1
-                                          , (std::uint32_t)-1
-                                          , (std::uint32_t)-1
-                                          };
-
-                colors[0] = marty_draw_context::ColorRef::deserialize("GreenYellow").toUnsigned();
-                colors[1] = marty_draw_context::ColorRef::deserialize("Red").toUnsigned();
-                colors[2] = marty_draw_context::ColorRef::deserialize("Blue").toUnsigned();
-                colors[3] = marty_draw_context::ColorRef::deserialize("Grey").toUnsigned();
-                colors[4] = marty_draw_context::ColorRef::deserialize("Cyan").toUnsigned();
-                colors[5] = marty_draw_context::ColorRef::deserialize("DarkCyan").toUnsigned();
-                colors[6] = marty_draw_context::ColorRef::deserialize("MediumCyan").toUnsigned();
-                colors[7] = marty_draw_context::ColorRef::deserialize("Brown").toUnsigned();
 
                 
                 auto textColorSaver = marty_draw_context::TextColorSaver(pDc, clr ); // Устанавливаем дефолтный цвет текста, одновременно сохраняя текущий для последующего восстановления
@@ -468,7 +470,7 @@ public:
                                       , text, (std::size_t)-1 // textSize
                                       , 0 // lastCharProcessed
                                       , &nCharsProcessed
-                                      , &colors[0], 8
+                                      , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
                                       , &nSymbolsDrawn
                                       , 0 // stopChars
                                       , fontId
@@ -880,14 +882,7 @@ public:
         #ifdef TEST_DC_DRAW_PARA
         {
             // https://ru.wikipedia.org/wiki/Lorem_ipsum
-            std::wstring loremIpsumTiny = L"Lo—rem   \tip–sum\t\tdolor — sit – amet, consectetur adipiscing elit, sed do eiusmod tempor";
 
-            std::wstring loremIpsumShort = L"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor "
-                                    L"incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud "
-                                    L"exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure "
-                                    L"dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
-                                    L"Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt "
-                                    L"mollit anim id est laborum.";
             std::wstring loremIpsumLong = L"Sed ut perspiciatis, unde omnis iste natus error sit voluptatem accusantium "
                                     L"doloremque laudantium, totam rem aperiam eaque ipsa, quae ab illo inventore veritatis "
                                     L"et quasi architecto beatae vitae dicta sunt, explicabo. Nemo enim ipsam voluptatem, "
@@ -909,28 +904,35 @@ public:
                                     L"Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores "
                                     L"alias consequatur aut perferendis doloribus asperiores repellat.";
 
+            std::wstring loremIpsumShort = L"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor "
+                                    L"incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud "
+                                    L"exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure "
+                                    L"dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
+                                    L"Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt "
+                                    L"mollit anim id est laborum.";
+
+            std::wstring loremIpsumTiny = L"Lo—r   em\tip–s\tum\tdolor — sit – amet, consectetur adipiscing elit, sed do eiusmod tempor";
+
             #include "hogwarts.h"
 
-
-            auto pos                       = DrawCoord(60, 40);
+            auto pos                       = DrawCoord(60, 48);
             auto paraLimits                = DrawCoord(70, 200);
             DrawCoord::value_type nextPosY = 0;
-            DrawCoord::value_type tabStopPositions[] = {3,10,20,40};
+            //DrawCoord::value_type tabStopPositions[] = {30,50,60,110};
+            DrawCoord::value_type tabStopPositions[] = {25,50,80,110};
 
             pDc->drawParaColoredEx( pos, paraLimits, &nextPosY
-                                  , (DrawCoord::value_type)0.2  // lineSpacing
-                                  , (DrawCoord::value_type)0.5  // paraIndent
-                                  , (DrawCoord::value_type)2.0  // tabSize
+                                  , (DrawCoord::value_type)0.2   // lineSpacing
+                                  , (DrawCoord::value_type)3.5   // paraIndent
+                                  , (DrawCoord::value_type)10.0  // tabSize
                                   , DrawTextFlags::fitGlyphDefault | DrawTextFlags::fitHeightDisable
                                   , HorAlign::left
                                   , VertAlign::top
                                   , loremIpsumTiny.c_str(), loremIpsumTiny.size() // loremIpsumShort.c_str(), loremIpsumShort.size() // (std::size_t)-1
                                   , 0 // pCharsProcessed
-                                  , 0 // pColors
-                                  , 0 // nColors
-                                  , &tabStopPositions[0]
-                                  , 4
-                                  , timesSmallFontId
+                                  , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
+                                  , &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
+                                  , timesSmallFont4Id
                                   );
 
         }

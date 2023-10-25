@@ -1119,7 +1119,8 @@ protected:
         }
 
 
-        std::size_t getNumberOfCharsFitWidth(DrawCoord::value_type lim) const
+        // С учетом сурогатных пар
+        std::size_t getNumberOfCharInfosFitWidth(DrawCoord::value_type lim) const
         {
             std::size_t            chIdx = 0;
             DrawCoord::value_type  w     = 0;
@@ -1151,6 +1152,26 @@ protected:
 
         } // getNumberOfCharsFitWidth
 
+        std::size_t getNumberOfCharsByNumberCharInfos(std::size_t nCharInfos) const
+        {
+            if (nCharInfos>=charInfos.size())
+            {
+                if (charInfos.empty())
+                {
+                    return 0;
+                }
+                else
+                {
+                    return charInfos.back().idx + charInfos.back().len;
+                    // можно и text.size() вернуть
+                }
+            }
+            else
+            {
+                return charInfos[nCharInfos].idx; // 
+            }
+
+        }
 
     }; // struct TextPortionInfo
 
@@ -1171,7 +1192,7 @@ protected:
                                , std::size_t                           textSize=(std::size_t)-1
                                , const std::uint32_t                   *pColors=0
                                , std::size_t                           nColors=0
-                               , DrawCoord::value_type                 *pTabStopPositions=0        //!< Relative to start pos X coord
+                               , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
                                , std::size_t                           nTabStopPositions=0
                                , int                                   fontId=-1
                                )
@@ -1216,6 +1237,7 @@ protected:
 
         std::size_t lineNumber     = 0;
         std::size_t wordsDrawn     = 0;
+        bool        wordSpacesOnly = true;
         std::size_t tpIdx          = 0;
         std::size_t tabNumber      = 0;
         DrawCoord::value_type limX = startPos.x + limits.x;
@@ -1223,7 +1245,9 @@ protected:
         DrawCoord   pos            = startPos;
         pos.x                     += paraIndent; // Для первой строки сразу добавлям отступ параграфа
 
-        const bool keepLtSpaces = (flags&DrawTextFlags::keepLtSpaces)!=0;
+        const bool keepLtSpaces  = (flags&DrawTextFlags::keepLtSpaces)!=0;
+        const auto ellipsisFlags = DrawTextFlags::endEllipsis | DrawTextFlags::pathEllipsis | DrawTextFlags::wordEllipsis;
+        const auto stopFlags     = DrawTextFlags::stopOnLineBreaks | DrawTextFlags::stopOnTabs;
 
         MARTY_IDC_ARG_USED(limX);
         MARTY_IDC_ARG_USED(limY);
@@ -1245,12 +1269,26 @@ protected:
 
         auto nextLine = [&]()
         {
-            ++lineNumber;
-            wordsDrawn = 0;
-            tabNumber  = 0;
-            pos.x      = startPos.x;
-            pos.y     += fontMetrics.height; // lineSpacing тут не добавляем
+            if (!wordSpacesOnly)
+            {
+                ++lineNumber;
+                pos.y     += fontMetrics.height + lineSpacing; // Потом в конце надо отнять lineSpacing, если не первая строка
+            }
+            
+            wordsDrawn     = 0;
+            wordSpacesOnly = true;
+            tabNumber      = 0;
+            pos.x          = startPos.x;
+            
             skipSpaces();
+        };
+
+        auto checkGoNextLine = [&]()
+        {
+            if (pos.x>limX)
+            {
+                nextLine();
+            }
         };
 
         auto getTabStopPosX = [&]()
@@ -1270,17 +1308,66 @@ protected:
 
         //DrawCoord::value_type
 
+        auto drawTextHelper = [&](const wchar_t *pText, std::size_t textSize /* , std::size_t *pSymbolsDrawn */ )
+        {
+            std::size_t nSymbolsDrawn = 0;
+            bool bRes = drawTextColoredEx( pos, 0 // widthLim
+                                         , 0 // pNextPosX - не нужен
+                                         , 0 // pOverhang - не нужен
+                                         , (flags | DrawTextFlags::fitWidthDisable) & ~(ellipsisFlags|stopFlags) // в лимит укладываться не нужно, и элипсисы не рисуем
+                                         , pText, textSize // tpi.text.data(), numWcharsFit
+                                         , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
+                                         , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                         , pColors, nColors
+                                         , &nSymbolsDrawn
+                                         , 0 // stopChars
+                                         , -1 // fontId
+                                         );
+            if (bRes && pColors)
+            {
+                if (nSymbolsDrawn>nColors)
+                {
+                    pColors += nColors;
+                    nColors  = 0;
+                }
+                else
+                {
+                    pColors += nSymbolsDrawn;
+                    nColors -= nSymbolsDrawn;
+                }
+            }
+
+            return bRes;
+        };
+
+
+        auto splitTextPortionInfo = [&]( std::size_t tpIdx, std::size_t numWcharsFit)
+        {
+            const TextPortionInfo &tpi = textPortions[tpIdx];
+
+            TextPortionInfo newTpi;
+            newTpi.tpType = tpi.tpType; // TpType::space;
+            newTpi.text = std::wstring_view( tpi.text.data()+numWcharsFit, tpi.text.size()-numWcharsFit );
+            // https://www.nextptr.com/tutorial/ta1430524603/capture-this-in-lambda-expression-timeline-of-change
+            newTpi.updateWidth(this, kerningPairs, flags, fontMetrics);
+            textPortions.insert(textPortions.begin()+(std::ptrdiff_t)tpIdx, newTpi);
+        };
+
+
+
+        bool globalStop = false;
 
         if (horAlign==HorAlign::left)
         {
             skipSpaces();
 
-            while(tpIdx!=textPortions.size())
+            //while(tpIdx!=textPortions.size() && !globalStop)
+            for(; tpIdx!=textPortions.size() && !globalStop; ++tpIdx)
             {
                 // Готовы рисовать
                 // Рисуем строку
 
-                while(true) // Пока строка не закончена
+                //for(; tpIdx!=textPortions.size() && !globalStop; ++tpIdx) // Пока строка не закончена
                 {
                     const TextPortionInfo &tpi = textPortions[tpIdx];
                     if (tpi.tpType==TpType::space)
@@ -1290,16 +1377,44 @@ protected:
                             pos.x += tpi.width;
                             // Больше ничего не делаем, пробел же
                         }
-                        else
+                        else // Режим сохранения leading & trailing spaces
                         {
                             // тут надо проверить лимит и нарисовать/пропустить нужное число пробелов
                             // и при необходимости перенести строку
+
+                            auto remainingWidth = limX - pos.x;
+                            auto nCharsToDraw   = tpi.getNumberOfCharInfosFitWidth(remainingWidth);
+
+                            if (nCharsToDraw>=tpi.charInfos.size())
+                            {
+                                // рисуем целиком, всё нормально
+                                // опс, у нас пробелы, ничего делать и не надо
+                                pos.x += tpi.width;
+                            }
+                            else if (!nCharsToDraw)
+                            {
+                                return false; // ничего не влезает - это ошибка с лимитами, слишком маленький
+                            }
+                            else
+                            {
+                                // Нужно проверить, это первое слово в текущей строке
+                                // Если не первое, то все равно - пробелы можно разбивать всегда
+
+                                auto numWcharsFit = tpi.getNumberOfCharsByNumberCharInfos(nCharsToDraw);
+                                splitTextPortionInfo(tpIdx, numWcharsFit);
+                            }
                         }
+
+                        ++wordsDrawn; // Пробелы тоже считаем за отрисованые слова
+
+                        checkGoNextLine();
+
                     }
                     else if (tpi.tpType==TpType::tab)
                     {
                         pos.x = getTabStopPosX();
                         // Больше ничего не делаем, просто табуляция
+                        checkGoNextLine();
                     }
                     else if (tpi.tpType==TpType::text)
                     {
@@ -1309,38 +1424,86 @@ protected:
                         // Какие у нас варианты
                         // 1) Начальная точка вышла за пределы - тут мы вообще ничего сделать не можем, надо переносить на следующую строку
 
-                        bool limReached = false;
+                        bool startLimReached = false;
+                        bool endLimReached   = false;
 
-                        // if (startX>=limX)
+                        if (startX>=limX)
+                            startLimReached = true;
+
                         if (endX>=limX) // 
+                            endLimReached = true;
+
+                        if (wordsDrawn==0)
                         {
-                            limReached = true;
+                            if (startLimReached)
+                            {
+                                return false; // Слово ещё не нарисовано, но уже вышли за диапазон - явно что-то с диапазоном - возвращаем ошибку
+                            }
+
+                            if (endLimReached)
+                            {
+                                // Слов ещё не нарисовано, а текущее - уже не влезает, значит, рисуем то, что есть
+                                auto remainingWidth = limX - pos.x;
+                                auto nCharsToDraw   = tpi.getNumberOfCharInfosFitWidth(remainingWidth);
+                                auto numWcharsFit   = tpi.getNumberOfCharsByNumberCharInfos(nCharsToDraw);
+
+                                if (nCharsToDraw>=tpi.charInfos.size())
+                                {
+                                    // рисуем целиком, всё нормально, но вообще - странная ситуация, такого не должно быть
+                                    if (!drawTextHelper(tpi.text.data(), numWcharsFit))
+                                        return false;
+                                    ++wordsDrawn;
+                                    wordSpacesOnly = false;
+                                    nextLine();
+                                }
+                                else if (!nCharsToDraw)
+                                {
+                                    return false; // ничего не влезает - это ошибка с лимитами, слишком маленький
+                                }
+                                else
+                                {
+                                    if (!drawTextHelper(tpi.text.data(), numWcharsFit))
+                                        return false;
+                                    ++wordsDrawn;
+                                    wordSpacesOnly = false;
+                                    splitTextPortionInfo(tpIdx, numWcharsFit);
+                                    nextLine();
+                                }
+
+                            }
+                            else // !endLimReached - порцию текста рисуем целиком
+                            {
+                                if (!drawTextHelper(tpi.text.data(), tpi.text.size()))
+                                    return false;
+                                ++wordsDrawn;
+                                wordSpacesOnly = false;
+                                pos.x += tpi.width;
+
+                                checkGoNextLine();
+                            }
+                        
                         }
+                        else // wordsDrawn!=0
+                        {
+                            if (startLimReached)
+                            {
+                                nextLine(); // Начало не влезает, но это не первое слово в строке - просто переходим на следующую строку
+                            }
 
+                            if (endLimReached)
+                            {
+                                nextLine(); // Конец не влезает, но это не первое слово в строке - просто переходим на следующую строку
+                            }
 
-                        #if 0
-                        tpi.overhang
-                        std::size_t getNumberOfCharsFitWidth(DrawCoord::value_type lim) const
+                            // порцию текста рисуем целиком
+                            if (!drawTextHelper(tpi.text.data(), tpi.text.size()))
+                                return false;
+                            ++wordsDrawn;
+                            wordSpacesOnly = false;
+                            pos.x += tpi.width;
 
-
-                        std::size_t nSymbolsDrawn = 0;
-
-                        bool bRes = drawTextColoredEx( pos
-                                  , const DrawCoord::value_type   &widthLim
-                                  , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
-                                  , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
-                                  , DrawTextFlags                 flags
-                                  , const wchar_t                 *text
-                                  , std::size_t                   textSize=(std::size_t)-1
-                                  , std::uint32_t                 *pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
-                                  , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                  , const std::uint32_t           *pColors=0
-                                  , std::size_t                   nColors=0
-                                  , std::size_t                   *pSymbolsDrawn=0
-                                  , const wchar_t                 *stopChars=0
-                                  , int                           fontId=-1
-                                  ) = 0;
-                        #endif
+                            checkGoNextLine();
+                        }
 
                     }
                     else
@@ -1409,7 +1572,7 @@ protected:
                               , std::size_t                           *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
                               , const std::uint32_t                   *pColors=0
                               , std::size_t                           nColors=0
-                              , DrawCoord::value_type                 *pTabStopPositions=0        //!< Relative to start pos X coord
+                              , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
                               , std::size_t                           nTabStopPositions=0
                               , int                                   fontId=-1
                               )
@@ -1733,6 +1896,8 @@ protected:
         return bRes;
     }
 
+// bool marty_draw_context::DrawContextImplBase::drawParaColoredEx(const marty_draw_context::DrawCoord &,const marty_draw_context::DrawCoord &,marty_draw_context::DrawCoord::value_type *,const marty_draw_context::DrawCoord::value_type &,const marty_draw_context::DrawCoord::value_type &,const marty_draw_context::DrawCoord::value_type &,marty_draw_context::DrawTextFlags,marty_draw_context::HorAlign,marty_draw_context::VertAlign,const wchar_t *,size_t,size_t *,const uint32_t *,size_t,marty_draw_context::DrawCoord::value_type *,size_t,int)': member function does not override any base class virtual member function
+// bool marty_draw_context::IDrawContext::       drawParaColoredEx(const marty_draw_context::DrawCoord &,const marty_draw_context::DrawCoord &,marty_draw_context::DrawCoord::value_type *,const marty_draw_context::DrawCoord::value_type &,const marty_draw_context::DrawCoord::value_type &,const marty_draw_context::DrawCoord::value_type &,marty_draw_context::DrawTextFlags,marty_draw_context::HorAlign,marty_draw_context::VertAlign,const wchar_t *,size_t,size_t *,const uint32_t *,size_t,const marty_draw_context::DrawCoord::value_type *,size_t,int)': no override available for virtual member function from base 'marty_draw_context::IDrawContext'; function is hidden
 
     virtual bool drawParaColoredEx( const DrawCoord                       &startPos
                                   , const DrawCoord                       &limits       //!< Limits, vertical and horizontal, relative to start pos
@@ -1748,7 +1913,7 @@ protected:
                                   , std::size_t                           *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
                                   , const std::uint32_t                   *pColors=0
                                   , std::size_t                           nColors=0
-                                  , DrawCoord::value_type                 *pTabStopPositions=0        //!< Relative to start pos X coord
+                                  , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
                                   , std::size_t                           nTabStopPositions=0
                                   , int                                   fontId=-1
                                   ) override
