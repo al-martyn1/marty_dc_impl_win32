@@ -1,3 +1,5 @@
+// Inline types. Not for include itself
+    
     struct CharInfo
     {
         std::size_t                idx;

@@ -1,3 +1,5 @@
+// Inline methods. Not for include itself
+
     bool drawTextColoredExImpl( const std::unordered_set<KerningPair> &kerningPairs
                               , const SimpleFontMetrics       &fontMetrics
                               , const DrawCoord               &startPos
@@ -326,35 +328,16 @@
                                , DrawCoord::value_type                 tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
                                , DrawTextFlags                         flags
                                , HorAlign                              horAlign
-                               , VertAlign                             vertAlign
-                               , const wchar_t                         *text
-                               , std::size_t                           textSize=(std::size_t)-1
+                               // , VertAlign                             vertAlign
+                               // , const wchar_t                         *text
+                               // , std::size_t                           textSize=(std::size_t)-1
                                , const std::uint32_t                   *pColors=0
                                , std::size_t                           nColors=0
                                , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
                                , std::size_t                           nTabStopPositions=0
-                               , int                                   fontId=-1
+                               // , int                                   fontId=-1 // шрифт уже выбран, параметр не нужен
                                )
     {
-        MARTY_IDC_ARG_USED(kerningPairs     );
-        MARTY_IDC_ARG_USED(fontMetrics      );
-        MARTY_IDC_ARG_USED(textPortions     );
-        MARTY_IDC_ARG_USED(startPos         );
-        MARTY_IDC_ARG_USED(limits           );
-        MARTY_IDC_ARG_USED(pNextPosY        );
-        MARTY_IDC_ARG_USED(lineSpacing      );
-        MARTY_IDC_ARG_USED(paraIndent       );
-        MARTY_IDC_ARG_USED(tabSize          );
-        MARTY_IDC_ARG_USED(flags            );
-        MARTY_IDC_ARG_USED(horAlign         );
-        MARTY_IDC_ARG_USED(vertAlign        );
-        MARTY_IDC_ARG_USED(text             );
-        MARTY_IDC_ARG_USED(textSize         );
-        MARTY_IDC_ARG_USED(pColors          );
-        MARTY_IDC_ARG_USED(nColors          );
-        MARTY_IDC_ARG_USED(pTabStopPositions);
-        MARTY_IDC_ARG_USED(nTabStopPositions);
-        MARTY_IDC_ARG_USED(fontId           );
 
         DrawCoord::value_type spaceWidth = 0;
         getCharWidth((std::uint32_t)' ', spaceWidth);
@@ -655,26 +638,6 @@
                 }
             }
 
-
-#if 0
-    enum class TpType // TextPortionType
-    {
-        invalid,
-        space,
-        text,
-        tab
-    };
-
-    struct TextPortionInfo
-    {
-        TpType                      tpType   ;
-        std::wstring_view           text     ;
-        std::vector<CharInfo>       charInfos;
-        DrawCoord::value_type       width    ;
-        DrawCoord::value_type       overhang ;
-#endif
-
-
         }
         else if (horAlign==HorAlign::center)
         {
@@ -958,14 +921,14 @@
                                               , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
                                               , flags | DrawTextFlags::fitHeightDisable | DrawTextFlags::calcOnly // установили флаг "нет лимита по высоте" и "только калькуляция", вроде ничего больше не надо
                                               , horAlign
-                                              , VertAlign::top
-                                              , text
-                                              , textSize
+                                              //, VertAlign::top
+                                              //, text
+                                              //, textSize
                                               , 0 // const std::uint32_t                   *pColors=0
                                               , 0 // nColors=0
                                               , pTabStopPositions        //!< Relative to start pos X coord
                                               , nTabStopPositions
-                                              , fontId
+                                              // , fontId
                                               );
 
             if (!bRes)
@@ -1003,14 +966,14 @@
                                           , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
                                           , flags
                                           , horAlign
-                                          , VertAlign::top
-                                          , text
-                                          , textSize
+                                          //, VertAlign::top
+                                          //, text
+                                          //, textSize
                                           , pColors
                                           , nColors
                                           , pTabStopPositions        //!< Relative to start pos X coord
                                           , nTabStopPositions
-                                          , fontId
+                                          // , fontId
                                           );
 
         if (!bRes)

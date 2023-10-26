@@ -926,12 +926,12 @@ public:
                                   , (DrawCoord::value_type)3.5   // paraIndent
                                   , (DrawCoord::value_type)10.0  // tabSize
                                   , DrawTextFlags::fitGlyphDefault | DrawTextFlags::fitHeightDisable
-                                  , HorAlign::left
+                                  , HorAlign::width // тестируем выравнивание по ширине
                                   , VertAlign::top
                                   , loremIpsumTiny.c_str(), loremIpsumTiny.size() // loremIpsumShort.c_str(), loremIpsumShort.size() // (std::size_t)-1
                                   , 0 // pCharsProcessed
                                   , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
-                                  , &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
+                                  , 0, 0 // &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
                                   , timesSmallFont4Id
                                   );
 
