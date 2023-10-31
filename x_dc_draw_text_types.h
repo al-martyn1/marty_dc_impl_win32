@@ -166,4 +166,18 @@
 
         }
 
+        DrawCoord::value_type getWidthByNumberCharInfos(std::size_t nCharInfos) const
+        {
+            std::size_t chIdx = 0;
+            DrawCoord::value_type resWidth = 0;
+
+            for(; chIdx!=charInfos.size() && chIdx!=nCharInfos; ++chIdx)
+            {
+                resWidth += charInfos[chIdx].width;
+            }
+
+            return resWidth;
+        }
+
+
     }; // struct TextPortionInfo

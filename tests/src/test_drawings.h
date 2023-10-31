@@ -466,6 +466,97 @@ std::size_t calcWordsBytes(const std::vector<std::wstring> &words, marty::Decima
 }
 
 
+inline
+void test_drawTextBox(marty_draw_context::IDrawContext *pDc, int penId, const marty_draw_context::DrawCoord &pos, const marty_draw_context::DrawCoord &lim, marty_draw_context::DrawCoord::value_type heigh)
+{
+    auto prevPen  = pDc->selectPen(penId);
+
+    using marty_draw_context::DrawCoord;
+
+    auto startPos = pos+DrawCoord((DrawCoord::value_type)0,heigh);
+    auto leftPos  = pos;
+    auto rightPos = DrawCoord(pos.x+lim.x,pos.y);
+    auto endPos   = DrawCoord(rightPos.x ,pos.y+heigh);
+
+    pDc->beginPath();
+    pDc->moveTo(startPos);
+    pDc->lineTo(leftPos);
+    pDc->lineTo(rightPos);
+    pDc->lineTo(endPos);
+    pDc->endPath( true, false ); // stroke, no fill
+
+    pDc->selectPen(prevPen);
+}
+
+inline 
+void test_drawParaColored( marty_draw_context::IDrawContext *pDc
+                         , const marty_draw_context::DrawCoord &pos
+                         , const marty_draw_context::DrawCoord &lim
+                         , const marty_draw_context::DrawCoord::value_type  *pTabStopPositions
+                         , std::size_t tabStopPositionsCount
+                         , const std::uint32_t *pLetterColors
+                         , std::size_t letterColorsCount
+                         , marty_draw_context::HorAlign horAlign
+                         , const marty_draw_context::DrawCoord::value_type &frameBoxHeight
+                         , int pixelPenId
+                         , int fontId
+                         , const std::wstring &text
+                         )
+{
+    using marty_draw_context::DrawCoord;
+    using marty_draw_context::DrawTextFlags;
+    using marty_draw_context::VertAlign;
+
+    DrawCoord::value_type nextPosY = 0;
+    bool                  verticalDone = false;
+
+    test_drawTextBox(pDc, pixelPenId, pos, lim, frameBoxHeight);
+
+    pDc->drawParaColoredEx( pos, lim, &nextPosY, &verticalDone
+                          , (DrawCoord::value_type)0.2   // lineSpacing
+                          , (DrawCoord::value_type)3.5   // paraIndent
+                          , (DrawCoord::value_type)10.0  // tabSize
+                          , DrawTextFlags::fitGlyphDefault | DrawTextFlags::fitHeightDisable
+                          , horAlign // HorAlign::width // тестируем выравнивание по ширине
+                          , VertAlign::top
+                          , text.c_str(), text.size()
+                          , 0 // pCharsProcessed
+                          , pLetterColors, letterColorsCount // &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
+                          , pTabStopPositions, tabStopPositionsCount
+                          , fontId
+                          );
+
+}
+
+#if 0
+            auto pos                       = DrawCoord(60, 48);
+            auto paraLimits                = DrawCoord(70, 200);
+            DrawCoord::value_type nextPosY = 0;
+            bool                  verticalDone = false;
+            //DrawCoord::value_type tabStopPositions[] = {30,50,60,110};
+            DrawCoord::value_type tabStopPositions[] = {25,50,80,110};
+
+            // redFramePenId
+            // pixelPen
+
+            test_drawTextBox(pDc, pixelPen, pos, paraLimits, 60);
+
+            pDc->drawParaColoredEx( pos, paraLimits, &nextPosY, &verticalDone
+                                  , (DrawCoord::value_type)0.2   // lineSpacing
+                                  , (DrawCoord::value_type)3.5   // paraIndent
+                                  , (DrawCoord::value_type)10.0  // tabSize
+                                  , DrawTextFlags::fitGlyphDefault | DrawTextFlags::fitHeightDisable
+                                  , HorAlign::width // тестируем выравнивание по ширине
+                                  , VertAlign::top
+                                  //, loremIpsumTiny.c_str(), loremIpsumTiny.size()
+                                  , loremIpsumShort.c_str(), loremIpsumShort.size() // (std::size_t)-1
+                                  , 0 // pCharsProcessed
+                                  , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
+                                  , 0, 0 // &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
+                                  , timesSmallFont4Id
+                                  );
+#endif
+
 
 
 } // namespace underwood

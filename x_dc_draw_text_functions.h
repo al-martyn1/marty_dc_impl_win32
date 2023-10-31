@@ -321,11 +321,12 @@
                                , const SimpleFontMetrics               &fontMetrics
                                , std::vector<TextPortionInfo>          textPortions
                                , const DrawCoord                       &startPos
-                               , const DrawCoord                       &limits       //!< Limits, vertical and horizontal, relative to start pos
-                               , DrawCoord::value_type                 *pNextPosY    //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
-                               , const  DrawCoord::value_type          &lineSpacing  //!< Extra space between lines of text
-                               , const  DrawCoord::value_type          &paraIndent   //!< Indent on the first line
-                               , DrawCoord::value_type                 tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
+                               , const DrawCoord                       &limits        //!< Limits, vertical and horizontal, relative to start pos
+                               , DrawCoord::value_type                 *pNextPosY     //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                               , bool                                  *pVerticalDone //!< OUT All/not all lines drawn, 
+                               , const  DrawCoord::value_type          &lineSpacing   //!< Extra space between lines of text
+                               , const  DrawCoord::value_type          &paraIndent    //!< Indent on the first line
+                               , DrawCoord::value_type                 tabSize        //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
                                , DrawTextFlags                         flags
                                , HorAlign                              horAlign
                                // , VertAlign                             vertAlign
@@ -365,16 +366,29 @@
         DrawCoord::value_type limX = startPos.x + limits.x;
         DrawCoord::value_type limY = startPos.y + limits.y;
         DrawCoord   pos            = startPos;
-        pos.x                     += paraIndent; // Для первой строки сразу добавлям отступ параграфа
+        pos.x                     += (horAlign==HorAlign::center) ? (DrawCoord::value_type)0 : paraIndent; // Для первой строки сразу добавлям отступ параграфа
 
-        const bool keepLtSpaces      = (flags&DrawTextFlags::keepLtSpaces)!=0;
+
+        const bool keepLtSpaces      = (horAlign==HorAlign::left) && ((flags&DrawTextFlags::keepLtSpaces)!=0);
         const bool noLastLineSpacing = (flags&DrawTextFlags::noLastLineSpacing)!=0;
         const auto ellipsisFlags     = DrawTextFlags::endEllipsis | DrawTextFlags::pathEllipsis | DrawTextFlags::wordEllipsis;
         const auto stopFlags         = DrawTextFlags::stopOnLineBreaks | DrawTextFlags::stopOnTabs;
+        const auto fitHeightDisable  = (flags&DrawTextFlags::calcOnly)!=0 || (flags&DrawTextFlags::fitHeightDisable)!=0;
 
+        bool bStoppedByLimY = false;
 
-        MARTY_IDC_ARG_USED(limX);
-        MARTY_IDC_ARG_USED(limY);
+        auto checLimY = [&]()
+        {
+            if (fitHeightDisable)
+            {
+                auto testY = pos.y + fontMetrics.height;
+                if (testY>limY)
+                {
+                    bStoppedByLimY = true;
+                }
+            }
+        };
+
 
         auto skipSpaces = [&]()
         {
@@ -391,7 +405,7 @@
             }
         };
 
-        auto nextLine = [&]()
+        auto nextLine = [&](bool bSkipSpaces)
         {
             if (!wordSpacesOnly)
             {
@@ -404,14 +418,19 @@
             tabNumber      = 0;
             pos.x          = startPos.x;
             
-            skipSpaces();
+            if (!bSkipSpaces)
+            {
+                skipSpaces();
+            }
+
+            checLimY();
         };
 
-        auto checkGoNextLine = [&]()
+        auto checkGoNextLine = [&](bool bSkipSpaces)
         {
             if (pos.x>limX)
             {
-                nextLine();
+                nextLine(bSkipSpaces);
             }
         };
 
@@ -478,6 +497,51 @@
         };
 
 
+        //if (startIdx==tpIdx)
+        auto expandTpSpacesToFitWidth = [&](std::size_t startIdx, std::size_t endIdx, DrawCoord::value_type fitToWidth)
+        {
+            std::size_t spaceWords = 0;
+            DrawCoord::value_type calulatedWidth = 0;
+
+            for(std::size_t tpIdx=startIdx; tpIdx!=endIdx; ++tpIdx)
+            {
+                const TextPortionInfo &tpi = textPortions[tpIdx];
+                calulatedWidth += tpi.width;
+                if (tpi.tpType!=TpType::text)
+                {
+                    ++spaceWords;
+                }
+            }
+
+            if (!spaceWords)
+            {
+                return;
+            }
+
+            if (endIdx==textPortions.size())
+            {
+                return;
+            }
+
+            MARTY_IDC_ARG_USED(fitToWidth);
+            MARTY_IDC_ARG_USED(calulatedWidth);
+            MARTY_IDC_ARG_USED(spaceWords);
+
+            // #if 0
+            DrawCoord::value_type addW = (fitToWidth - calulatedWidth) / (DrawCoord::value_type)spaceWords;
+
+            for(std::size_t tpIdx=startIdx; tpIdx!=endIdx; ++tpIdx)
+            {
+                TextPortionInfo &tpi = textPortions[tpIdx];
+                if (tpi.tpType!=TpType::text)
+                {
+                    tpi.width += addW;
+                }
+            }
+            // #endif
+        };
+
+
 
         bool globalStop = false;
 
@@ -486,7 +550,7 @@
             skipSpaces();
 
             //while(tpIdx!=textPortions.size() && !globalStop)
-            for(; tpIdx!=textPortions.size() && !globalStop; ++tpIdx)
+            for(; tpIdx!=textPortions.size() && !globalStop && !bStoppedByLimY; ++tpIdx)
             {
                 // Готовы рисовать
                 // Рисуем строку
@@ -498,7 +562,10 @@
                     {
                         if (!keepLtSpaces)
                         {
-                            pos.x += tpi.width;
+                            if (wordsDrawn)
+                            {
+                                pos.x += tpi.width;
+                            }
                             // Больше ничего не делаем, пробел же
                         }
                         else // Режим сохранения leading & trailing spaces
@@ -531,14 +598,14 @@
 
                         ++wordsDrawn; // Пробелы тоже считаем за отрисованые слова
 
-                        checkGoNextLine();
+                        checkGoNextLine(false /* no skipSpaces */);
 
                     }
                     else if (tpi.tpType==TpType::tab)
                     {
                         pos.x = getTabStopPosX();
                         // Больше ничего не делаем, просто табуляция
-                        checkGoNextLine();
+                        checkGoNextLine(false /* no skipSpaces */);
                     }
                     else if (tpi.tpType==TpType::text)
                     {
@@ -578,7 +645,7 @@
                                         return false;
                                     ++wordsDrawn;
                                     wordSpacesOnly = false;
-                                    nextLine();
+                                    nextLine(false /* no skipSpaces */);
                                 }
                                 else if (!nCharsToDraw)
                                 {
@@ -591,7 +658,7 @@
                                     ++wordsDrawn;
                                     wordSpacesOnly = false;
                                     splitTextPortionInfo(tpIdx, numWcharsFit);
-                                    nextLine();
+                                    nextLine(false /* no skipSpaces */);
                                 }
 
                             }
@@ -603,30 +670,32 @@
                                 wordSpacesOnly = false;
                                 pos.x += tpi.width;
 
-                                checkGoNextLine();
+                                checkGoNextLine(false /* no skipSpaces */);
                             }
                         
                         }
                         else // wordsDrawn!=0
                         {
-                            if (startLimReached)
+                            if (startLimReached || endLimReached)
                             {
-                                nextLine(); // Начало не влезает, но это не первое слово в строке - просто переходим на следующую строку
+                                nextLine(false /* no skipSpaces */); // Начало или конец не влезает, но это не первое слово в строке - просто переходим на следующую строку
+                                if (tpIdx)
+                                {
+                                    --tpIdx; // Но надо откатить индекс, иначе пропустим слово
+                                }
+                            }
+                            else
+                            {
+                                // порцию текста рисуем целиком
+                                if (!drawTextHelper(tpi.text.data(), tpi.text.size()))
+                                    return false;
+                                ++wordsDrawn;
+                                wordSpacesOnly = false;
+                                pos.x += tpi.width;
+    
+                                checkGoNextLine(false /* no skipSpaces */);
                             }
 
-                            if (endLimReached)
-                            {
-                                nextLine(); // Конец не влезает, но это не первое слово в строке - просто переходим на следующую строку
-                            }
-
-                            // порцию текста рисуем целиком
-                            if (!drawTextHelper(tpi.text.data(), tpi.text.size()))
-                                return false;
-                            ++wordsDrawn;
-                            wordSpacesOnly = false;
-                            pos.x += tpi.width;
-
-                            checkGoNextLine();
                         }
 
                     }
@@ -639,14 +708,227 @@
             }
 
         }
-        else if (horAlign==HorAlign::center)
+        else if (horAlign==HorAlign::center || horAlign==HorAlign::right || horAlign==HorAlign::width)
         {
-        }
-        else if (horAlign==HorAlign::right)
-        {
-        }
-        else if (horAlign==HorAlign::width)
-        {
+            skipSpaces();
+
+            for(; tpIdx!=textPortions.size() && !bStoppedByLimY; )
+            {
+                skipSpaces();
+
+                auto startIdx = tpIdx;
+                //auto nextIdx  = startIdx;
+                std::size_t spaceWords  = 0;
+                bool breakOnLimit = false;
+
+                DrawCoord::value_type curX = pos.x; // тут идёт учет отступа
+
+                DrawCoord::value_type sumWidth = 0;
+
+                for(; tpIdx!=textPortions.size() && (curX<limX); ++tpIdx)
+                {
+                    const TextPortionInfo &tpi = textPortions[tpIdx];
+
+                    if ((curX+tpi.width)>limX)
+                    {
+                        breakOnLimit = true;
+                        // if (tpIdx!=startIdx)
+                        // {
+                        //     --tpIdx;
+                        // }
+                        break;
+                    }
+
+                    ++wordsDrawn;
+
+                    if (tpi.tpType==TpType::space)
+                    {
+                        ++spaceWords;
+                    }
+                    else if (tpi.tpType==TpType::tab)
+                    {
+                        ++spaceWords;
+                    }
+                    else if (tpi.tpType==TpType::text)
+                    {
+                        wordSpacesOnly = false;
+                    }
+
+                    sumWidth += tpi.width;
+                    curX     += tpi.width;
+                }
+
+                // Удаляем пробелы в конце - в следющей строки они будут пропущены при вызове skipSpaces();
+                if (tpIdx!=startIdx)
+                {
+                    for(--tpIdx; tpIdx!=startIdx; --tpIdx)
+                    {
+                        const TextPortionInfo &tpi = textPortions[tpIdx];
+                        if (tpi.tpType==TpType::space || tpi.tpType==TpType::tab)
+                        {
+                            --spaceWords;
+                            --wordsDrawn;
+                            sumWidth -= tpi.width;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    ++tpIdx; // На следующее за последним словом слово
+                }
+
+                // !!!
+
+                // Какие у нас тут варианты
+                // I  Вышли по лимиту
+                //    а) ни одного слова не добавили в текущую строку - значит, первое слово очень длинное 
+                //       и не влезает в строку, значит, нужно его принудительно переносить
+                //    б) слова в строке есть - добавляем нужное количество пробелов и рисуем без особых исключений
+                // II Вышли по окончанию текста.
+                //    а) Если нет слов для рисования, то ничего не делаем
+                //    б) Если слова есть, но их длина меньше от какого-то процента - то не расстягиваем по ширине. 
+                //       Если строка почти полностью заполнена, то растягиваем её. Применимо только при форматировании по ширине
+                //       По умолчанию - наверно ничего не делаем, и надо бы добавить флаг, включающий такое поведение.
+                //    в) Если слова есть и длина достаточна для растягивания - работаем по обычному алгоритму
+
+                // Надо найти стартовую позицию
+                // if (horAlign==HorAlign::center)
+                // {
+                //     pos.x += (limX-sumWidth)/2;
+                // }
+                // else if (horAlign==HorAlign::right)
+                // {
+                //     pos.x += (limX-sumWidth);
+                // }
+                // else if(horAlign==HorAlign::width)
+                // {
+                //     // ничего не надо, начинаем с pos.x, но надо расшить пробелы
+                // }
+
+                auto fitToWidth = limX - pos.x;
+
+
+                if (breakOnLimit) // I
+                {
+                    if (startIdx==tpIdx)
+                    {
+                        // I.a
+                        // Слов ещё не нарисовано, а текущее - уже не влезает, значит, рисуем то, что есть
+                        const TextPortionInfo &tpi = textPortions[tpIdx];
+
+                        auto remainingWidth = limX - pos.x;
+                        auto nCharsToDraw   = tpi.getNumberOfCharInfosFitWidth(remainingWidth);
+                        auto numWcharsFit   = tpi.getNumberOfCharsByNumberCharInfos(nCharsToDraw);
+
+                        auto actualWidth = tpi.getWidthByNumberCharInfos(nCharsToDraw);
+                        if (horAlign==HorAlign::center)
+                        {
+                            pos.x += (fitToWidth-actualWidth)/2;
+                        }
+                        else if (horAlign==HorAlign::right)
+                        {
+                            pos.x += (fitToWidth-actualWidth);
+                        }
+
+
+                        if (nCharsToDraw>=tpi.charInfos.size())
+                        {
+                            // рисуем целиком, всё нормально, но вообще - странная ситуация, такого не должно быть
+                            if (!drawTextHelper(tpi.text.data(), numWcharsFit))
+                                return false;
+                            nextLine(true /* skipSpaces */);
+                        }
+                        else if (!nCharsToDraw)
+                        {
+                            return false; // ничего не влезает - это ошибка с лимитами, слишком маленький
+                        }
+                        else
+                        {
+                            if (!drawTextHelper(tpi.text.data(), numWcharsFit))
+                                return false;
+                            splitTextPortionInfo(tpIdx, numWcharsFit);
+                            nextLine(true /* skipSpaces */);
+                        }
+
+                    }
+                    else
+                    {
+                        // I.б
+
+                        if (horAlign==HorAlign::center)
+                        {
+                            pos.x += (fitToWidth-sumWidth)/2;
+                        }
+                        else if (horAlign==HorAlign::right)
+                        {
+                            pos.x += (fitToWidth-sumWidth);
+                        }
+                        else if (horAlign==HorAlign::width)
+                        {
+                            expandTpSpacesToFitWidth(startIdx, tpIdx, fitToWidth);
+                        }
+
+
+                        for(; startIdx!=tpIdx && startIdx!=textPortions.size(); ++startIdx)
+                        {
+                            const TextPortionInfo &tpi = textPortions[startIdx];
+                            if (!drawTextHelper(tpi.text.data(), tpi.text.size()))
+                                return false;
+                            pos.x += tpi.width;
+                        }
+
+                        nextLine(true /* skipSpaces */);
+                    }
+                }
+                else // (!breakOnLimit) // II
+                {
+                    if (startIdx==tpIdx)
+                    {
+                        // II.а
+                        // Ничего не делаем
+                    }
+                    else
+                    {
+                        // II.в
+                        // работаем по обычному алгоритму
+                        if (horAlign==HorAlign::center)
+                        {
+                            pos.x += (fitToWidth-sumWidth)/2;
+                        }
+                        else if (horAlign==HorAlign::right)
+                        {
+                            pos.x += (fitToWidth-sumWidth);
+                        }
+                        else if (horAlign==HorAlign::width)
+                        {
+                            expandTpSpacesToFitWidth(startIdx, tpIdx, fitToWidth);
+                        }
+
+
+                        for(; startIdx!=tpIdx && startIdx!=textPortions.size(); ++startIdx)
+                        {
+                            const TextPortionInfo &tpi = textPortions[startIdx];
+                            if (!drawTextHelper(tpi.text.data(), tpi.text.size()))
+                                return false;
+                            pos.x += tpi.width;
+                        }
+
+                    }
+
+                    nextLine(true /* skipSpaces */);
+                    
+                }
+
+
+                if (tpIdx!=textPortions.size())
+                {
+                    //++tpIdx;
+                }
+
+            }
+
         }
         else
         {
@@ -665,6 +947,15 @@
             *pNextPosY = pos.x;
         }
 
+        if (pVerticalDone)
+        {
+            *pVerticalDone = !bStoppedByLimY;
+        }
+
+
+
+        MARTY_IDC_ARG_USED(pVerticalDone);
+
         return true; // 
         
     }
@@ -675,6 +966,7 @@
                               , DrawCoord                             startPos
                               , DrawCoord                             limits       //!< Limits, vertical and horizontal, relative to start pos
                               , DrawCoord::value_type                 *pNextPosY    //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                              , bool                                  *pVerticalDone
                               , const DrawCoord::value_type           &lineSpacing  //!< Extra space between lines of text
                               , const DrawCoord::value_type           &paraIndent   //!< Indent on the first line
                               , const DrawCoord::value_type           &tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
@@ -916,6 +1208,7 @@
             bool bRes = drawParaColoredExImpl2( kerningPairs, fontMetrics, textPortions
                                               , startPos, limits
                                               , &nextPosY
+                                              , pVerticalDone
                                               , lineSpacing  //!< Extra space between lines of text
                                               , paraIndent   //!< Indent on the first line
                                               , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
@@ -961,6 +1254,7 @@
         bool bRes = drawParaColoredExImpl2( kerningPairs, fontMetrics, textPortions
                                           , startPos, limits
                                           , pNextPosY
+                                          , pVerticalDone
                                           , lineSpacing  //!< Extra space between lines of text
                                           , paraIndent   //!< Indent on the first line
                                           , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
@@ -993,6 +1287,7 @@
     virtual bool drawParaColoredEx( const DrawCoord                       &startPos
                                   , const DrawCoord                       &limits       //!< Limits, vertical and horizontal, relative to start pos
                                   , DrawCoord::value_type                 *pNextPosY    //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                                  , bool                                  *pVerticalDone
                                   , const DrawCoord::value_type           &lineSpacing  //!< Extra space between lines of text
                                   , const DrawCoord::value_type           &paraIndent   //!< Indent on the first line
                                   , const DrawCoord::value_type           &tabSize      //!< Size used for tabs if tabStops are over
@@ -1019,7 +1314,7 @@
         }
 
         return drawParaColoredExImpl( kerningPairs, fontMetrics
-                                    , startPos, limits, pNextPosY
+                                    , startPos, limits, pNextPosY, pVerticalDone
                                     , lineSpacing, paraIndent, tabSize
                                     , flags, horAlign, vertAlign
                                     , text, textSize, pCharsProcessed
