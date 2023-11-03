@@ -91,6 +91,7 @@ void smpPrint(ssq::Object val)
 {
     using umba::lout;
     lout << encoding::toUtf8(dotnut::System::objectToStringHelper(val));
+    umba::lout.flush();
 }
 
 inline
@@ -98,6 +99,7 @@ void smpPrintLn(ssq::Object val)
 {
     using umba::lout;
     lout << encoding::toUtf8(dotnut::System::objectToStringHelper(val)) << "\n";
+    umba::lout.flush();
 }
 
 
