@@ -73,6 +73,9 @@ public:
     //CBitmap m_bmp;
     //SIZE m_size;
 
+    DrawCoord paraPos      = DrawCoord(50, 42);
+    DrawCoord paraLimits   = DrawCoord(42, 20);
+
     CBitmapView()
     {
     }
@@ -90,6 +93,7 @@ public:
 
     BEGIN_MSG_MAP(CBitmapView)
         MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBackground)
+        MSG_WM_KEYDOWN(OnKeyDown)
         CHAIN_MSG_MAP(CScrollWindowImpl<CBitmapView>);
     END_MSG_MAP()
 
@@ -130,6 +134,38 @@ public:
         */
         return 0;
     }
+
+    void invalidateClientArea()
+    {
+        InvalidateRect(0, TRUE);
+    }
+
+    void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+    {
+        MARTY_ARG_USED(nChar);
+        MARTY_ARG_USED(nRepCnt);
+        MARTY_ARG_USED(nFlags);
+
+        if (nChar==VK_ADD)
+        {
+            if (paraLimits.x<100)
+            {
+                paraLimits.x += 0.2;
+                invalidateClientArea();
+            }
+        }
+
+        if (nChar==VK_SUBTRACT)
+        {
+            if (paraLimits.x>4)
+            {
+                paraLimits.x -= 0.2;
+                invalidateClientArea();
+            }
+        }
+
+    }
+
 
     void DoPaint(CDCHandle dc)
     {
@@ -200,17 +236,18 @@ public:
         marty_draw_context::FontParamsA genericFontParamsH3_2 = genericFontParamsH8; genericFontParamsH3_2 .height =  3.2;
         marty_draw_context::FontParamsA genericFontParamsH3_5 = genericFontParamsH8; genericFontParamsH3_5 .height =  3.5;
         marty_draw_context::FontParamsA genericFontParamsH4   = genericFontParamsH8; genericFontParamsH4   .height =  4;
+        marty_draw_context::FontParamsA genericFontParamsH6   = genericFontParamsH8; genericFontParamsH6   .height =  6;
 
 
-        auto arialFontId     = pDc->createFont( genericFontParamsH8, "Arial"          );
-        auto timesFontId     = pDc->createFont( genericFontParamsH8, "Times New Roman");
-        auto courierFontId   = pDc->createFont( genericFontParamsH8, "Courier New"    );
+        auto arialFontId     = pDc->createFont( genericFontParamsH6, "Arial"          );
+        auto timesFontId     = pDc->createFont( genericFontParamsH6, "Times New Roman");
+        auto courierFontId   = pDc->createFont( genericFontParamsH6, "Courier New"    );
         // https://learn.microsoft.com/ru-ru/windows/win32/intl/international-fonts-and-text-display
         // https://learn.microsoft.com/ru-ru/windows/win32/intl/using-ms-shell-dlg-and-ms-shell-dlg-2
-        auto shellDlgFontId  = pDc->createFont( genericFontParamsH8, "MS Shell Dlg"   );
-        auto shellDlg2FontId = pDc->createFont( genericFontParamsH8, "MS Shell Dlg 2" );
-        auto lucidaFontId    = pDc->createFont( genericFontParamsH8, "Lucida Console" );
-        auto fixedsysFontId  = pDc->createFont( genericFontParamsH8, "Fixedsys" );
+        auto shellDlgFontId  = pDc->createFont( genericFontParamsH6, "MS Shell Dlg"   );
+        auto shellDlg2FontId = pDc->createFont( genericFontParamsH6, "MS Shell Dlg 2" );
+        auto lucidaFontId    = pDc->createFont( genericFontParamsH6, "Lucida Console" );
+        auto fixedsysFontId  = pDc->createFont( genericFontParamsH6, "Fixedsys" );
 
         //auto timesSmallFontId = pDc->createFont( genericFontParamsH4, "Times New Roman");
         auto timesSmallFont3Id = pDc->createFont( genericFontParamsH3, "Times New Roman");
@@ -223,6 +260,10 @@ public:
         MARTY_ARG_USED(arialFontId  );
         MARTY_ARG_USED(timesFontId  );
         MARTY_ARG_USED(courierFontId);
+        MARTY_ARG_USED(shellDlgFontId);
+        MARTY_ARG_USED(shellDlg2FontId);
+        MARTY_ARG_USED(lucidaFontId);
+        MARTY_ARG_USED(fixedsysFontId);
         MARTY_ARG_USED(labelsFontId );
         MARTY_ARG_USED(timesSmallFont3Id);
         MARTY_ARG_USED(timesSmallFont3_2Id);
@@ -478,7 +519,7 @@ public:
                 pDc->drawTextColoredEx( pos, /* pos.x+ */ 60
                                       , 0 // pNextPosX - не интересно
                                       , 0 // pOverhang - не интересно
-                                      , DrawTextFlags::fitGlyphDefault | DrawTextFlags::endEllipsis | DrawTextFlags::kerningDisable // defMode endEllipsis fitWidthDisable
+                                      , DrawTextFlags::fitGlyphDefault | DrawTextFlags::endEllipsis | DrawTextFlags::kerningDisable | DrawTextFlags::coloringWords // !!! // defMode endEllipsis fitWidthDisable
                                       , text, (std::size_t)-1 // textSize
                                       , 0 // lastCharProcessed
                                       , &nCharsProcessed
@@ -497,7 +538,7 @@ public:
                 return drawSampleTextImpl(pos, dy, fontId, clr, textStr.c_str());
             };
 
-            auto dPos = DrawCoord(18, 10);
+            auto dPos = DrawCoord(18.0, 7.8);
             //auto pos  = DrawCoord(76, 14);
             auto pos  = DrawCoord(76,  1)-dPos;
 
@@ -526,8 +567,8 @@ public:
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, courierFontId  , ColorRef{0  ,128,128}, L"Courier C"      );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, shellDlgFontId , ColorRef{128,  0,128}, L"MS Shell Dlg"   );
             pos = drawSampleText(pos+dPos, 3*dPos.y/4, shellDlg2FontId, ColorRef{0  ,  0,128}, L"MS Shell Dlg 2\n222" );
-            pos = drawSampleText(pos+dPos, 3*dPos.y/4, lucidaFontId   , ColorRef{0  ,  0,128}, L"Lucida Console" );
-            pos = drawSampleText(pos+dPos, 3*dPos.y/4, fixedsysFontId , ColorRef{0  ,  0,128}, L"Fixedsys" );
+            //pos = drawSampleText(pos+dPos, 3*dPos.y/4, lucidaFontId   , ColorRef{0  ,  0,128}, L"Lucida Console" );
+            //pos = drawSampleText(pos+dPos, 3*dPos.y/4, fixedsysFontId , ColorRef{0  ,  0,128}, L"Fixedsys" );
             //drawSampleText(pos+dPos*DrawCoord(2,2), pos.y, );
 
         }
@@ -916,7 +957,7 @@ public:
                                     L"Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores "
                                     L"alias consequatur aut perferendis doloribus asperiores repellat.";
 
-            std::wstring loremIpsumShort = L"Lorem\tipsum\tdolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor "
+            std::wstring loremIpsumShort = L"Lorem\tipsum\tdolor sit amet, consectetur_adipiscing_elit,_sed_do eiusmod tempor "
                                     L"incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud "
                                     L"exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure "
                                     L"dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
@@ -927,61 +968,73 @@ public:
 
             #include "hogwarts.h"
 
-            auto pos                       = DrawCoord(60, 40);
+            //auto pos                       = DrawCoord(50, 42);
             //auto paraLimits                = DrawCoord(70, 200);
-            auto paraLimits                = DrawCoord(60, 20);
-            auto deltaPos                  = DrawCoord(paraLimits.x+5, (DrawCoord::value_type)20);
+            //auto paraLimits                = DrawCoord(42, 20);
+            auto deltaPos                  = DrawCoord(paraLimits.x+1, (DrawCoord::value_type)13);
             //DrawCoord::value_type nextPosY = 0;
             //bool                  verticalDone = false;
             //DrawCoord::value_type tabStopPositions[] = {30,50,60,110};
-            DrawCoord::value_type tabStopPositions[] = {25,50,80,110};
+            DrawCoord::value_type tabStopPositions[] = {22,35,45,110};
+
+            DrawCoord::value_type frameBoxHeight = 30;
 
             // redFramePenId
             // pixelPen
 
+            //DrawTextFlags dtfExtra = 0;
+            DrawTextFlags dtFlags = DrawTextFlags::coloringWords;
+            //DrawTextFlags dtfExtra = DrawTextFlags::coloringParas;
+
+            dtFlags |= DrawTextFlags::fitHeightDisable;
+
             test_drawParaColored( pDc
-                                , pos
+                                , paraPos
                                 , paraLimits
                                 , &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
                                 , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
+                                , dtFlags
                                 , HorAlign::left
-                                , 60 // frameBoxHeight
+                                , frameBoxHeight
                                 , pixelPen
                                 , timesSmallFont3_2Id
                                 , L"Left " + loremIpsumShort // loremIpsumTiny
                                 );
 
             test_drawParaColored( pDc
-                                , pos + deltaPos
+                                , paraPos + deltaPos
                                 , paraLimits
                                 , 0, 0 // &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
                                 , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
+                                , dtFlags
                                 , HorAlign::center
-                                , 60 // frameBoxHeight
+                                , frameBoxHeight
                                 , pixelPen
                                 , timesSmallFont3_2Id
                                 , L"Center " + loremIpsumShort // loremIpsumTiny
                                 );
 
             test_drawParaColored( pDc
-                                , pos + deltaPos + deltaPos
+                                , paraPos + deltaPos + deltaPos
                                 , paraLimits
                                 , 0, 0 // &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
                                 , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
+                                , dtFlags
                                 , HorAlign::right
-                                , 60 // frameBoxHeight
+                                , frameBoxHeight
                                 , pixelPen
                                 , timesSmallFont3_2Id
                                 , L"Right " + loremIpsumShort // loremIpsumTiny
                                 );
 
             test_drawParaColored( pDc
-                                , pos + deltaPos + deltaPos + deltaPos
+                                , paraPos + deltaPos + deltaPos + deltaPos
                                 , paraLimits
                                 , 0, 0 // &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
                                 , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
+                                , dtFlags
                                 , HorAlign::width
-                                , 60 // frameBoxHeight
+                                , frameBoxHeight
                                 , pixelPen
                                 , timesSmallFont3_2Id
                                 , L"Width " + loremIpsumShort // loremIpsumTiny

@@ -496,6 +496,7 @@ void test_drawParaColored( marty_draw_context::IDrawContext *pDc
                          , std::size_t tabStopPositionsCount
                          , const std::uint32_t *pLetterColors
                          , std::size_t letterColorsCount
+                         , marty_draw_context::DrawTextFlags flags
                          , marty_draw_context::HorAlign horAlign
                          , const marty_draw_context::DrawCoord::value_type &frameBoxHeight
                          , int pixelPenId
@@ -516,7 +517,7 @@ void test_drawParaColored( marty_draw_context::IDrawContext *pDc
                           , (DrawCoord::value_type)0.2   // lineSpacing
                           , (DrawCoord::value_type)3.5   // paraIndent
                           , (DrawCoord::value_type)10.0  // tabSize
-                          , DrawTextFlags::fitGlyphDefault | DrawTextFlags::fitHeightDisable
+                          , flags | DrawTextFlags::fitGlyphDefault // | DrawTextFlags::fitHeightDisable
                           , horAlign // HorAlign::width // тестируем выравнивание по ширине
                           , VertAlign::top
                           , text.c_str(), text.size()

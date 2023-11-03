@@ -57,6 +57,8 @@
             return false;
         }
 
+        const wchar_t *orgTextPtr = text;
+
         std::basic_string<std::uint32_t> wstrStopChars32 = makeStopCharsString32(flags, stopChars);
 
         size_t nCharsProcessed  = 0;
@@ -69,10 +71,16 @@
             prevCh32 = *pLastCharProcessed;
         }
 
+        const bool stopOnLineBreaks     = (flags&DrawTextFlags::stopOnLineBreaks)!=0;
+        const bool stopOnTabs           = (flags&DrawTextFlags::stopOnTabs)!=0;
+        const bool coloringWords        = (flags&DrawTextFlags::coloringWords)!=0;
+        const bool forceSpacesColoring  = (flags&DrawTextFlags::forceSpacesColoring)!=0;
+
         DrawCoord pos = startPos;
         DrawCoord::value_type xPosMax = pos.x + widthLim;
 
         bool breakOnLimit = false;
+        bool prevSpace    = true ; // На старте строки считаем, что ранее был пробел - для раскрасски по словам
 
         std::vector<marty_draw_context::DrawCoord::value_type>::const_iterator wit = widths.begin();
         std::size_t curCharLen = getCharLen(text, textSize);
@@ -93,12 +101,18 @@
                 break; // found stop char
             }
 
-            if ((flags&DrawTextFlags::stopOnLineBreaks)!=0 && isAnyLineBreakChar(ch32))
+            //bool bAnySpaceChar     = isAnySpaceChar(ch32);
+            bool bAnyWhiteSpaceChar = isAnyWhiteSpaceChar(ch32);
+            bool bAnyLineBreakChar  = isAnyLineBreakChar(ch32);
+            bool bAnyTabChar        = isAnyTabChar(ch32);
+            bool bFirstChar         = orgTextPtr==text;
+
+            if (stopOnLineBreaks && bAnyLineBreakChar)
             {
                 break; // stop on line break
             }
 
-            if ((flags&DrawTextFlags::stopOnTabs)!=0 && isAnyTabChar(ch32))
+            if (stopOnTabs && bAnyTabChar)
             {
                 break; // stop on tab char
             }
@@ -189,11 +203,33 @@
             nCharsProcessed += curCharLen;
             ++nSymbolsDrawn;
 
-            const bool forceSpacesColoring = (flags&DrawTextFlags::forceSpacesColoring)!=0;
-            if (!isAnyWhiteSpaceChar(ch32) || forceSpacesColoring)
+            bool bAnyWsOrTab = (bAnyWhiteSpaceChar || bAnyTabChar);
+
+            if (coloringWords)
             {
-                ++nColorIndex;
+                // Раскраска по словам
+                
+                if (!bFirstChar)
+                {
+                    // Если предыдущий символ - не пробельный, а текущий - пробельный - закончилось слово, надо передвинуть индекс цвета
+                    if (!prevSpace && bAnyWsOrTab)
+                    {
+                        ++nColorIndex;
+                    }
+                }
             }
+            else
+            {
+                // Раскраска по буквам
+                if (!bAnyWhiteSpaceChar || forceSpacesColoring)
+                {
+                    ++nColorIndex;
+                }
+
+            }
+
+            prevSpace = bAnyWsOrTab;
+
 
             if (isCombining)
             {
@@ -360,6 +396,7 @@
 
         std::size_t lineNumber     = 0;
         std::size_t wordsDrawn     = 0;
+        std::size_t wordColorIdx   = 0;
         bool        wordSpacesOnly = true;
         std::size_t tpIdx          = 0;
         std::size_t tabNumber      = 0;
@@ -374,6 +411,9 @@
         const auto ellipsisFlags     = DrawTextFlags::endEllipsis | DrawTextFlags::pathEllipsis | DrawTextFlags::wordEllipsis;
         const auto stopFlags         = DrawTextFlags::stopOnLineBreaks | DrawTextFlags::stopOnTabs;
         const auto fitHeightDisable  = (flags&DrawTextFlags::calcOnly)!=0 || (flags&DrawTextFlags::fitHeightDisable)!=0;
+        //const bool coloringParas     = (flags&DrawTextFlags::coloringParas)!=0;
+        const bool coloringWords     = (flags&DrawTextFlags::coloringWords)!=0; // && !coloringParas;
+
 
         bool bStoppedByLimY = false;
 
@@ -418,7 +458,7 @@
             tabNumber      = 0;
             pos.x          = startPos.x;
             
-            if (!bSkipSpaces)
+            if (bSkipSpaces)
             {
                 skipSpaces();
             }
@@ -451,36 +491,75 @@
 
         //DrawCoord::value_type
 
-        auto drawTextHelper = [&](const wchar_t *pText, std::size_t textSize /* , std::size_t *pSymbolsDrawn */ )
+        auto drawTextHelper = [&](const wchar_t *pText, std::size_t textSize, bool spaceWord, bool wordHasContinuation /* , std::size_t *pSymbolsDrawn */ )
         {
-            std::size_t nSymbolsDrawn = 0;
-            bool bRes = drawTextColoredEx( pos, 0 // widthLim
-                                         , 0 // pNextPosX - не нужен
-                                         , 0 // pOverhang - не нужен
-                                         , (flags | DrawTextFlags::fitWidthDisable) & ~(ellipsisFlags|stopFlags) // в лимит укладываться не нужно, и элипсисы не рисуем
-                                         , pText, textSize // tpi.text.data(), numWcharsFit
-                                         , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
-                                         , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                         , pColors, nColors
-                                         , &nSymbolsDrawn
-                                         , 0 // stopChars
-                                         , -1 // fontId
-                                         );
-            if (bRes && pColors)
+            auto newDrawFlags = (flags | DrawTextFlags::fitWidthDisable) & ~(ellipsisFlags|stopFlags); // в лимит укладываться не нужно, и элипсисы не рисуем
+
+            bool bRes = false;
+
+            if (!coloringWords)
             {
-                if (nSymbolsDrawn>nColors)
+                std::size_t nSymbolsDrawn = 0;
+                bRes = drawTextColoredEx( pos, 0 // widthLim
+                                        , 0 // pNextPosX - не нужен
+                                        , 0 // pOverhang - не нужен
+                                        , newDrawFlags
+                                        , pText, textSize // tpi.text.data(), numWcharsFit
+                                        , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
+                                        , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                        , pColors, nColors
+                                        , &nSymbolsDrawn
+                                        , 0 // stopChars
+                                        , -1 // fontId
+                                        );
+                if (bRes && pColors)
                 {
-                    pColors += nColors;
-                    nColors  = 0;
+                    if (nSymbolsDrawn>nColors)
+                    {
+                        pColors += nColors;
+                        nColors  = 0;
+                    }
+                    else
+                    {
+                        pColors += nSymbolsDrawn;
+                        nColors -= nSymbolsDrawn;
+                    }
                 }
-                else
+            
+            }
+            else
+            {
+                std::uint32_t        wordColor   = 0;
+                const std::uint32_t *pWordColors = 0;
+                std::size_t          nWordColors = 0;
+                if (pColors && wordColorIdx<nColors)
                 {
-                    pColors += nSymbolsDrawn;
-                    nColors -= nSymbolsDrawn;
+                    wordColor   = pColors[wordColorIdx];
+                    pWordColors = &wordColor;
+                    nWordColors = 1;
                 }
+
+                bRes = drawTextColoredEx( pos, 0 // widthLim
+                                        , 0 // pNextPosX - не нужен
+                                        , 0 // pOverhang - не нужен
+                                        , newDrawFlags
+                                        , pText, textSize // tpi.text.data(), numWcharsFit
+                                        , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
+                                        , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                        , pWordColors, nWordColors
+                                        , 0 // &nSymbolsDrawn
+                                        , 0 // stopChars
+                                        , -1 // fontId
+                                        );
+                if (bRes && !spaceWord && !wordHasContinuation) // Это не пробельное слово, слово не обрезано, продолжения того же слова нет, поэтому можно инкрементировать индекс цвета
+                {
+                    ++wordColorIdx;
+                }
+
             }
 
             return bRes;
+
         };
 
 
@@ -493,7 +572,7 @@
             newTpi.text = std::wstring_view( tpi.text.data()+numWcharsFit, tpi.text.size()-numWcharsFit );
             // https://www.nextptr.com/tutorial/ta1430524603/capture-this-in-lambda-expression-timeline-of-change
             newTpi.updateWidth(this, kerningPairs, flags, fontMetrics);
-            textPortions.insert(textPortions.begin()+(std::ptrdiff_t)tpIdx, newTpi);
+            textPortions.insert(textPortions.begin()+(std::ptrdiff_t)tpIdx+1, newTpi);
         };
 
 
@@ -641,7 +720,7 @@
                                 if (nCharsToDraw>=tpi.charInfos.size())
                                 {
                                     // рисуем целиком, всё нормально, но вообще - странная ситуация, такого не должно быть
-                                    if (!drawTextHelper(tpi.text.data(), numWcharsFit))
+                                    if (!drawTextHelper(tpi.text.data(), numWcharsFit, false, false))
                                         return false;
                                     ++wordsDrawn;
                                     wordSpacesOnly = false;
@@ -651,9 +730,9 @@
                                 {
                                     return false; // ничего не влезает - это ошибка с лимитами, слишком маленький
                                 }
-                                else
+                                else // Делим на части, рисуем первую часть
                                 {
-                                    if (!drawTextHelper(tpi.text.data(), numWcharsFit))
+                                    if (!drawTextHelper(tpi.text.data(), numWcharsFit, false, true))
                                         return false;
                                     ++wordsDrawn;
                                     wordSpacesOnly = false;
@@ -664,7 +743,7 @@
                             }
                             else // !endLimReached - порцию текста рисуем целиком
                             {
-                                if (!drawTextHelper(tpi.text.data(), tpi.text.size()))
+                                if (!drawTextHelper(tpi.text.data(), tpi.text.size(), false, false))
                                     return false;
                                 ++wordsDrawn;
                                 wordSpacesOnly = false;
@@ -687,7 +766,7 @@
                             else
                             {
                                 // порцию текста рисуем целиком
-                                if (!drawTextHelper(tpi.text.data(), tpi.text.size()))
+                                if (!drawTextHelper(tpi.text.data(), tpi.text.size(), false, false))
                                     return false;
                                 ++wordsDrawn;
                                 wordSpacesOnly = false;
@@ -736,6 +815,11 @@
                         // {
                         //     --tpIdx;
                         // }
+                        if (tpi.tpType==TpType::text)
+                        {
+                            wordSpacesOnly = false;
+                        }
+                        
                         break;
                     }
 
@@ -815,7 +899,7 @@
                     if (startIdx==tpIdx)
                     {
                         // I.a
-                        // Слов ещё не нарисовано, а текущее - уже не влезает, значит, рисуем то, что есть
+                        // Слово ещё не нарисовано, а текущее - уже не влезает, значит, рисуем то, что есть
                         const TextPortionInfo &tpi = textPortions[tpIdx];
 
                         auto remainingWidth = limX - pos.x;
@@ -836,7 +920,7 @@
                         if (nCharsToDraw>=tpi.charInfos.size())
                         {
                             // рисуем целиком, всё нормально, но вообще - странная ситуация, такого не должно быть
-                            if (!drawTextHelper(tpi.text.data(), numWcharsFit))
+                            if (!drawTextHelper(tpi.text.data(), numWcharsFit, false, false))
                                 return false;
                             nextLine(true /* skipSpaces */);
                         }
@@ -844,12 +928,13 @@
                         {
                             return false; // ничего не влезает - это ошибка с лимитами, слишком маленький
                         }
-                        else
+                        else // Делим на части, рисуем первую часть
                         {
-                            if (!drawTextHelper(tpi.text.data(), numWcharsFit))
+                            if (!drawTextHelper(tpi.text.data(), numWcharsFit, false, true))
                                 return false;
                             splitTextPortionInfo(tpIdx, numWcharsFit);
                             nextLine(true /* skipSpaces */);
+                            ++tpIdx;
                         }
 
                     }
@@ -874,7 +959,7 @@
                         for(; startIdx!=tpIdx && startIdx!=textPortions.size(); ++startIdx)
                         {
                             const TextPortionInfo &tpi = textPortions[startIdx];
-                            if (!drawTextHelper(tpi.text.data(), tpi.text.size()))
+                            if (!drawTextHelper(tpi.text.data(), tpi.text.size(), tpi.tpType!=TpType::text, false))
                                 return false;
                             pos.x += tpi.width;
                         }
@@ -910,7 +995,7 @@
                         for(; startIdx!=tpIdx && startIdx!=textPortions.size(); ++startIdx)
                         {
                             const TextPortionInfo &tpi = textPortions[startIdx];
-                            if (!drawTextHelper(tpi.text.data(), tpi.text.size()))
+                            if (!drawTextHelper(tpi.text.data(), tpi.text.size(), tpi.tpType!=TpType::text, false))
                                 return false;
                             pos.x += tpi.width;
                         }
