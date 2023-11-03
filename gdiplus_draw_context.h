@@ -708,6 +708,8 @@ public:
         SelectObject(m_hdc, hPrevBrush);
 
         DeleteObject((HGDIOBJ)hpen);
+        DeleteObject((HGDIOBJ)hbrush);
+        
     }
 
     virtual void drawLineInLogicalCoordsForFillGradientRect

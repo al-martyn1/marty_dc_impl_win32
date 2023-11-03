@@ -146,7 +146,11 @@ public:
         MARTY_ARG_USED(nRepCnt);
         MARTY_ARG_USED(nFlags);
 
-        if (nChar==VK_ADD)
+        if (nChar==VK_F5)
+        {
+            invalidateClientArea();
+        }
+        else if (nChar==VK_ADD)
         {
             if (paraLimits.x<100)
             {
@@ -154,8 +158,7 @@ public:
                 invalidateClientArea();
             }
         }
-
-        if (nChar==VK_SUBTRACT)
+        else if (nChar==VK_SUBTRACT)
         {
             if (paraLimits.x>4)
             {
@@ -640,6 +643,8 @@ public:
 
         DrawCoord::value_type gradientRectSizeX = (DrawCoord::value_type)50;
         DrawCoord::value_type gradientRectSizeY = (DrawCoord::value_type)4;
+        MARTY_ARG_USED(gradientRectSizeX);
+        MARTY_ARG_USED(gradientRectSizeY);
 
         GradientParams gradientParams;
         {
