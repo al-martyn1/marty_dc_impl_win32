@@ -1,22 +1,94 @@
 // Inline methods. Not for include itself
 
-    bool drawTextColoredExImpl( const std::unordered_set<KerningPair> &kerningPairs
-                              , const SimpleFontMetrics       &fontMetrics
-                              , const DrawCoord               &startPos
-                              , const DrawCoord::value_type   &widthLim
-                              , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
-                              , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
-                              , DrawTextFlags                 flags
-                              , const wchar_t                 *text
-                              , std::size_t                   textSize=(std::size_t)-1
-                              , std::uint32_t                 *pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
-                              , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                              , const std::uint32_t           *pColors=0
-                              , std::size_t                   nColors=0
-                              , std::size_t                   *pSymbolsDrawn=0
-                              , const wchar_t                 *stopChars=0
-                              , int                           fontId=-1
-                              )
+    /*
+    bool isTextWhiteSpaceOnly(const wchar_t *text, std::size_t textSize) const
+    {
+        std::size_t curCharLen = getCharLen(text, textSize);
+        for( ; textSize && curCharLen!=0
+             ; ++wit, curCharLen = getCharLen(text, textSize)
+           )
+        {
+            bool bAnyWhiteSpaceChar = isAnyWhiteSpaceChar(ch32);
+            bool bAnyLineBreakChar  = isAnyLineBreakChar(ch32);
+            bool bAnyTabChar        = isAnyTabChar(ch32);
+
+            if (bAnyWhiteSpaceChar)
+
+        }
+
+    }
+    */
+
+    virtual bool drawTextColored( const DrawCoord                  &startPos
+                                , const DrawCoord::value_type      &widthLim
+                                , DrawTextFlags                    flags
+                                , const std::wstring               &text
+                                , const std::wstring               &stopChars
+                                , const std::vector<std::uint32_t> &colors
+                                , const std::vector<std::uint32_t> &bkColors
+                                , int                              fontId=-1
+                                , DrawCoord::value_type            *pNextPosX=0          //!< OUT, Положение вывода для символа, следующего за последним выведенным
+                                , DrawCoord::value_type            *pOverhang=0          //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+                                , std::uint32_t                    *pLastCharProcessed=0 //!< IN/OUT last drawn char, for kerning calculation
+                                , std::size_t                      *pCharsProcessed=0    //!< OUT Num chars, not symbols/glyphs
+                                , std::size_t                      *pSymbolsDrawn=0
+                                ) override
+    {
+        return drawTextColored( startPos, widthLim, flags, text.c_str(), text.size(), stopChars.c_str()
+                              , colors.empty()   ? (const std::uint32_t*)0 : &colors[0], colors.size()
+                              , bkColors.empty() ? (const std::uint32_t*)0 : &bkColors[0], bkColors.size()
+                              , fontId
+                              , pNextPosX, pOverhang, pLastCharProcessed, pCharsProcessed, pSymbolsDrawn
+                              );
+    }
+
+    virtual bool drawParaColored( const DrawCoord                  &startPos
+                                , const DrawCoord                  &limits       //!< Limits, vertical and horizontal, relative to start pos
+                                , const DrawCoord::value_type      &lineSpacing  //!< Extra space between lines of text
+                                , const DrawCoord::value_type      &paraIndent   //!< Indent on the first line
+                                , const DrawCoord::value_type      &tabSize      //!< Size used for tabs if tabStops are over
+                                , DrawTextFlags                    flags
+                                , HorAlign                         horAlign
+                                , VertAlign                        vertAlign
+                                , const std::wstring               &text
+                                , const std::vector<std::uint32_t> &colors
+                                , const std::vector<std::uint32_t> &bkColors
+                                , const std::vector<DrawCoord::value_type> &tabStopPositions
+                                , int                              fontId=-1
+                                , DrawCoord::value_type            *pNextPosY=0         //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                                , bool                             *pVerticalDone=0     //!< OUT All/not all lines drawn, 
+                                , std::size_t                      *pCharsProcessed=0   //!< OUT Num chars, not symbols/glyphs
+                                ) override
+    {
+        return drawParaColored( startPos, limits, lineSpacing, paraIndent, tabSize, flags, horAlign, vertAlign, text.c_str(), text.size()
+                              , colors.empty()           ? (const std::uint32_t*)0 : &colors[0], colors.size()
+                              , bkColors.empty()         ? (const std::uint32_t*)0 : &bkColors[0], bkColors.size()
+                              , tabStopPositions.empty() ? (DrawCoord::value_type*)0 : &tabStopPositions[0], tabStopPositions.size()
+                              , fontId
+                              , pNextPosY, pVerticalDone, pCharsProcessed
+                              );
+    }
+
+
+    bool drawTextColoredImpl( const std::unordered_set<KerningPair> &kerningPairs
+                            , const SimpleFontMetrics       &fontMetrics
+                            , const DrawCoord               &startPos
+                            , const DrawCoord::value_type   &widthLim
+                            , DrawTextFlags                 flags
+                            , const wchar_t                 *text
+                            , std::size_t                   textSize
+                            , const wchar_t                 *stopChars
+                            , const std::uint32_t           *pColors
+                            , std::size_t                   nColors
+                            , const std::uint32_t           *pBackColors
+                            , std::size_t                   nBackColors
+                            , int                           fontId
+                            , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
+                            , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+                            , std::uint32_t                 *pLastCharProcessed //!< IN/OUT last drawn char, for kerning calculation
+                            , std::size_t                   *pCharsProcessed    //!< OUT Num chars, not symbols/glyphs
+                            , std::size_t                   *pSymbolsDrawn
+                            )
     {
         //MARTY_IDC_ARG_USED(kerningPairs);
 
@@ -81,6 +153,41 @@
 
         bool breakOnLimit = false;
         bool prevSpace    = true ; // На старте строки считаем, что ранее был пробел - для раскрасски по словам
+
+        auto findLetterColors = [&](std::uint32_t &curUintTextColor, std::uint32_t &curUintBkColor, bool forceNoBgColor)
+        {
+            curUintTextColor = (std::uint32_t)-1;
+            if (pColors && nColorIndex<nColors)
+            {
+                curUintTextColor = pColors[nColorIndex];
+            }
+
+            curUintBkColor = (std::uint32_t)-1;
+            if (pBackColors && nColorIndex<nBackColors)
+            {
+                curUintBkColor = pBackColors[nColorIndex];
+            }
+
+            if (forceNoBgColor)
+            {
+                curUintBkColor = (std::uint32_t)-1;
+            }
+
+        };
+
+
+        struct LetterDrawInfo
+        {
+            DrawCoord                                    letterPos   ;
+            const wchar_t                               *pLetter  = 0;
+            std::size_t                                  charLen  = 0;
+            marty_draw_context::DrawCoord::value_type    width    = 0; // Да вроде и не нужно, но пусть
+            std::uint32_t                                uintTextColor = (std::uint32_t)-1;
+            std::uint32_t                                uintBkColor   = (std::uint32_t)-1; // Да вроде и не нужно, но пусть
+        };
+
+        std::vector<LetterDrawInfo> letterDrawInfos;
+        
 
         std::vector<marty_draw_context::DrawCoord::value_type>::const_iterator wit = widths.begin();
         std::size_t curCharLen = getCharLen(text, textSize);
@@ -184,17 +291,18 @@
                 // Не только считаем, но и рисуем
 
                 std::uint32_t curUintTextColor = (std::uint32_t)-1;
-                if (pColors && nColorIndex<nColors)
-                {
-                    curUintTextColor = pColors[nColorIndex];
-                }
-    
-                auto textColorSaver = (curUintTextColor==(std::uint32_t)-1)
-                                    ? TextColorSaver(this)
-                                    : TextColorSaver(this, ColorRef::fromUnsigned(curUintTextColor) )
-                                    ;
+                std::uint32_t curUintBkColor = (std::uint32_t)-1;
+
+                findLetterColors(curUintTextColor, curUintBkColor, (bAnyWhiteSpaceChar || bAnyLineBreakChar || bAnyTabChar) && !forceSpacesColoring);
+                
+                auto textColorSaver = (curUintTextColor==(std::uint32_t)-1) ? TextColorSaver(this) : TextColorSaver(this, ColorRef::fromUnsigned(curUintTextColor) );
+                auto bkColorSaver = (curUintBkColor==(std::uint32_t)-1) ? BkColorSaver(this) : BkColorSaver(this, ColorRef::fromUnsigned(curUintBkColor) );
+                // Если задан цвет фона, выключаем прозрачность
+                auto bkModeSaver  = (curUintBkColor==(std::uint32_t)-1) ? BkModeSaver(this)  : BkModeSaver(this, BkMode::opaque );
 
                 textOut(pos, text, curCharLen);
+
+                letterDrawInfos.emplace_back(LetterDrawInfo{pos, text, curCharLen, curCharWidth, curUintTextColor, curUintBkColor});
             }
 
             pos.x           += curCharWidth;
@@ -240,26 +348,62 @@
                 prevCh32     = ch32;
             }
             
-        }
+        } // for
+
+
 
         if (breakOnLimit && drawEllipsis && (flags&DrawTextFlags::calcOnly)==0)
         {
             std::uint32_t curUintTextColor = (std::uint32_t)-1;
-            if (pColors && nColorIndex<nColors)
-            {
-                curUintTextColor = pColors[nColorIndex];
-            }
+            std::uint32_t curUintBkColor = (std::uint32_t)-1;
 
-            auto textColorSaver = (curUintTextColor==(std::uint32_t)-1)
-                                ? TextColorSaver(this)
-                                : TextColorSaver(this, ColorRef::fromUnsigned(curUintTextColor) )
-                                ;
+            findLetterColors(curUintTextColor, curUintBkColor, false);
+            
+            auto textColorSaver = (curUintTextColor==(std::uint32_t)-1) ? TextColorSaver(this) : TextColorSaver(this, ColorRef::fromUnsigned(curUintTextColor) );
+            auto bkColorSaver = (curUintBkColor==(std::uint32_t)-1) ? BkColorSaver(this) : BkColorSaver(this, ColorRef::fromUnsigned(curUintBkColor) );
+            // Если задан цвет фона, выключаем прозрачность
+            auto bkModeSaver  = (curUintBkColor==(std::uint32_t)-1) ? BkModeSaver(this)  : BkModeSaver(this, BkMode::opaque );
 
-            textOut(pos, ellipsisStr, 1);
+            textOut(pos, &ellipsisStr[0], 1);
+
+            letterDrawInfos.emplace_back(LetterDrawInfo{pos, &ellipsisStr[0], 1, 0 /* curCharWidth */ , curUintTextColor, curUintBkColor});
         }
 
-        // if (drawEllipsis) // ellipsisWidth
 
+        if (pBackColors)
+        {
+            // При кернинге, особенно, если у нас italic или ещё какое-то говно, фон следующей буквы перекрывает фон текущей буквы
+            // По этому, если у нас заданы отдельные цвета для фона букв, то будет говно (я проверял)
+            // Чтобы избежать говна, перерисовываем всё то же, только в режиме прозрачности
+
+            // Устанавливаем прозрачный режим рисования, сохраняя предыдущий
+            auto bkModeSaver  = BkModeSaver(this, BkMode::transparent);
+
+            for(const auto & ldi : letterDrawInfos)
+            {
+                auto textColorSaver = (ldi.uintTextColor==(std::uint32_t)-1) ? TextColorSaver(this) : TextColorSaver(this, ColorRef::fromUnsigned(ldi.uintTextColor) );
+                textOut(ldi.letterPos, ldi.pLetter, ldi.charLen);
+            }
+        }
+        
+        // struct LetterDrawInfo
+        // {
+        //     DrawCoord                                    letterPos   ;
+        //     const wchar_t                               *pLetter  = 0;
+        //     std::size_t                                  charLen  = 0;
+        //     marty_draw_context::DrawCoord::value_type    width    = 0; // Да вроде и не нужно, но пусть
+        //     std::uint32_t                                uintTextColor = (std::uint32_t)-1;
+        //     std::uint32_t                                uintBkColor   = (std::uint32_t)-1;
+        // };
+        //  
+        // std::vector<LetterDrawInfo> letterDrawInfos;
+
+                // auto textColorSaver = (curUintTextColor==(std::uint32_t)-1) ? TextColorSaver(this) : TextColorSaver(this, ColorRef::fromUnsigned(curUintTextColor) );
+                // auto bkColorSaver = (curUintBkColor==(std::uint32_t)-1) ? BkColorSaver(this) : BkColorSaver(this, ColorRef::fromUnsigned(curUintBkColor) );
+                // // Если задан цвет фона, выключаем прозрачность
+                // auto bkModeSaver  = (curUintBkColor==(std::uint32_t)-1) ? BkModeSaver(this)  : BkModeSaver(this, BkMode::opaque );
+                //  
+                // textOut(pos, text, curCharLen);
 
 
         if (pNextPosX)
@@ -292,21 +436,23 @@
     }
 
 
-    virtual bool drawTextColoredEx( const DrawCoord               &startPos
-                                  , const DrawCoord::value_type   &widthLim
-                                  , DrawCoord::value_type         *pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
-                                  , DrawCoord::value_type         *pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
-                                  , DrawTextFlags                 flags
-                                  , const wchar_t                 *text
-                                  , std::size_t                   textSize=(std::size_t)-1
-                                  , std::uint32_t                 *pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
-                                  , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                  , const std::uint32_t           *pColors=0
-                                  , std::size_t                   nColors=0
-                                  , std::size_t                   *pSymbolsDrawn=0
-                                  , const wchar_t                 *stopChars=0
-                                  , int                           fontId=-1
-                                  ) override
+    virtual bool drawTextColored( const DrawCoord               &startPos
+                                , const DrawCoord::value_type   &widthLim
+                                , DrawTextFlags                 flags
+                                , const wchar_t                 *text
+                                , std::size_t                   textSize=(std::size_t)-1
+                                , const wchar_t                 *stopChars=0
+                                , const std::uint32_t           *pColors=0
+                                , std::size_t                   nColors=0
+                                , const std::uint32_t           *pBackColors=0
+                                , std::size_t                   nBackColors=0
+                                , int                           fontId=-1
+                                , DrawCoord::value_type         *pNextPosX=0      //!< OUT, Положение вывода для символа, следующего за последним выведенным
+                                , DrawCoord::value_type         *pOverhang=0      //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+                                , std::uint32_t                 *pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
+                                , std::size_t                   *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                , std::size_t                   *pSymbolsDrawn=0
+                                ) override
     {
         std::unordered_set<KerningPair> kerningPairs;
         getKerningPairsSet(kerningPairs, fontId);
@@ -317,63 +463,37 @@
             return false;
         }
 
-        return drawTextColoredExImpl( kerningPairs, fontMetrics
-                                    , startPos, widthLim, pNextPosX, pOverhang, flags
-                                    , text, textSize, pLastCharProcessed, pCharsProcessed, pColors, nColors
-                                    , pSymbolsDrawn, stopChars, fontId
-                                    );
+        return drawTextColoredImpl( kerningPairs, fontMetrics
+                                  , startPos, widthLim, flags
+                                  , text, textSize
+                                  , stopChars
+                                  , pColors, nColors, pBackColors, nBackColors
+                                  , fontId
+                                  , pNextPosX, pOverhang, pLastCharProcessed, pCharsProcessed
+                                  , pSymbolsDrawn
+                                  );
     }
 
-
-    virtual bool drawTextColored  ( const DrawCoord               &startPos
-                                  , const DrawCoord::value_type   &widthLim
-                                  , DrawTextFlags                 flags
-                                  , const wchar_t                 *text
-                                  , std::size_t                   textSize=(std::size_t)-1
-                                  , const std::uint32_t           *pColors=0
-                                  , std::size_t                   nColors=0
-                                  , const wchar_t                 *stopChars=0
-                                  , int                           fontId=-1
-                                  ) override
-    {
-        return drawTextColoredEx( startPos, widthLim
-                                , 0 // pNextPosX //!< OUT, Положение вывода для символа, следующего за последним выведенным
-                                , 0 // pOverhang //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
-                                , flags
-                                , text
-                                , textSize
-                                , 0 // pLastCharProcessed
-                                , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                , pColors
-                                , nColors
-                                , 0 // pSymbolsDrawn=0
-                                , stopChars
-                                , fontId
-                                );
-    }
-
-
-    bool drawParaColoredExImpl2( const std::unordered_set<KerningPair> &kerningPairs
-                               , const SimpleFontMetrics               &fontMetrics
-                               , std::vector<TextPortionInfo>          textPortions
-                               , const DrawCoord                       &startPos
-                               , const DrawCoord                       &limits        //!< Limits, vertical and horizontal, relative to start pos
-                               , DrawCoord::value_type                 *pNextPosY     //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
-                               , bool                                  *pVerticalDone //!< OUT All/not all lines drawn, 
-                               , const  DrawCoord::value_type          &lineSpacing   //!< Extra space between lines of text
-                               , const  DrawCoord::value_type          &paraIndent    //!< Indent on the first line
-                               , DrawCoord::value_type                 tabSize        //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
-                               , DrawTextFlags                         flags
-                               , HorAlign                              horAlign
-                               // , VertAlign                             vertAlign
-                               // , const wchar_t                         *text
-                               // , std::size_t                           textSize=(std::size_t)-1
-                               , const std::uint32_t                   *pColors=0
-                               , std::size_t                           nColors=0
-                               , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
-                               , std::size_t                           nTabStopPositions=0
-                               // , int                                   fontId=-1 // шрифт уже выбран, параметр не нужен
-                               )
+    bool drawParaColoredImpl2( const std::unordered_set<KerningPair> &kerningPairs
+                             , const SimpleFontMetrics               &fontMetrics
+                             , std::vector<TextPortionInfo>          textPortions
+                             , const DrawCoord                       &startPos
+                             , const DrawCoord                       &limits        //!< Limits, vertical and horizontal, relative to start pos
+                             , const  DrawCoord::value_type          &lineSpacing   //!< Extra space between lines of text
+                             , const  DrawCoord::value_type          &paraIndent    //!< Indent on the first line
+                             , DrawCoord::value_type                 tabSize        //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
+                             , DrawTextFlags                         flags
+                             , HorAlign                              horAlign
+                             , const std::uint32_t                   *pColors=0
+                             , std::size_t                           nColors=0
+                             , const std::uint32_t                   *pBackColors=0
+                             , std::size_t                           nBackColors=0
+                             , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
+                             , std::size_t                           nTabStopPositions=0
+                             , DrawCoord::value_type                 *pNextPosY     =0 //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                             , bool                                  *pVerticalDone =0 //!< OUT All/not all lines drawn, 
+                             // , int                                   fontId=-1 // шрифт уже выбран, параметр не нужен
+                             )
     {
 
         DrawCoord::value_type spaceWidth = 0;
@@ -413,6 +533,11 @@
         const auto fitHeightDisable  = (flags&DrawTextFlags::calcOnly)!=0 || (flags&DrawTextFlags::fitHeightDisable)!=0;
         //const bool coloringParas     = (flags&DrawTextFlags::coloringParas)!=0;
         const bool coloringWords     = (flags&DrawTextFlags::coloringWords)!=0; // && !coloringParas;
+
+        if (coloringWords)
+        {
+            flags &= ~DrawTextFlags::forceSpacesColoring; //TODO: !!! Пока так, но вообще надо фиксить
+        }
 
 
         bool bStoppedByLimY = false;
@@ -500,18 +625,19 @@
             if (!coloringWords)
             {
                 std::size_t nSymbolsDrawn = 0;
-                bRes = drawTextColoredEx( pos, 0 // widthLim
-                                        , 0 // pNextPosX - не нужен
-                                        , 0 // pOverhang - не нужен
-                                        , newDrawFlags
-                                        , pText, textSize // tpi.text.data(), numWcharsFit
-                                        , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
-                                        , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                        , pColors, nColors
-                                        , &nSymbolsDrawn
-                                        , 0 // stopChars
-                                        , -1 // fontId
-                                        );
+                bRes = drawTextColored( pos, 0 // widthLim
+                                      , newDrawFlags
+                                      , pText, textSize // tpi.text.data(), numWcharsFit
+                                      , 0 // stopChars
+                                      , pColors, nColors
+                                      , pBackColors, nBackColors 
+                                      , -1 // fontId
+                                      , 0 // pNextPosX - не нужен
+                                      , 0 // pOverhang - не нужен
+                                      , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
+                                      , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                      , &nSymbolsDrawn
+                                      );
                 if (bRes && pColors)
                 {
                     if (nSymbolsDrawn>nColors)
@@ -539,18 +665,29 @@
                     nWordColors = 1;
                 }
 
-                bRes = drawTextColoredEx( pos, 0 // widthLim
-                                        , 0 // pNextPosX - не нужен
-                                        , 0 // pOverhang - не нужен
-                                        , newDrawFlags
-                                        , pText, textSize // tpi.text.data(), numWcharsFit
-                                        , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
-                                        , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                        , pWordColors, nWordColors
-                                        , 0 // &nSymbolsDrawn
-                                        , 0 // stopChars
-                                        , -1 // fontId
-                                        );
+                std::uint32_t        wordBkColor   = 0;
+                const std::uint32_t *pWordBkColors = 0;
+                std::size_t          nWordBkColors = 0;
+                if (pBackColors && wordColorIdx<nBackColors)
+                {
+                    wordBkColor   = pBackColors[wordColorIdx];
+                    pWordBkColors = &wordBkColor;
+                    nWordBkColors = 1;
+                }
+
+                bRes = drawTextColored( pos, 0 // widthLim
+                                      , newDrawFlags
+                                      , pText, textSize // tpi.text.data(), numWcharsFit
+                                      , 0 // stopChars
+                                      , pWordColors  , nWordColors
+                                      , pWordBkColors, nWordBkColors
+                                      , -1 // fontId
+                                      , 0 // pNextPosX - не нужен
+                                      , 0 // pOverhang - не нужен
+                                      , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
+                                      , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                      , 0 // &nSymbolsDrawn
+                                      );
                 if (bRes && !spaceWord && !wordHasContinuation) // Это не пробельное слово, слово не обрезано, продолжения того же слова нет, поэтому можно инкрементировать индекс цвета
                 {
                     ++wordColorIdx;
@@ -1046,27 +1183,29 @@
     }
 
 
-    bool drawParaColoredExImpl( const std::unordered_set<KerningPair> &kerningPairs
-                              , const SimpleFontMetrics               &fontMetrics
-                              , DrawCoord                             startPos
-                              , DrawCoord                             limits       //!< Limits, vertical and horizontal, relative to start pos
-                              , DrawCoord::value_type                 *pNextPosY    //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
-                              , bool                                  *pVerticalDone
-                              , const DrawCoord::value_type           &lineSpacing  //!< Extra space between lines of text
-                              , const DrawCoord::value_type           &paraIndent   //!< Indent on the first line
-                              , const DrawCoord::value_type           &tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
-                              , DrawTextFlags                         flags
-                              , HorAlign                              horAlign
-                              , VertAlign                             vertAlign
-                              , const wchar_t                         *text
-                              , std::size_t                           textSize=(std::size_t)-1
-                              , std::size_t                           *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                              , const std::uint32_t                   *pColors=0
-                              , std::size_t                           nColors=0
-                              , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
-                              , std::size_t                           nTabStopPositions=0
-                              , int                                   fontId=-1
-                              )
+    bool drawParaColoredImpl( const std::unordered_set<KerningPair> &kerningPairs
+                            , const SimpleFontMetrics               &fontMetrics
+                            , DrawCoord                             startPos
+                            , DrawCoord                             limits       //!< Limits, vertical and horizontal, relative to start pos
+                            , const DrawCoord::value_type           &lineSpacing  //!< Extra space between lines of text
+                            , const DrawCoord::value_type           &paraIndent   //!< Indent on the first line
+                            , const DrawCoord::value_type           &tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
+                            , DrawTextFlags                         flags
+                            , HorAlign                              horAlign
+                            , VertAlign                             vertAlign
+                            , const wchar_t                         *text
+                            , std::size_t                           textSize=(std::size_t)-1
+                            , const std::uint32_t                   *pColors=0
+                            , std::size_t                           nColors=0
+                            , const std::uint32_t                   *pBackColors=0
+                            , std::size_t                           nBackColors=0
+                            , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
+                            , std::size_t                           nTabStopPositions=0
+                            , int                                   fontId=-1
+                            , DrawCoord::value_type                 *pNextPosY=0     //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                            , bool                                  *pVerticalDone=0
+                            , std::size_t                           *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                            )
     {
         textSize = checkCalcStringSize(text, textSize);
 
@@ -1290,24 +1429,26 @@
         {
             DrawCoord::value_type nextPosY = startPos.y;
             // Нам нужно узнать реальную высоту, которую занимает параграф
-            bool bRes = drawParaColoredExImpl2( kerningPairs, fontMetrics, textPortions
-                                              , startPos, limits
-                                              , &nextPosY
-                                              , pVerticalDone
-                                              , lineSpacing  //!< Extra space between lines of text
-                                              , paraIndent   //!< Indent on the first line
-                                              , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
-                                              , flags | DrawTextFlags::fitHeightDisable | DrawTextFlags::calcOnly // установили флаг "нет лимита по высоте" и "только калькуляция", вроде ничего больше не надо
-                                              , horAlign
-                                              //, VertAlign::top
-                                              //, text
-                                              //, textSize
-                                              , 0 // const std::uint32_t                   *pColors=0
-                                              , 0 // nColors=0
-                                              , pTabStopPositions        //!< Relative to start pos X coord
-                                              , nTabStopPositions
-                                              // , fontId
-                                              );
+            bool bRes = drawParaColoredImpl2( kerningPairs, fontMetrics, textPortions
+                                            , startPos, limits
+                                            , lineSpacing  //!< Extra space between lines of text
+                                            , paraIndent   //!< Indent on the first line
+                                            , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
+                                            , flags | DrawTextFlags::fitHeightDisable | DrawTextFlags::calcOnly // установили флаг "нет лимита по высоте" и "только калькуляция", вроде ничего больше не надо
+                                            , horAlign
+                                            //, VertAlign::top
+                                            //, text
+                                            //, textSize
+                                            , 0 // pColors=0
+                                            , 0 // nColors=0
+                                            , 0 // pBkColors=0
+                                            , 0 // nBkColors=0
+                                            , 0 // pTabStopPositions        //!< Relative to start pos X coord
+                                            , 0 // nTabStopPositions
+                                            , &nextPosY
+                                            , pVerticalDone
+                                            // , fontId
+                                            );
 
             if (!bRes)
             {
@@ -1336,24 +1477,26 @@
         }
 
 
-        bool bRes = drawParaColoredExImpl2( kerningPairs, fontMetrics, textPortions
-                                          , startPos, limits
-                                          , pNextPosY
-                                          , pVerticalDone
-                                          , lineSpacing  //!< Extra space between lines of text
-                                          , paraIndent   //!< Indent on the first line
-                                          , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
-                                          , flags
-                                          , horAlign
-                                          //, VertAlign::top
-                                          //, text
-                                          //, textSize
-                                          , pColors
-                                          , nColors
-                                          , pTabStopPositions        //!< Relative to start pos X coord
-                                          , nTabStopPositions
-                                          // , fontId
-                                          );
+        bool bRes = drawParaColoredImpl2( kerningPairs, fontMetrics, textPortions
+                                        , startPos, limits
+                                        , lineSpacing  //!< Extra space between lines of text
+                                        , paraIndent   //!< Indent on the first line
+                                        , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
+                                        , flags
+                                        , horAlign
+                                        //, VertAlign::top
+                                        //, text
+                                        //, textSize
+                                        , pColors
+                                        , nColors
+                                        , pBackColors
+                                        , nBackColors
+                                        , pTabStopPositions        //!< Relative to start pos X coord
+                                        , nTabStopPositions
+                                        , pNextPosY
+                                        , pVerticalDone
+                                        // , fontId
+                                        );
 
         if (!bRes)
         {
@@ -1369,25 +1512,27 @@
     }
 
 
-    virtual bool drawParaColoredEx( const DrawCoord                       &startPos
-                                  , const DrawCoord                       &limits       //!< Limits, vertical and horizontal, relative to start pos
-                                  , DrawCoord::value_type                 *pNextPosY    //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
-                                  , bool                                  *pVerticalDone
-                                  , const DrawCoord::value_type           &lineSpacing  //!< Extra space between lines of text
-                                  , const DrawCoord::value_type           &paraIndent   //!< Indent on the first line
-                                  , const DrawCoord::value_type           &tabSize      //!< Size used for tabs if tabStops are over
-                                  , DrawTextFlags                         flags
-                                  , HorAlign                              horAlign
-                                  , VertAlign                             vertAlign
-                                  , const wchar_t                         *text
-                                  , std::size_t                           textSize=(std::size_t)-1
-                                  , std::size_t                           *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                  , const std::uint32_t                   *pColors=0
-                                  , std::size_t                           nColors=0
-                                  , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
-                                  , std::size_t                           nTabStopPositions=0
-                                  , int                                   fontId=-1
-                                  ) override
+    virtual bool drawParaColored( const DrawCoord                       &startPos
+                                , const DrawCoord                       &limits       //!< Limits, vertical and horizontal, relative to start pos
+                                , const DrawCoord::value_type           &lineSpacing  //!< Extra space between lines of text
+                                , const DrawCoord::value_type           &paraIndent   //!< Indent on the first line
+                                , const DrawCoord::value_type           &tabSize      //!< Size used for tabs if tabStops are over
+                                , DrawTextFlags                         flags
+                                , HorAlign                              horAlign
+                                , VertAlign                             vertAlign
+                                , const wchar_t                         *text
+                                , std::size_t                           textSize=(std::size_t)-1
+                                , const std::uint32_t                   *pColors=0
+                                , std::size_t                           nColors=0
+                                , const std::uint32_t                   *pBackColors=0
+                                , std::size_t                            nBackColors=0
+                                , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
+                                , std::size_t                           nTabStopPositions=0
+                                , int                                   fontId=-1
+                                , DrawCoord::value_type                 *pNextPosY=0    //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                                , bool                                  *pVerticalDone=0
+                                , std::size_t                           *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                ) override
     {
         std::unordered_set<KerningPair> kerningPairs;
         getKerningPairsSet(kerningPairs, fontId);
@@ -1398,20 +1543,18 @@
             return false;
         }
 
-        return drawParaColoredExImpl( kerningPairs, fontMetrics
-                                    , startPos, limits, pNextPosY, pVerticalDone
-                                    , lineSpacing, paraIndent, tabSize
-                                    , flags, horAlign, vertAlign
-                                    , text, textSize, pCharsProcessed
-                                    , pColors, nColors
-                                    , pTabStopPositions, nTabStopPositions
-                                    , fontId
-                                    );
-    
-    
+        return drawParaColoredImpl( kerningPairs, fontMetrics
+                                  , startPos, limits
+                                  , lineSpacing, paraIndent, tabSize
+                                  , flags, horAlign, vertAlign
+                                  , text, textSize
+                                  , pColors, nColors, pBackColors, nBackColors
+                                  , pTabStopPositions, nTabStopPositions
+                                  , fontId
+                                  , pNextPosY, pVerticalDone
+                                  , pCharsProcessed
+                                  );
     }
-
-
 
 
 

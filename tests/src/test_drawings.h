@@ -496,6 +496,8 @@ void test_drawParaColored( marty_draw_context::IDrawContext *pDc
                          , std::size_t tabStopPositionsCount
                          , const std::uint32_t *pLetterColors
                          , std::size_t letterColorsCount
+                         , const std::uint32_t *pLetterBkColors
+                         , std::size_t letterBkColorsCount
                          , marty_draw_context::DrawTextFlags flags
                          , marty_draw_context::HorAlign horAlign
                          , const marty_draw_context::DrawCoord::value_type &frameBoxHeight
@@ -513,23 +515,48 @@ void test_drawParaColored( marty_draw_context::IDrawContext *pDc
 
     test_drawTextBox(pDc, pixelPenId, pos, lim, frameBoxHeight);
 
-    pDc->drawParaColoredEx( pos, lim, &nextPosY, &verticalDone
-                          , (DrawCoord::value_type)0.2   // lineSpacing
-                          , (DrawCoord::value_type)3.5   // paraIndent
-                          , (DrawCoord::value_type)10.0  // tabSize
-                          , flags | DrawTextFlags::fitGlyphDefault // | DrawTextFlags::fitHeightDisable
-                          , horAlign // HorAlign::width // тестируем выравнивание по ширине
-                          , VertAlign::top
-                          , text.c_str(), text.size()
-                          , 0 // pCharsProcessed
-                          , pLetterColors, letterColorsCount // &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
-                          , pTabStopPositions, tabStopPositionsCount
-                          , fontId
-                          );
+    pDc->drawParaColored( pos, lim
+                        , (DrawCoord::value_type)0.2   // lineSpacing
+                        , (DrawCoord::value_type)3.5   // paraIndent
+                        , (DrawCoord::value_type)10.0  // tabSize
+                        , flags | DrawTextFlags::fitGlyphDefault // | DrawTextFlags::fitHeightDisable
+                        , horAlign // HorAlign::width // тестируем выравнивание по ширине
+                        , VertAlign::top
+                        , text.c_str(), text.size()
+                        , pLetterColors, letterColorsCount // &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
+                        , pLetterBkColors, letterBkColorsCount
+                        , pTabStopPositions, tabStopPositionsCount
+                        , fontId
+                        , &nextPosY, &verticalDone
+                        , 0 // pCharsProcessed
+                        );
 
 }
 
 #if 0
+
+    virtual bool drawParaColoredEx( const DrawCoord                  &startPos
+                                  , const DrawCoord                  &limits       //!< Limits, vertical and horizontal, relative to start pos
+                                  , const DrawCoord::value_type      &lineSpacing  //!< Extra space between lines of text
+                                  , const DrawCoord::value_type      &paraIndent   //!< Indent on the first line
+                                  , const DrawCoord::value_type      &tabSize      //!< Size used for tabs if tabStops are over
+                                  , DrawTextFlags                    flags
+                                  , HorAlign                         horAlign
+                                  , VertAlign                        vertAlign
+                                  , const wchar_t                    *text
+                                  , std::size_t                      textSize=(std::size_t)-1
+                                  , const std::uint32_t              *pColors=0
+                                  , std::size_t                      nColors=0
+                                  , const std::uint32_t              *pBackColors=0
+                                  , std::size_t                      nBackColors=0
+                                  , const DrawCoord::value_type      *pTabStopPositions=0        //!< Relative to start pos X coord
+                                  , std::size_t                      nTabStopPositions=0
+                                  , DrawCoord::value_type            *pNextPosY=0         //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                                  , bool                             *pVerticalDone=0     //!< OUT All/not all lines drawn, 
+                                  , std::size_t                      *pCharsProcessed=0   //!< OUT Num chars, not symbols/glyphs
+                                  , int                              fontId=-1
+                                  ) = 0;
+
             auto pos                       = DrawCoord(60, 48);
             auto paraLimits                = DrawCoord(70, 200);
             DrawCoord::value_type nextPosY = 0;
