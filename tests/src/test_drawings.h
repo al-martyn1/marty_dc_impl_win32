@@ -492,12 +492,9 @@ inline
 void test_drawParaColored( marty_draw_context::IDrawContext *pDc
                          , const marty_draw_context::DrawCoord &pos
                          , const marty_draw_context::DrawCoord &lim
-                         , const marty_draw_context::DrawCoord::value_type  *pTabStopPositions
-                         , std::size_t tabStopPositionsCount
-                         , const std::uint32_t *pLetterColors
-                         , std::size_t letterColorsCount
-                         , const std::uint32_t *pLetterBkColors
-                         , std::size_t letterBkColorsCount
+                         , const std::vector<marty_draw_context::DrawCoord::value_type> &tabStopPositions
+                         , const std::vector<std::uint32_t> &letterColors
+                         , const std::vector<std::uint32_t> &letterBkColors
                          , marty_draw_context::DrawTextFlags flags
                          , marty_draw_context::HorAlign horAlign
                          , const marty_draw_context::DrawCoord::value_type &frameBoxHeight
@@ -522,10 +519,10 @@ void test_drawParaColored( marty_draw_context::IDrawContext *pDc
                         , flags | DrawTextFlags::fitGlyphDefault // | DrawTextFlags::fitHeightDisable
                         , horAlign // HorAlign::width // тестируем выравнивание по ширине
                         , VertAlign::top
-                        , text.c_str(), text.size()
-                        , pLetterColors, letterColorsCount // &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
-                        , pLetterBkColors, letterBkColorsCount
-                        , pTabStopPositions, tabStopPositionsCount
+                        , text
+                        , letterColors
+                        , letterBkColors
+                        , tabStopPositions
                         , fontId
                         , &nextPosY, &verticalDone
                         , 0 // pCharsProcessed

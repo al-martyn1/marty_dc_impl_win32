@@ -477,69 +477,35 @@ public:
         // bool fillGradientRect(DrawingCoords leftTop, DrawingCoords rightBottom, DrawingGradientParams gradientParams, int gradientType, bool excludeFrame) const
         #endif
 
-        std::uint32_t letterColors[16] = { (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         };
+        std::vector<std::uint32_t> letterColors;
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("GreenYellow").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Red").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Grey").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Blue").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Cyan").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("DarkCyan").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("MediumCyan").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Brown").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Whitesmoke").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Moccasin").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Orchid").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("OrangeRed").toUnsigned());
+        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("DarkKhaki").toUnsigned());
+        //letterColors[8] = marty_draw_context::ColorRef::deserialize("").toUnsigned());
 
-        std::uint32_t letterBk[16]     = { (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         , (std::uint32_t)-1
-                                         };
-
-        letterColors[ 0] = marty_draw_context::ColorRef::deserialize("GreenYellow").toUnsigned();
-        letterColors[ 1] = marty_draw_context::ColorRef::deserialize("Red").toUnsigned();
-        letterColors[ 2] = marty_draw_context::ColorRef::deserialize("Grey").toUnsigned();
-        letterColors[ 3] = marty_draw_context::ColorRef::deserialize("Blue").toUnsigned();
-        letterColors[ 4] = marty_draw_context::ColorRef::deserialize("Cyan").toUnsigned();
-        letterColors[ 5] = marty_draw_context::ColorRef::deserialize("DarkCyan").toUnsigned();
-        letterColors[ 6] = marty_draw_context::ColorRef::deserialize("MediumCyan").toUnsigned();
-        letterColors[ 7] = marty_draw_context::ColorRef::deserialize("Brown").toUnsigned();
-        letterColors[ 8] = marty_draw_context::ColorRef::deserialize("Whitesmoke").toUnsigned();
-        letterColors[ 9] = marty_draw_context::ColorRef::deserialize("Moccasin").toUnsigned();
-        letterColors[10] = marty_draw_context::ColorRef::deserialize("Orchid").toUnsigned();
-        letterColors[11] = marty_draw_context::ColorRef::deserialize("OrangeRed").toUnsigned();
-        letterColors[12] = marty_draw_context::ColorRef::deserialize("DarkKhaki").toUnsigned();
-        //letterColors[8] = marty_draw_context::ColorRef::deserialize("").toUnsigned();
-
-        letterBk    [ 0] = marty_draw_context::ColorRef::deserialize("Brown").toUnsigned();
-        letterBk    [ 1] = marty_draw_context::ColorRef::deserialize("DarkCyan").toUnsigned();
-        letterBk    [ 2] = marty_draw_context::ColorRef::deserialize("GreenYellow").toUnsigned();
-        letterBk    [ 3] = marty_draw_context::ColorRef::deserialize("Red").toUnsigned();
-        letterBk    [ 4] = marty_draw_context::ColorRef::deserialize("Grey").toUnsigned();
-        letterBk    [ 5] = marty_draw_context::ColorRef::deserialize("MediumCyan").toUnsigned();
-        letterBk    [ 6] = marty_draw_context::ColorRef::deserialize("Blue").toUnsigned();
-        letterBk    [ 7] = marty_draw_context::ColorRef::deserialize("Grey").toUnsigned();
-        letterBk    [ 8] = marty_draw_context::ColorRef::deserialize("DarkGrey").toUnsigned();
-        letterBk    [ 9] = marty_draw_context::ColorRef::deserialize("SpringGreen").toUnsigned();
-        letterBk    [10] = marty_draw_context::ColorRef::deserialize("SkyBlue").toUnsigned();
-        letterBk    [11] = marty_draw_context::ColorRef::deserialize("PaleGreen").toUnsigned();
+        std::vector<std::uint32_t> letterBk;
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Brown").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("DarkCyan").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("GreenYellow").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Red").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Grey").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("MediumCyan").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Blue").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Grey").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("DarkGrey").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("SpringGreen").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("SkyBlue").toUnsigned());
+        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("PaleGreen").toUnsigned());
 
 
         #ifdef TEST_DC_FONTS
@@ -574,10 +540,10 @@ public:
                 std::size_t nSymbolsDrawn   = 0;
                 pDc->drawTextColored( pos, /* pos.x+ */ 60
                                     , dtFlags
-                                    , text, (std::size_t)-1 // textSize
+                                    , text
                                     , 0 // stopChars
-                                    , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
-                                    , &letterBk[0], sizeof(letterBk)/sizeof(letterBk[0])
+                                    , letterColors
+                                    , letterBk
                                     , fontId
                                     , 0 // pNextPosX - не интересно
                                     , 0 // pOverhang - не интересно
@@ -1034,7 +1000,8 @@ public:
             //DrawCoord::value_type nextPosY = 0;
             //bool                  verticalDone = false;
             //DrawCoord::value_type tabStopPositions[] = {30,50,60,110};
-            DrawCoord::value_type tabStopPositions[] = {22,35,45,110};
+            std::vector<DrawCoord::value_type> tabStopPositions = {22,35,45,110};
+            std::vector<DrawCoord::value_type> tabStopPositionsEmpty;
 
             DrawCoord::value_type frameBoxHeight = 30;
 
@@ -1052,9 +1019,9 @@ public:
             test_drawParaColored( pDc
                                 , paraPos
                                 , paraLimits
-                                , &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
-                                , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
-                                , &letterBk[0], sizeof(letterBk)/sizeof(letterBk[0])
+                                , tabStopPositions
+                                , letterColors
+                                , letterBk
                                 , dtFlags
                                 , HorAlign::left
                                 , frameBoxHeight
@@ -1066,9 +1033,9 @@ public:
             test_drawParaColored( pDc
                                 , paraPos + deltaPos
                                 , paraLimits
-                                , 0, 0 // &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
-                                , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
-                                , &letterBk[0], sizeof(letterBk)/sizeof(letterBk[0])
+                                , tabStopPositionsEmpty
+                                , letterColors
+                                , letterBk
                                 , dtFlags
                                 , HorAlign::center
                                 , frameBoxHeight
@@ -1080,9 +1047,9 @@ public:
             test_drawParaColored( pDc
                                 , paraPos + deltaPos + deltaPos
                                 , paraLimits
-                                , 0, 0 // &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
-                                , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
-                                , &letterBk[0], sizeof(letterBk)/sizeof(letterBk[0])
+                                , tabStopPositionsEmpty
+                                , letterColors
+                                , letterBk
                                 , dtFlags
                                 , HorAlign::right
                                 , frameBoxHeight
@@ -1094,9 +1061,9 @@ public:
             test_drawParaColored( pDc
                                 , paraPos + deltaPos + deltaPos + deltaPos
                                 , paraLimits
-                                , 0, 0 // &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
-                                , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
-                                , &letterBk[0], sizeof(letterBk)/sizeof(letterBk[0])
+                                , tabStopPositionsEmpty
+                                , letterColors
+                                , letterBk
                                 , dtFlags
                                 , HorAlign::width
                                 , frameBoxHeight
@@ -1104,8 +1071,6 @@ public:
                                 , timesSmallFont3_2Id
                                 , L"Width " + loremIpsumShort // loremIpsumTiny
                                 );
-
-
 
             #if 0
             test_drawTextBox(pDc, pixelPen, pos, paraLimits, 60);
