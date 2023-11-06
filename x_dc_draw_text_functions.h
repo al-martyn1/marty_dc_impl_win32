@@ -60,7 +60,8 @@
                                 , std::size_t                      *pCharsProcessed=0   //!< OUT Num chars, not symbols/glyphs
                                 ) override
     {
-        return drawParaColored( startPos, limits, lineSpacing, paraIndent, tabSize, flags, horAlign, vertAlign, text.c_str(), text.size()
+        return drawParaColored( startPos, limits, lineSpacing, paraIndent, tabSize, flags, horAlign, vertAlign
+                              , text.c_str(), text.size()
                               , colors.empty()           ? (const std::uint32_t*)0 : &colors[0], colors.size()
                               , bkColors.empty()         ? (const std::uint32_t*)0 : &bkColors[0], bkColors.size()
                               , tabStopPositions.empty() ? (DrawCoord::value_type*)0 : &tabStopPositions[0], tabStopPositions.size()
@@ -69,6 +70,38 @@
                               );
     }
 
+    virtual bool drawMultiParasColored( const DrawCoord            &startPos
+                                      , const DrawCoord                  &limits       //!< Limits, vertical and horizontal, relative to start pos
+                                      , const DrawCoord::value_type      &lineSpacing  //!< Extra space between lines of text
+                                      , const DrawCoord::value_type      &paraSpacing  //!< Extra space between paras
+                                      , const DrawCoord::value_type      &paraIndent   //!< Indent on the first line
+                                      , const DrawCoord::value_type      &tabSize      //!< Size used for tabs if tabStops are over
+                                      , DrawTextFlags                    flags
+                                      , HorAlign                         horAlign
+                                      , VertAlign                        vertAlign
+                                      , const std::wstring               &text
+                                      , const std::vector<std::uint32_t> &colors
+                                      , const std::vector<std::uint32_t> &bkColors
+                                      , const std::vector<DrawCoord::value_type> &tabStopPositions
+                                      , const std::vector<std::uint32_t> &paraColors
+                                      , const std::vector<std::uint32_t> &paraBkColors
+                                      , int                              fontId=-1
+                                      , DrawCoord::value_type            *pNextPosY=0         //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                                      , bool                             *pVerticalDone=0     //!< OUT All/not all lines drawn, 
+                                      ) override
+    {
+        return drawMultiParasColored( startPos, limits, lineSpacing, paraSpacing, paraIndent, tabSize, flags, horAlign, vertAlign
+                                    , text.c_str(), text.size()
+                                    , colors.empty()           ? (const std::uint32_t*)0 : &colors[0], colors.size()
+                                    , bkColors.empty()         ? (const std::uint32_t*)0 : &bkColors[0], bkColors.size()
+                                    , tabStopPositions.empty() ? (DrawCoord::value_type*)0 : &tabStopPositions[0], tabStopPositions.size()
+                                    , paraColors.empty()       ? (const std::uint32_t*)0 : &paraColors[0], paraColors.size()
+                                    , paraBkColors.empty()     ? (const std::uint32_t*)0 : &paraBkColors[0], paraBkColors.size()
+                                    , fontId
+                                    , pNextPosY
+                                    , pVerticalDone
+                                    );
+    }
 
     bool drawTextColoredImpl( const std::unordered_set<KerningPair> &kerningPairs
                             , const SimpleFontMetrics       &fontMetrics
