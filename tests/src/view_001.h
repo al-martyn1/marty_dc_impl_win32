@@ -541,7 +541,7 @@ public:
                 pDc->drawTextColored( pos, /* pos.x+ */ 60
                                     , dtFlags
                                     , text
-                                    , 0 // stopChars
+                                    , std::wstring() // 0 // stopChars
                                     , letterColors
                                     , letterBk
                                     , fontId

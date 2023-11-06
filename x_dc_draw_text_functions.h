@@ -492,9 +492,10 @@
                              , std::size_t                           nTabStopPositions=0
                              , DrawCoord::value_type                 *pNextPosY     =0 //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
                              , bool                                  *pVerticalDone =0 //!< OUT All/not all lines drawn, 
-                             // , int                                   fontId=-1 // шрифт уже выбран, параметр не нужен
+                             , std::size_t                           *pSymbolsDrawn=0
                              )
     {
+        MARTY_IDC_ARG_USED(pSymbolsDrawn);
 
         DrawCoord::value_type spaceWidth = 0;
         getCharWidth((std::uint32_t)' ', spaceWidth);
@@ -1204,7 +1205,7 @@
                             , int                                   fontId=-1
                             , DrawCoord::value_type                 *pNextPosY=0     //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
                             , bool                                  *pVerticalDone=0
-                            , std::size_t                           *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                            , std::size_t                           *pSymbolsDrawn=0
                             )
     {
         textSize = checkCalcStringSize(text, textSize);
@@ -1385,14 +1386,6 @@
 
         auto fontSaver = FontSaver(this, fontId);
 
-        // DrawCoord::value_type spaceWidth = 0;
-        // pdc->getCharWidth((std::uint32_t)' ', spaceWidth);
-        // if (tabSize<0)
-        // {
-        //     tabSize = -tabSize * spaceWidth;
-        // }
-
-        //std::vector<TextPortionInfo>  textPortions;
         for(auto &tp : textPortions)
         {
             // Также обновляет charInfos
@@ -1412,7 +1405,6 @@
         {
             // По вертикали вписываться не надо, нет лимита
             // Раз нет лимита по высоте - то нет и выравнивания по вертикали
-        
             vertAlign = VertAlign::top;
         }
 
@@ -1436,9 +1428,6 @@
                                             , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
                                             , flags | DrawTextFlags::fitHeightDisable | DrawTextFlags::calcOnly // установили флаг "нет лимита по высоте" и "только калькуляция", вроде ничего больше не надо
                                             , horAlign
-                                            //, VertAlign::top
-                                            //, text
-                                            //, textSize
                                             , 0 // pColors=0
                                             , 0 // nColors=0
                                             , 0 // pBkColors=0
@@ -1447,6 +1436,7 @@
                                             , 0 // nTabStopPositions
                                             , &nextPosY
                                             , pVerticalDone
+                                            , pSymbolsDrawn
                                             // , fontId
                                             );
 
@@ -1454,7 +1444,7 @@
             {
                 return bRes;
             }
-
+            
             auto actualParaHeight = nextPosY - startPos.y;
             auto limDelta = limits.y - actualParaHeight; // предплагаем, что лимит (куда надо вписать параграф) больше, чем реальная высота параграфа
 
@@ -1484,9 +1474,6 @@
                                         , tabSize      //!< Size used for tabs if tabStops are over, >=0 - size in logical units, <0 - size in spaces
                                         , flags
                                         , horAlign
-                                        //, VertAlign::top
-                                        //, text
-                                        //, textSize
                                         , pColors
                                         , nColors
                                         , pBackColors
@@ -1495,7 +1482,7 @@
                                         , nTabStopPositions
                                         , pNextPosY
                                         , pVerticalDone
-                                        // , fontId
+                                        , pSymbolsDrawn
                                         );
 
         if (!bRes)
@@ -1503,10 +1490,10 @@
             return bRes;
         }
 
-        if (pCharsProcessed)
-        {
-            *pCharsProcessed = (std::size_t)(text - tpStart);
-        }
+        // if (pCharsProcessed)
+        // {
+        //     *pCharsProcessed = (std::size_t)(text - tpStart);
+        // }
 
         return bRes;
     }
@@ -1531,7 +1518,8 @@
                                 , int                                   fontId=-1
                                 , DrawCoord::value_type                 *pNextPosY=0    //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
                                 , bool                                  *pVerticalDone=0
-                                , std::size_t                           *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                //, std::size_t                           *pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                , std::size_t                           *pSymbolsDrawn=0
                                 ) override
     {
         std::unordered_set<KerningPair> kerningPairs;
@@ -1552,9 +1540,354 @@
                                   , pTabStopPositions, nTabStopPositions
                                   , fontId
                                   , pNextPosY, pVerticalDone
-                                  , pCharsProcessed
+                                  //, pCharsProcessed
+                                  , pSymbolsDrawn
                                   );
     }
+
+
+    virtual bool drawMultiParasColored( const DrawCoord            &startPos
+                                , const DrawCoord                  &limits       //!< Limits, vertical and horizontal, relative to start pos
+                                , const DrawCoord::value_type      &lineSpacing  //!< Extra space between lines of text
+                                , const DrawCoord::value_type      &paraSpacing  //!< Extra space between paras
+                                , const DrawCoord::value_type      &paraIndent   //!< Indent on the first line
+                                , const DrawCoord::value_type      &tabSize      //!< Size used for tabs if tabStops are over
+                                , DrawTextFlags                    flags
+                                , HorAlign                         horAlign
+                                , VertAlign                        vertAlign
+                                , const wchar_t                    *text
+                                , std::size_t                      textSize=(std::size_t)-1
+                                , const std::uint32_t              *pColors=0
+                                , std::size_t                      nColors=0
+                                , const std::uint32_t              *pBackColors=0
+                                , std::size_t                      nBackColors=0
+                                , const DrawCoord::value_type      *pTabStopPositions=0        //!< Relative to start pos X coord
+                                , std::size_t                      nTabStopPositions=0
+                                , const std::uint32_t              *pParaColors=0
+                                , std::size_t                      nParaColors=0
+                                , const std::uint32_t              *pParaBackColors=0
+                                , std::size_t                      nParaBackColors=0
+                                , int                              fontId=-1
+                                , DrawCoord::value_type            *pNextPosY=0         //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                                , bool                             *pVerticalDone=0     //!< OUT All/not all lines drawn, 
+                                ) override
+    {
+        std::unordered_set<KerningPair> kerningPairs;
+        getKerningPairsSet(kerningPairs, fontId);
+
+        SimpleFontMetrics fontMetrics;
+        if (!getSimpleFontMetrics(fontMetrics, fontId))
+        {
+            return false;
+        }
+
+        return drawMultiParasColoredImpl( kerningPairs, fontMetrics
+                                        , startPos, limits
+                                        , lineSpacing, paraSpacing, paraIndent, tabSize
+                                        , flags, horAlign, vertAlign
+                                        , text, textSize
+                                        , pColors, nColors, pBackColors, nBackColors
+                                        , pTabStopPositions, nTabStopPositions
+                                        , pParaColors, nParaColors
+                                        , pParaBackColors, nParaBackColors
+                                        , fontId
+                                        , pNextPosY, pVerticalDone
+                                        );
+    }
+
+
+    bool drawMultiParasColoredImpl( const std::unordered_set<KerningPair>         &kerningPairs
+                                          , const SimpleFontMetrics               &fontMetrics
+                                          , DrawCoord                             startPos
+                                          , const DrawCoord                       &limits       //!< Limits, vertical and horizontal, relative to start pos
+                                          , const DrawCoord::value_type           &lineSpacing  //!< Extra space between lines of text
+                                          , const DrawCoord::value_type           &paraSpacing  //!< Extra space between paras
+                                          , const DrawCoord::value_type           &paraIndent   //!< Indent on the first line
+                                          , const DrawCoord::value_type           &tabSize      //!< Size used for tabs if tabStops are over
+                                          , DrawTextFlags                         flags
+                                          , HorAlign                              horAlign
+                                          , VertAlign                             vertAlign
+                                          , const wchar_t                         *text
+                                          , std::size_t                           textSize=(std::size_t)-1
+                                          , const std::uint32_t                   *pColors=0
+                                          , std::size_t                           nColors=0
+                                          , const std::uint32_t                   *pBackColors=0
+                                          , std::size_t                           nBackColors=0
+                                          , const DrawCoord::value_type           *pTabStopPositions=0        //!< Relative to start pos X coord
+                                          , std::size_t                           nTabStopPositions=0
+                                          , const std::uint32_t                   *pParaColors=0
+                                          , std::size_t                           nParaColors=0
+                                          , const std::uint32_t                   *pParaBackColors=0
+                                          , std::size_t                           nParaBackColors=0
+                                          , int                                   fontId=-1
+                                          , DrawCoord::value_type                 *pNextPosY=0         //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                                          , bool                                  *pVerticalDone=0     //!< OUT All/not all lines drawn, 
+                                          )
+    {
+        // MARTY_IDC_ARG_USED(kerningPairs);
+        // MARTY_IDC_ARG_USED(fontMetrics);
+        // MARTY_IDC_ARG_USED(startPos);
+        // MARTY_IDC_ARG_USED(limits);
+        // MARTY_IDC_ARG_USED(lineSpacing);
+        // MARTY_IDC_ARG_USED(paraSpacing);
+        // MARTY_IDC_ARG_USED(paraIndent);
+        // MARTY_IDC_ARG_USED(tabSize);
+        // MARTY_IDC_ARG_USED(flags);
+        // MARTY_IDC_ARG_USED(horAlign);
+        // MARTY_IDC_ARG_USED(vertAlign);
+        // MARTY_IDC_ARG_USED(text);
+        // MARTY_IDC_ARG_USED(textSize);
+        // MARTY_IDC_ARG_USED(pColors);
+        // MARTY_IDC_ARG_USED(nColors);
+        // MARTY_IDC_ARG_USED(pBackColors);
+        // MARTY_IDC_ARG_USED(nBackColors);
+        // MARTY_IDC_ARG_USED(pTabStopPositions);
+        // MARTY_IDC_ARG_USED(nTabStopPositions);
+        // MARTY_IDC_ARG_USED(pParaColors);
+        // MARTY_IDC_ARG_USED(nParaColors);
+        // MARTY_IDC_ARG_USED(pParaBackColors);
+        // MARTY_IDC_ARG_USED(nParaBackColors);
+        // MARTY_IDC_ARG_USED(fontId);
+        // MARTY_IDC_ARG_USED(pNextPosY);
+        // MARTY_IDC_ARG_USED(pVerticalDone);
+   
+        const bool skipEmptyParas = (flags&DrawTextFlags::skipEmptyParas)!=0;
+
+        textSize = checkCalcStringSize(text, textSize);
+
+        std::vector<std::wstring> paras;
+        std::wstring curPara; curPara.reserve(textSize);
+
+        std::size_t curCharLen = getCharLen(text, textSize);
+        for( ; textSize && curCharLen!=0; curCharLen = getCharLen(text, textSize) )
+        {
+            ATLASSERT(curCharLen<=textSize);
+            if (curCharLen>textSize)
+            {
+                break;
+            }
+
+            std::uint32_t ch32 = getChar32(text, textSize);
+
+            if (isAnyLineBreakChar(ch32))
+            {
+                std::size_t lineBreakLen = getLineBreakLen(text, textSize);
+                ATLASSERT(lineBreakLen<=textSize);
+                if (lineBreakLen>textSize)
+                {
+                    break;
+                }
+
+                if (!curPara.empty() || !skipEmptyParas)
+                {
+                    paras.emplace_back(curPara);
+                    curPara.clear();
+                }
+
+                text     += lineBreakLen;
+                textSize -= lineBreakLen;
+            }
+            else
+            {
+                curPara.append(text, curCharLen);
+                text     += curCharLen;
+                textSize -= curCharLen;
+            }
+        }
+
+        // Добавить последний параграф, если не пустой
+        if (!curPara.empty())
+        {
+            paras.emplace_back(curPara);
+            curPara.clear();
+        }
+
+
+        if ((flags&DrawTextFlags::fitHeightDisable)!=0)
+        {
+            // По вертикали вписываться не надо, нет лимита
+            // Раз нет лимита по высоте - то нет и выравнивания по вертикали
+            vertAlign = VertAlign::top;
+        }
+
+        // Отсекаем некорректные значения
+        if (vertAlign!=VertAlign::center && vertAlign!=VertAlign::bottom)
+        {
+            vertAlign = VertAlign::top;
+        }
+
+
+        //const DrawCoord pos = startPos;
+
+        auto drawParas = [&](DrawTextFlags paraFlags, DrawCoord pos, DrawCoord::value_type *pOutPosY, bool *pOutVerticalDone ) -> bool
+        {
+            //std::vector<std::wstring> paras;
+            DrawCoord::value_type nextPosY      = pos.y;
+            bool                  verticalDone  = true;
+            std::size_t           symbolsDrawn  = 0;
+            bool                  res = true;
+
+            for(std::size_t paraIdx=0; paraIdx!=paras.size(); ++paraIdx )
+            {
+                const auto &para = paras[paraIdx];
+
+                std::uint32_t curUintTextColor = (std::uint32_t)-1;
+                std::uint32_t curUintBkColor   = (std::uint32_t)-1;
+
+                if (pParaColors && paraIdx<nParaColors)
+                {
+                    curUintTextColor = pParaColors[paraIdx];
+                }
+             
+                if (pParaBackColors && paraIdx<nParaBackColors)
+                {
+                    curUintBkColor = pParaBackColors[paraIdx];
+                }
+             
+                // Задаем дефолтные цвета для текста параграфа
+                auto textColorSaver = (curUintTextColor==(std::uint32_t)-1) ? TextColorSaver(this) : TextColorSaver(this, ColorRef::fromUnsigned(curUintTextColor) );
+                auto bkColorSaver   = (curUintBkColor==(std::uint32_t)-1)   ? BkColorSaver(this)   : BkColorSaver(this, ColorRef::fromUnsigned(curUintBkColor) );
+                // Если задан цвет фона, выключаем прозрачность
+                auto bkModeSaver    = (curUintBkColor==(std::uint32_t)-1)   ? BkModeSaver(this)    : BkModeSaver(this, BkMode::opaque );
+
+                const bool coloringResetOnPara = (flags&DrawTextFlags::coloringResetOnPara)!=0;
+
+                const std::uint32_t  *pColorsCopy     = pColors     ;
+                std::size_t          nColorsCopy      = nColors     ;
+                const std::uint32_t  *pBackColorsCopy = pBackColors ;
+                std::size_t          nBackColorsCopy  = nBackColors ;
+
+                res = drawParaColoredImpl( kerningPairs, fontMetrics
+                                         , pos, limits
+                                         , lineSpacing, paraIndent
+                                         , tabSize
+                                         , paraFlags
+                                         , horAlign, vertAlign
+                                         , para.c_str(), para.size()
+                                         , pColorsCopy, nColorsCopy
+                                         , pBackColorsCopy, nBackColorsCopy
+                                         , pTabStopPositions, nTabStopPositions
+                                         , fontId
+                                         , &nextPosY
+                                         , &verticalDone
+                                         , &symbolsDrawn
+                                         );
+
+                if (!res || !verticalDone) // Если ошибка или текущий параграф был отрисован не полностью - выход
+                {
+                    break;
+                }
+
+                pos.y  = nextPosY;
+
+                if (paraIdx!=paras.size()-1u) // После последнего параграфа не выводим
+                {
+                    pos.y += paraSpacing;
+                }
+
+                if (coloringResetOnPara)
+                {
+                    // Раскраска букв/слов параграфа сквозная по всем параграфам, ничего не делаем - это работает как reset
+                }
+                else
+                {
+                    // Тут надо подвинуть указатели и уменьшить количества оставшихся цветов
+
+                    if (pColorsCopy)
+                    {
+                        if (symbolsDrawn>=nColorsCopy)
+                        {
+                            pColorsCopy = 0;
+                        }
+                        else
+                        {
+                            pColorsCopy += symbolsDrawn;
+                            nColorsCopy -= symbolsDrawn;
+                        }
+                    }
+
+                    if (pBackColorsCopy)
+                    {
+                        if (symbolsDrawn>=nBackColorsCopy)
+                        {
+                            pBackColorsCopy = 0;
+                        }
+                        else
+                        {
+                            pBackColorsCopy += symbolsDrawn;
+                            nBackColorsCopy -= symbolsDrawn;
+                        }
+                    }
+                }
+
+            } // for
+
+
+            if (!res)
+            {
+                return res;
+            }
+
+            if (pOutPosY)
+            {
+                *pOutPosY = pos.y;
+            }
+
+            if (pOutVerticalDone)
+            {
+                *pOutVerticalDone = verticalDone;
+            }
+
+            return res;
+        
+        };
+
+
+        if (vertAlign==VertAlign::center || vertAlign==VertAlign::bottom)
+        {
+            // auto drawParas = [&](DrawTextFlags paraFlags, DrawCoord pos, DrawCoord::value_type *pOutPosY, bool *pOutVerticalDone ) -> bool
+
+            DrawCoord::value_type nextPosY = startPos.y;
+            bool verticalDone = true;
+
+            bool res = drawParas(flags | DrawTextFlags::calcOnly, startPos, &nextPosY, &verticalDone);
+            if (!res)
+            {
+                return res;
+            }
+
+            if (!verticalDone)
+            {
+                // У нас не всё влезло, поэтому никакого выравнивания по вертикали не будет, будем рисовать по верхней границе
+            }
+            else
+            {
+                auto actualParasHeight = nextPosY - startPos.y;
+                auto limDelta          = limits.y - actualParasHeight;
+
+                if (vertAlign==VertAlign::center)
+                {
+                    limDelta /= 2; // Если надо выровнять посередине, то сдвигаем вниз только на половину дельты
+                }
+                 
+                if (limDelta<0)
+                {
+                    limDelta = 0; // смещение не может быть меньше нуля
+                }
+                 
+                startPos.y += limDelta; // сместили вниз
+
+            }
+
+        }
+
+        return drawParas(flags, startPos, pNextPosY, pVerticalDone);
+
+    }
+
+
+
+
 
 
 
