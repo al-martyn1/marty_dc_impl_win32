@@ -600,9 +600,12 @@
         }
 
 
+        // DC_LOG()<<"----\n";
+        // DC_LOG()<<"DPCImpl2, startPos, Pos Y (IN) : "<<pos.y<<", line #"<<lineNumber<<"\n";
+
         bool bStoppedByLimY = false;
 
-        auto checLimY = [&]()
+        auto checkLimY = [&]()
         {
             if (fitHeightDisable)
             {
@@ -632,11 +635,16 @@
 
         auto nextLine = [&](bool bSkipSpaces)
         {
+            // drawParaColoredImpl2
+            // DC_LOG()<<"--\n";
+            // DC_LOG()<<"DPCImpl2, nextLine, Pos Y (Before): "<<pos.y<<", line #"<<lineNumber<<"\n";
             if (!wordSpacesOnly)
             {
                 ++lineNumber;
                 pos.y     += fontMetrics.height + lineSpacing; // Потом в конце надо отнять lineSpacing, если не первая строка
             }
+
+            // DC_LOG()<<"DPCImpl2, nextLine, Pos Y (After) : "<<pos.y<<", line #"<<lineNumber<<"\n";
             
             wordsDrawn     = 0;
             wordSpacesOnly = true;
@@ -648,7 +656,7 @@
                 skipSpaces();
             }
 
-            checLimY();
+            checkLimY();
         };
 
         auto checkGoNextLine = [&](bool bSkipSpaces)
@@ -1224,24 +1232,38 @@
             throw std::runtime_error("Invalid HorAlign value");
         }
 
+        // DC_LOG()<<"--\n";
+        // DC_LOG()<<"DPCImpl2, Pos Y (OUT1): "<<pos.y<<"\n";
+
         drawLettersByInfoTransparent(letterDrawInfos, -1);
 
+        // DC_LOG()<<"DPCImpl2, Pos Y (OUT2): "<<pos.y<<"\n";
+
+        if (wordsDrawn)
+        {
+            pos.y += fontMetrics.height; // lineSpacing;
+        }
 
         if (wordsDrawn && !wordSpacesOnly && !noLastLineSpacing)
         {
-            pos.x += lineSpacing;
+            pos.y += lineSpacing;
         }
+
+        // DC_LOG()<<"DPCImpl2, Pos Y (OUT3): "<<pos.y<<"\n";
 
         if (pNextPosY)
         {
-            *pNextPosY = pos.x;
+            *pNextPosY = pos.y;
+            // DC_LOG()<<"DPCImpl2, Pos Y (OUT4): "<<*pNextPosY<<"\n";
         }
+
+        // DC_LOG()<<"----\n";
+
 
         if (pVerticalDone)
         {
             *pVerticalDone = !bStoppedByLimY;
         }
-
 
 
         MARTY_IDC_ARG_USED(pVerticalDone);
@@ -1487,6 +1509,10 @@
         if (vertAlign==VertAlign::center || vertAlign==VertAlign::bottom)
         {
             DrawCoord::value_type nextPosY = startPos.y;
+
+            // DC_LOG()<<"--\n";
+            // DC_LOG()<<"DPCImpl, calc top, nextPosY (Before): "<<nextPosY<<"\n";
+
             // Нам нужно узнать реальную высоту, которую занимает параграф
             bool bRes = drawParaColoredImpl2( kerningPairs, fontMetrics, textPortions
                                             , startPos, limits
@@ -1506,6 +1532,9 @@
                                             , pSymbolsDrawn
                                             // , fontId
                                             );
+
+            // DC_LOG()<<"DPCImpl, calc top, nextPosY (After) : "<<nextPosY<<"\n";
+            // DC_LOG()<<"--\n";
 
             if (!bRes)
             {
@@ -1533,6 +1562,11 @@
 
         }
 
+        if (pNextPosY)
+        {
+            // DC_LOG()<<"--\n";
+            // DC_LOG()<<"DPCImpl, call drawParaColoredImpl2, nextPosY (Before): "<<*pNextPosY<<"\n";
+        }
 
         bool bRes = drawParaColoredImpl2( kerningPairs, fontMetrics, textPortions
                                         , startPos, limits
@@ -1551,6 +1585,12 @@
                                         , pVerticalDone
                                         , pSymbolsDrawn
                                         );
+
+        if (pNextPosY)
+        {
+            // DC_LOG()<<"DPCImpl, call drawParaColoredImpl2, nextPosY (After) : "<<*pNextPosY<<"\n";
+            // DC_LOG()<<"--\n";
+        }
 
         if (!bRes)
         {
@@ -1797,6 +1837,11 @@
                 const std::uint32_t  *pBackColorsCopy = pBackColors ;
                 std::size_t          nBackColorsCopy  = nBackColors ;
 
+                // drawMultiParasColoredImpl
+                // DC_LOG()<<"-------\n";
+                // DC_LOG()<<"DMPCImpl, para #"<<paraIdx<<"\n";
+                // DC_LOG()<<"DMPCImpl, Pos Y (IN) : "<<pos.y<<"\n\n";
+
                 res = drawParaColoredImpl( kerningPairs, fontMetrics
                                          , pos, limits
                                          , lineSpacing, paraIndent
@@ -1818,6 +1863,8 @@
                     break;
                 }
 
+                // DC_LOG()<<"\n";
+                // DC_LOG()<<"DMPCImpl, Pos Y (OUT): "<<nextPosY<<"\n";
                 pos.y  = nextPosY;
 
                 if (paraIdx!=paras.size()-1u) // После последнего параграфа не выводим

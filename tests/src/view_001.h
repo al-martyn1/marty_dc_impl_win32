@@ -47,21 +47,25 @@ typedef marty_draw_context::GdiPlusDrawContext                GdiPlusDrawContext
 // #define TEST_DC_USE_GDIPLUS
 
 
-#define TEST_DC_DRAWRECT
-#define TEST_DC_FISHTAIL
-#define TEST_DC_ROUND_SQUARE
-#define TEST_DC_SNAKE
 
-#define TEST_DC_FONTS
+// #define TEST_DC_DRAWRECTS
+// #define TEST_DC_DRAWRECT
+// #define TEST_DC_ROUNDRECT
+// #define TEST_DC_FISHTAIL
+// #define TEST_DC_ROUND_SQUARE
+// #define TEST_DC_SNAKE
+
 #define TEST_DC_DRAW_PARA
 #define TEST_DC_DRAW_PARA_MULTI    /* Draw multi para instead of simple para */
-#define TEST_DC_SPIDERS
-#define TEST_DC_GRADIENT_RECT
-#define TEST_DC_GRADIENT_ROUNDRECT
-#define TEST_DC_GRADIENT_CIRCLE
-#define TEST_DC_LINEJOINSTYLE
-#define TEST_DC_ARCTO
-#define TEST_DC_GRADIENTRECT_WITH_RECT_FRAME
+
+// #define TEST_DC_FONTS
+// #define TEST_DC_SPIDERS
+// #define TEST_DC_GRADIENT_RECT
+// #define TEST_DC_GRADIENT_ROUNDRECT
+// #define TEST_DC_GRADIENT_CIRCLE
+// #define TEST_DC_LINEJOINSTYLE
+// #define TEST_DC_ARCTO
+// #define TEST_DC_GRADIENTRECT_WITH_RECT_FRAME
 
 
 
@@ -347,7 +351,8 @@ public:
             test_drawRoundSquare(pDc,DrawCoord(90,10), DrawCoord(30, 20), 4);
             #endif
 
-        #endif
+        #endif // #if defined(TEST_DC_DRAWRECT) || defined(TEST_DC_FISHTAIL) || defined(TEST_DC_ROUND_SQUARE) || defined(TEST_DC_SNAKE)
+
 
         #if defined(TEST_DC_GRADIENTRECT_WITH_RECT_FRAME)
         {
@@ -459,7 +464,9 @@ public:
             pDc->selectPen(prevPen);
 
         }
-        #endif
+        #endif // #if defined(TEST_DC_GRADIENTRECT_WITH_RECT_FRAME)
+
+
         #if 0
         local pixelPen  = dc.createSolidPen(D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Purple);
         dc.selectPen(pixelPen);
@@ -486,13 +493,15 @@ public:
         letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Cyan").toUnsigned());
         letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("DarkCyan").toUnsigned());
         letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("MediumCyan").toUnsigned());
-        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Brown").toUnsigned());
-        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Whitesmoke").toUnsigned());
-        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Moccasin").toUnsigned());
-        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Orchid").toUnsigned());
-        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("OrangeRed").toUnsigned());
-        letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("DarkKhaki").toUnsigned());
+        // letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Brown").toUnsigned());
+        // letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Whitesmoke").toUnsigned());
+        // letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Moccasin").toUnsigned());
+        // letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("Orchid").toUnsigned());
+        // letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("OrangeRed").toUnsigned());
+        // letterColors.emplace_back(marty_draw_context::ColorRef::deserialize("DarkKhaki").toUnsigned());
+
         //letterColors[8] = marty_draw_context::ColorRef::deserialize("").toUnsigned());
+
 
         std::vector<std::uint32_t> letterBk;
         letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Brown").toUnsigned());
@@ -501,12 +510,12 @@ public:
         letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Red").toUnsigned());
         letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Grey").toUnsigned());
         letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("MediumCyan").toUnsigned());
-        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Blue").toUnsigned());
-        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Grey").toUnsigned());
-        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("DarkGrey").toUnsigned());
-        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("SpringGreen").toUnsigned());
-        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("SkyBlue").toUnsigned());
-        letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("PaleGreen").toUnsigned());
+        // letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Blue").toUnsigned());
+        // letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("Grey").toUnsigned());
+        // letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("DarkGrey").toUnsigned());
+        // letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("SpringGreen").toUnsigned());
+        // letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("SkyBlue").toUnsigned());
+        // letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("PaleGreen").toUnsigned());
 
 
         std::vector<std::uint32_t> paraColors;
@@ -524,6 +533,8 @@ public:
         paraBk.emplace_back(marty_draw_context::ColorRef::deserialize("NavajoWhite").toUnsigned());
         paraBk.emplace_back(marty_draw_context::ColorRef::deserialize("WhiteSmoke").toUnsigned());
 
+
+
         #ifdef TEST_DC_FONTS
 
         {
@@ -539,8 +550,6 @@ public:
                 DrawCoord retPos = pos;
 
                 #if 1
-
-
                 
                 auto textColorSaver = marty_draw_context::TextColorSaver(pDc, clr ); // Устанавливаем дефолтный цвет текста, одновременно сохраняя текущий для последующего восстановления
 
@@ -617,7 +626,7 @@ public:
             // pDc->textOut( DrawCoord(130, 56), shellDlgFontId , ColorRef{128,  0,128}, L"MS Shell Dlg"   );
             // pDc->textOut( DrawCoord(148, 70), shellDlg2FontId, ColorRef{0  ,  0,128}, L"MS Shell Dlg 2" );
 
-        #endif
+        #endif // #ifdef TEST_DC_FONTS
 
 
 
@@ -628,6 +637,7 @@ public:
         auto spiderCellSize = 6;
         MARTY_ARG_USED(spiderBasePos );
         MARTY_ARG_USED(spiderCellSize);
+
 
         #ifdef TEST_DC_SPIDERS
 
@@ -650,7 +660,7 @@ public:
 
         pDc->markersDraw(markersPenId);
 
-        #endif
+        #endif // #ifdef TEST_DC_SPIDERS
 
 
         #ifdef TEST_DC_LINEJOINSTYLE
@@ -831,10 +841,16 @@ public:
 
         }
 
-        test_drawRects(pDc, gradientSamplePos);
+
+        #if defined(TEST_DC_DRAWRECTS)
+            test_drawRects(pDc, gradientSamplePos);
+        #endif
+
         gradientSamplePos.y += 8;
         gradientSamplePos.y += gradientRectSizeY/2 + 2*iconInterval;
 
+
+        #ifdef TEST_DC_ROUNDRECT
         {
             auto pos = gradientSamplePos;
 
@@ -876,6 +892,7 @@ public:
             gradientSamplePos = pos;
         
         }
+        #endif // #ifdef TEST_DC_ROUNDRECT
 
 
         #if defined(TEST_DC_GRADIENT_CIRCLE)
@@ -1033,8 +1050,8 @@ public:
             //DrawTextFlags dtfExtra = DrawTextFlags::coloringParas;
 
             dtFlags |= DrawTextFlags::fitHeightDisable;
-
             dtFlags |= DrawTextFlags::forceSpacesColoring;
+            dtFlags |= DrawTextFlags::fitHeightDisable;
 
 
             #if defined(TEST_DC_DRAW_PARA_MULTI)

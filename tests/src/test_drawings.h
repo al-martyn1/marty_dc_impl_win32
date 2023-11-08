@@ -625,7 +625,7 @@ void test_drawMultiParasColored( marty_draw_context::IDrawContext *pDc
 
     pDc->drawMultiParasColored( pos, lim
                               , (DrawCoord::value_type)0.2   // lineSpacing
-                              , (DrawCoord::value_type)0.3   // paraSpacing
+                              , (DrawCoord::value_type)2 // 0.3   // paraSpacing
                               , (DrawCoord::value_type)3.5   // paraIndent
                               , (DrawCoord::value_type)10.0  // tabSize
                               , flags | DrawTextFlags::fitGlyphDefault // | DrawTextFlags::fitHeightDisable
