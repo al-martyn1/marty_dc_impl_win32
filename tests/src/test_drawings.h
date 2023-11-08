@@ -530,57 +530,118 @@ void test_drawParaColored( marty_draw_context::IDrawContext *pDc
 
 }
 
-#if 0
+inline
+bool hasLineBreaks(marty_draw_context::IDrawContext *pDc, const std::wstring &str)
+{
+    const wchar_t *text     = str.data();
+    std::size_t    textSize = str.size();
 
-    virtual bool drawParaColoredEx( const DrawCoord                  &startPos
-                                  , const DrawCoord                  &limits       //!< Limits, vertical and horizontal, relative to start pos
-                                  , const DrawCoord::value_type      &lineSpacing  //!< Extra space between lines of text
-                                  , const DrawCoord::value_type      &paraIndent   //!< Indent on the first line
-                                  , const DrawCoord::value_type      &tabSize      //!< Size used for tabs if tabStops are over
-                                  , DrawTextFlags                    flags
-                                  , HorAlign                         horAlign
-                                  , VertAlign                        vertAlign
-                                  , const wchar_t                    *text
-                                  , std::size_t                      textSize=(std::size_t)-1
-                                  , const std::uint32_t              *pColors=0
-                                  , std::size_t                      nColors=0
-                                  , const std::uint32_t              *pBackColors=0
-                                  , std::size_t                      nBackColors=0
-                                  , const DrawCoord::value_type      *pTabStopPositions=0        //!< Relative to start pos X coord
-                                  , std::size_t                      nTabStopPositions=0
-                                  , DrawCoord::value_type            *pNextPosY=0         //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
-                                  , bool                             *pVerticalDone=0     //!< OUT All/not all lines drawn, 
-                                  , std::size_t                      *pCharsProcessed=0   //!< OUT Num chars, not symbols/glyphs
-                                  , int                              fontId=-1
-                                  ) = 0;
+    std::size_t curCharLen  = pDc->getCharLen(str.data(), textSize);
+    for( ; textSize && curCharLen!=0; curCharLen = pDc->getCharLen(text, textSize) )
+    {
+        //ATLASSERT(curCharLen<=textSize);
+        if (curCharLen>textSize)
+        {
+            break;
+        }
 
-            auto pos                       = DrawCoord(60, 48);
-            auto paraLimits                = DrawCoord(70, 200);
-            DrawCoord::value_type nextPosY = 0;
-            bool                  verticalDone = false;
-            //DrawCoord::value_type tabStopPositions[] = {30,50,60,110};
-            DrawCoord::value_type tabStopPositions[] = {25,50,80,110};
+        std::uint32_t ch32 = pDc->getChar32(text, textSize);
 
-            // redFramePenId
-            // pixelPen
+        if (pDc->isAnyLineBreakChar(ch32))
+        {
+            return true;
+        }
+        else
+        {
+            //curPara.append(text, curCharLen);
+            text     += curCharLen;
+            textSize -= curCharLen;
+        }
+    }
 
-            test_drawTextBox(pDc, pixelPen, pos, paraLimits, 60);
+    return false;
+}
 
-            pDc->drawParaColoredEx( pos, paraLimits, &nextPosY, &verticalDone
-                                  , (DrawCoord::value_type)0.2   // lineSpacing
-                                  , (DrawCoord::value_type)3.5   // paraIndent
-                                  , (DrawCoord::value_type)10.0  // tabSize
-                                  , DrawTextFlags::fitGlyphDefault | DrawTextFlags::fitHeightDisable
-                                  , HorAlign::width // тестируем выравнивание по ширине
-                                  , VertAlign::top
-                                  //, loremIpsumTiny.c_str(), loremIpsumTiny.size()
-                                  , loremIpsumShort.c_str(), loremIpsumShort.size() // (std::size_t)-1
-                                  , 0 // pCharsProcessed
-                                  , &letterColors[0], sizeof(letterColors)/sizeof(letterColors[0])
-                                  , 0, 0 // &tabStopPositions[0], sizeof(tabStopPositions)/sizeof(tabStopPositions[0])
-                                  , timesSmallFont4Id
-                                  );
-#endif
+inline
+std::wstring splitSentencesToParas(const std::wstring &str)
+{
+    std::wstring resStr; resStr.reserve(str.size());
+    bool prevDot = false;
+
+    for(const auto &ch : str)
+    {
+        if (prevDot && ch==(wchar_t)' ')
+        {
+            resStr.append(1, (wchar_t)'\n');
+            prevDot = false;
+        }
+        else if (ch==(wchar_t)'.')
+        {
+            resStr.append(1, ch);
+            prevDot = true;
+        }
+        else
+        {
+            resStr.append(1, ch);
+            prevDot = false;
+        }
+    }
+
+    return resStr;
+}
+
+
+inline 
+void test_drawMultiParasColored( marty_draw_context::IDrawContext *pDc
+                         , const marty_draw_context::DrawCoord &pos
+                         , const marty_draw_context::DrawCoord &lim
+                         , const std::vector<marty_draw_context::DrawCoord::value_type> &tabStopPositions
+                         , const std::vector<std::uint32_t> &letterColors
+                         , const std::vector<std::uint32_t> &letterBkColors
+                         , const std::vector<std::uint32_t> &paraColors
+                         , const std::vector<std::uint32_t> &paraBkColors
+                         , marty_draw_context::DrawTextFlags flags
+                         , marty_draw_context::HorAlign horAlign
+                         , const marty_draw_context::DrawCoord::value_type &frameBoxHeight
+                         , int pixelPenId
+                         , int fontId
+                         , std::wstring text
+                         )
+{
+    using marty_draw_context::DrawCoord;
+    using marty_draw_context::DrawTextFlags;
+    using marty_draw_context::VertAlign;
+
+    DrawCoord::value_type nextPosY = 0;
+    bool                  verticalDone = false;
+
+    test_drawTextBox(pDc, pixelPenId, pos, lim, frameBoxHeight);
+
+    if (!hasLineBreaks(pDc, text))
+    {
+        text = splitSentencesToParas(text);
+    }
+    
+
+    pDc->drawMultiParasColored( pos, lim
+                              , (DrawCoord::value_type)0.2   // lineSpacing
+                              , (DrawCoord::value_type)0.3   // paraSpacing
+                              , (DrawCoord::value_type)3.5   // paraIndent
+                              , (DrawCoord::value_type)10.0  // tabSize
+                              , flags | DrawTextFlags::fitGlyphDefault // | DrawTextFlags::fitHeightDisable
+                              , horAlign // HorAlign::width // тестируем выравнивание по ширине
+                              , VertAlign::top
+                              , text
+                              , letterColors
+                              , letterBkColors
+                              , tabStopPositions
+                              , paraColors
+                              , paraBkColors
+                              , fontId
+                              , &nextPosY, &verticalDone
+                              );
+
+}
 
 
 

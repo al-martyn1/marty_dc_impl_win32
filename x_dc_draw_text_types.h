@@ -181,3 +181,15 @@
 
 
     }; // struct TextPortionInfo
+
+
+struct LetterDrawInfo
+{
+    DrawCoord                                    letterPos   ;
+    const wchar_t                               *pLetter  = 0;
+    std::size_t                                  charLen  = 0;
+    marty_draw_context::DrawCoord::value_type    width    = 0; // Да вроде и не нужно, но пусть
+    std::uint32_t                                uintTextColor = (std::uint32_t)-1;
+    std::uint32_t                                uintBkColor   = (std::uint32_t)-1; // Да вроде и не нужно, но пусть
+    BkMode                                       bkMode   = BkMode::opaque;
+};

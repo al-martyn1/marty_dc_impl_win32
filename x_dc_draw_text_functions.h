@@ -121,6 +121,7 @@
                             , std::uint32_t                 *pLastCharProcessed //!< IN/OUT last drawn char, for kerning calculation
                             , std::size_t                   *pCharsProcessed    //!< OUT Num chars, not symbols/glyphs
                             , std::size_t                   *pSymbolsDrawn
+                            , std::vector<LetterDrawInfo>   *pLetterDrawInfos
                             )
     {
         //MARTY_IDC_ARG_USED(kerningPairs);
@@ -209,18 +210,7 @@
         };
 
 
-        struct LetterDrawInfo
-        {
-            DrawCoord                                    letterPos   ;
-            const wchar_t                               *pLetter  = 0;
-            std::size_t                                  charLen  = 0;
-            marty_draw_context::DrawCoord::value_type    width    = 0; // Да вроде и не нужно, но пусть
-            std::uint32_t                                uintTextColor = (std::uint32_t)-1;
-            std::uint32_t                                uintBkColor   = (std::uint32_t)-1; // Да вроде и не нужно, но пусть
-        };
-
-        std::vector<LetterDrawInfo> letterDrawInfos;
-        
+        //std::vector<LetterDrawInfo> letterDrawInfos;
 
         std::vector<marty_draw_context::DrawCoord::value_type>::const_iterator wit = widths.begin();
         std::size_t curCharLen = getCharLen(text, textSize);
@@ -335,7 +325,10 @@
 
                 textOut(pos, text, curCharLen);
 
-                letterDrawInfos.emplace_back(LetterDrawInfo{pos, text, curCharLen, curCharWidth, curUintTextColor, curUintBkColor});
+                if (pLetterDrawInfos)
+                {
+                    pLetterDrawInfos->emplace_back(LetterDrawInfo{pos, text, curCharLen, curCharWidth, curUintTextColor, curUintBkColor, getBkMode()});
+                }
             }
 
             pos.x           += curCharWidth;
@@ -399,25 +392,28 @@
 
             textOut(pos, &ellipsisStr[0], 1);
 
-            letterDrawInfos.emplace_back(LetterDrawInfo{pos, &ellipsisStr[0], 1, 0 /* curCharWidth */ , curUintTextColor, curUintBkColor});
-        }
-
-
-        if (pBackColors)
-        {
-            // При кернинге, особенно, если у нас italic или ещё какое-то говно, фон следующей буквы перекрывает фон текущей буквы
-            // По этому, если у нас заданы отдельные цвета для фона букв, то будет говно (я проверял)
-            // Чтобы избежать говна, перерисовываем всё то же, только в режиме прозрачности
-
-            // Устанавливаем прозрачный режим рисования, сохраняя предыдущий
-            auto bkModeSaver  = BkModeSaver(this, BkMode::transparent);
-
-            for(const auto & ldi : letterDrawInfos)
+            if (pLetterDrawInfos)
             {
-                auto textColorSaver = (ldi.uintTextColor==(std::uint32_t)-1) ? TextColorSaver(this) : TextColorSaver(this, ColorRef::fromUnsigned(ldi.uintTextColor) );
-                textOut(ldi.letterPos, ldi.pLetter, ldi.charLen);
+                pLetterDrawInfos->emplace_back(LetterDrawInfo{pos, &ellipsisStr[0], 1, 0 /* curCharWidth */ , curUintTextColor, curUintBkColor, getBkMode()});
             }
         }
+
+
+        // //if (pBackColors || getBkMode()!=BkMode::transparent)
+        // {
+        //     // При кернинге, особенно, если у нас italic или ещё какое-то говно, фон следующей буквы перекрывает фон текущей буквы
+        //     // По этому, если у нас заданы отдельные цвета для фона букв, то будет говно (я проверял)
+        //     // Чтобы избежать говна, перерисовываем всё то же, только в режиме прозрачности
+        //  
+        //     // Устанавливаем прозрачный режим рисования, сохраняя предыдущий
+        //     auto bkModeSaver  = BkModeSaver(this, BkMode::transparent);
+        //  
+        //     for(const auto & ldi : letterDrawInfos)
+        //     {
+        //         auto textColorSaver = (ldi.uintTextColor==(std::uint32_t)-1) ? TextColorSaver(this) : TextColorSaver(this, ColorRef::fromUnsigned(ldi.uintTextColor) );
+        //         textOut(ldi.letterPos, ldi.pLetter, ldi.charLen);
+        //     }
+        // }
         
         // struct LetterDrawInfo
         // {
@@ -463,11 +459,34 @@
         {
             *pSymbolsDrawn = nSymbolsDrawn;
         }
+
+        // if (pLetterDrawInfos)
+        // {
+        //     pLetterDrawInfos->insert( pLetterDrawInfos->end(), letterDrawInfos.begin(), letterDrawInfos.end() );
+        // }
         
         return true;
         
     }
 
+    void drawLettersByInfoTransparent(const std::vector<LetterDrawInfo> &letterDrawInfos, int fontId)
+    {
+        //if (pBackColors || getBkMode()!=BkMode::transparent)
+
+        // При кернинге, особенно, если у нас italic или ещё какое-то говно, фон следующей буквы перекрывает фон текущей буквы
+        // По этому, если у нас заданы отдельные цвета для фона букв, то будет говно (я проверял)
+        // Чтобы избежать говна, перерисовываем всё то же, только в режиме прозрачности
+
+        // Устанавливаем прозрачный режим рисования, сохраняя предыдущий
+        auto bkModeSaver  = BkModeSaver(this, BkMode::transparent);
+        auto fontSaver    = fontId==-1 ? FontSaver(this) : FontSaver(this, fontId);
+
+        for(const auto & ldi : letterDrawInfos)
+        {
+            auto textColorSaver = (ldi.uintTextColor==(std::uint32_t)-1) ? TextColorSaver(this) : TextColorSaver(this, ColorRef::fromUnsigned(ldi.uintTextColor) );
+            textOut(ldi.letterPos, ldi.pLetter, ldi.charLen);
+        }
+    }
 
     virtual bool drawTextColored( const DrawCoord               &startPos
                                 , const DrawCoord::value_type   &widthLim
@@ -496,15 +515,22 @@
             return false;
         }
 
-        return drawTextColoredImpl( kerningPairs, fontMetrics
-                                  , startPos, widthLim, flags
-                                  , text, textSize
-                                  , stopChars
-                                  , pColors, nColors, pBackColors, nBackColors
-                                  , fontId
-                                  , pNextPosX, pOverhang, pLastCharProcessed, pCharsProcessed
-                                  , pSymbolsDrawn
-                                  );
+        std::vector<LetterDrawInfo> letterDrawInfos;
+
+        bool res = drawTextColoredImpl( kerningPairs, fontMetrics
+                                      , startPos, widthLim, flags
+                                      , text, textSize
+                                      , stopChars
+                                      , pColors, nColors, pBackColors, nBackColors
+                                      , fontId
+                                      , pNextPosX, pOverhang, pLastCharProcessed, pCharsProcessed
+                                      , pSymbolsDrawn
+                                      , &letterDrawInfos
+                                      );
+
+        drawLettersByInfoTransparent(letterDrawInfos, fontId);
+
+        return res;
     }
 
     bool drawParaColoredImpl2( const std::unordered_set<KerningPair> &kerningPairs
@@ -650,6 +676,8 @@
 
         //DrawCoord::value_type
 
+        std::vector<LetterDrawInfo> letterDrawInfos;
+
         auto drawTextHelper = [&](const wchar_t *pText, std::size_t textSize, bool spaceWord, bool wordHasContinuation /* , std::size_t *pSymbolsDrawn */ )
         {
             auto newDrawFlags = (flags | DrawTextFlags::fitWidthDisable) & ~(ellipsisFlags|stopFlags); // в лимит укладываться не нужно, и элипсисы не рисуем
@@ -659,19 +687,21 @@
             if (!coloringWords)
             {
                 std::size_t nSymbolsDrawn = 0;
-                bRes = drawTextColored( pos, 0 // widthLim
-                                      , newDrawFlags
-                                      , pText, textSize // tpi.text.data(), numWcharsFit
-                                      , 0 // stopChars
-                                      , pColors, nColors
-                                      , pBackColors, nBackColors 
-                                      , -1 // fontId
-                                      , 0 // pNextPosX - не нужен
-                                      , 0 // pOverhang - не нужен
-                                      , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
-                                      , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                      , &nSymbolsDrawn
-                                      );
+                bRes = drawTextColoredImpl( kerningPairs, fontMetrics
+                                          , pos, 0 // widthLim
+                                          , newDrawFlags
+                                          , pText, textSize // tpi.text.data(), numWcharsFit
+                                          , 0 // stopChars
+                                          , pColors, nColors
+                                          , pBackColors, nBackColors 
+                                          , -1 // fontId
+                                          , 0 // pNextPosX - не нужен
+                                          , 0 // pOverhang - не нужен
+                                          , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
+                                          , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                          , &nSymbolsDrawn
+                                          , &letterDrawInfos
+                                          );
                 if (bRes && pColors)
                 {
                     if (nSymbolsDrawn>nColors)
@@ -709,19 +739,21 @@
                     nWordBkColors = 1;
                 }
 
-                bRes = drawTextColored( pos, 0 // widthLim
-                                      , newDrawFlags
-                                      , pText, textSize // tpi.text.data(), numWcharsFit
-                                      , 0 // stopChars
-                                      , pWordColors  , nWordColors
-                                      , pWordBkColors, nWordBkColors
-                                      , -1 // fontId
-                                      , 0 // pNextPosX - не нужен
-                                      , 0 // pOverhang - не нужен
-                                      , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
-                                      , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
-                                      , 0 // &nSymbolsDrawn
-                                      );
+                bRes = drawTextColoredImpl( kerningPairs, fontMetrics
+                                          , pos, 0 // widthLim
+                                          , newDrawFlags
+                                          , pText, textSize // tpi.text.data(), numWcharsFit
+                                          , 0 // stopChars
+                                          , pWordColors  , nWordColors
+                                          , pWordBkColors, nWordBkColors
+                                          , -1 // fontId
+                                          , 0 // pNextPosX - не нужен
+                                          , 0 // pOverhang - не нужен
+                                          , 0 // pLastCharProcessed = 0 //!< IN/OUT last drawn char, for kerning calculation
+                                          , 0 // pCharsProcessed=0 //!< OUT Num chars, not symbols/glyphs
+                                          , 0 // &nSymbolsDrawn
+                                          , &letterDrawInfos
+                                          );
                 if (bRes && !spaceWord && !wordHasContinuation) // Это не пробельное слово, слово не обрезано, продолжения того же слова нет, поэтому можно инкрементировать индекс цвета
                 {
                     ++wordColorIdx;
@@ -1192,6 +1224,8 @@
             throw std::runtime_error("Invalid HorAlign value");
         }
 
+        drawLettersByInfoTransparent(letterDrawInfos, -1);
+
 
         if (wordsDrawn && !wordSpacesOnly && !noLastLineSpacing)
         {
@@ -1657,33 +1691,6 @@
                                           , bool                                  *pVerticalDone=0     //!< OUT All/not all lines drawn, 
                                           )
     {
-        // MARTY_IDC_ARG_USED(kerningPairs);
-        // MARTY_IDC_ARG_USED(fontMetrics);
-        // MARTY_IDC_ARG_USED(startPos);
-        // MARTY_IDC_ARG_USED(limits);
-        // MARTY_IDC_ARG_USED(lineSpacing);
-        // MARTY_IDC_ARG_USED(paraSpacing);
-        // MARTY_IDC_ARG_USED(paraIndent);
-        // MARTY_IDC_ARG_USED(tabSize);
-        // MARTY_IDC_ARG_USED(flags);
-        // MARTY_IDC_ARG_USED(horAlign);
-        // MARTY_IDC_ARG_USED(vertAlign);
-        // MARTY_IDC_ARG_USED(text);
-        // MARTY_IDC_ARG_USED(textSize);
-        // MARTY_IDC_ARG_USED(pColors);
-        // MARTY_IDC_ARG_USED(nColors);
-        // MARTY_IDC_ARG_USED(pBackColors);
-        // MARTY_IDC_ARG_USED(nBackColors);
-        // MARTY_IDC_ARG_USED(pTabStopPositions);
-        // MARTY_IDC_ARG_USED(nTabStopPositions);
-        // MARTY_IDC_ARG_USED(pParaColors);
-        // MARTY_IDC_ARG_USED(nParaColors);
-        // MARTY_IDC_ARG_USED(pParaBackColors);
-        // MARTY_IDC_ARG_USED(nParaBackColors);
-        // MARTY_IDC_ARG_USED(fontId);
-        // MARTY_IDC_ARG_USED(pNextPosY);
-        // MARTY_IDC_ARG_USED(pVerticalDone);
-   
         const bool skipEmptyParas = (flags&DrawTextFlags::skipEmptyParas)!=0;
 
         textSize = checkCalcStringSize(text, textSize);
@@ -1793,7 +1800,7 @@
                 res = drawParaColoredImpl( kerningPairs, fontMetrics
                                          , pos, limits
                                          , lineSpacing, paraIndent
-                                         , tabSize
+                                         , tabSize  
                                          , paraFlags
                                          , horAlign, vertAlign
                                          , para.c_str(), para.size()

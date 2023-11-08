@@ -54,6 +54,7 @@ typedef marty_draw_context::GdiPlusDrawContext                GdiPlusDrawContext
 
 #define TEST_DC_FONTS
 #define TEST_DC_DRAW_PARA
+#define TEST_DC_DRAW_PARA_MULTI    /* Draw multi para instead of simple para */
 #define TEST_DC_SPIDERS
 #define TEST_DC_GRADIENT_RECT
 #define TEST_DC_GRADIENT_ROUNDRECT
@@ -74,7 +75,7 @@ public:
     //SIZE m_size;
 
     DrawCoord paraPos      = DrawCoord(50, 42);
-    DrawCoord paraLimits   = DrawCoord(42, 20);
+    DrawCoord paraLimits   = DrawCoord(42, 80);
 
     CBitmapView()
     {
@@ -507,6 +508,21 @@ public:
         letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("SkyBlue").toUnsigned());
         letterBk.emplace_back(marty_draw_context::ColorRef::deserialize("PaleGreen").toUnsigned());
 
+
+        std::vector<std::uint32_t> paraColors;
+        std::vector<std::uint32_t> paraBk;
+
+        paraColors.emplace_back(marty_draw_context::ColorRef::deserialize("BlueViolet").toUnsigned());
+        paraColors.emplace_back(marty_draw_context::ColorRef::deserialize("DarkOliveGreen").toUnsigned());
+        paraColors.emplace_back(marty_draw_context::ColorRef::deserialize("RebeccaPurple").toUnsigned());
+        paraColors.emplace_back(marty_draw_context::ColorRef::deserialize("Magenta").toUnsigned());
+        paraColors.emplace_back(marty_draw_context::ColorRef::deserialize("BurlyWood").toUnsigned());
+
+        paraBk.emplace_back(marty_draw_context::ColorRef::deserialize("GhostWhite").toUnsigned());
+        paraBk.emplace_back(marty_draw_context::ColorRef::deserialize("AntiqueWhite").toUnsigned());
+        paraBk.emplace_back(marty_draw_context::ColorRef::deserialize("FloralWhite").toUnsigned());
+        paraBk.emplace_back(marty_draw_context::ColorRef::deserialize("NavajoWhite").toUnsigned());
+        paraBk.emplace_back(marty_draw_context::ColorRef::deserialize("WhiteSmoke").toUnsigned());
 
         #ifdef TEST_DC_FONTS
 
@@ -982,12 +998,16 @@ public:
                                     L"Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores "
                                     L"alias consequatur aut perferendis doloribus asperiores repellat.";
 
-            std::wstring loremIpsumShort = L"Lorem\tipsum\tdolor sit amet, consectetur_adipiscing_elit,_sed_do eiusmod tempor "
-                                    L"incididunt ut Labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud "
-                                    L"exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure "
-                                    L"dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
-                                    L"Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt "
-                                    L"mollit anim id est laborum.";
+            std::wstring loremIpsumShort = 
+                                    // L"First lorem ipsum dolor sit amet text line. "
+                                    // L"Second lorem ipsum dolor sit amet text line. "
+                                    // L"Third lorem ipsum dolor sit amet text line. "
+                                    // L"Fourth lorem ipsum dolor sit amet text line. ";
+
+                                    L"Lorem\tipsum\tdolor sit amet, consectetur_adipiscing_elit,_sed_do eiusmod tempor incididunt ut Labore et dolore magna aliqua. "
+                                    L"Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
+                                    L"Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
+                                    L"Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
             std::wstring loremIpsumTiny = L"Lo—r   em\tip–s\tum\tdolor — sit – amet, consectetur adipiscing elit, sed do eiusmod tempor";
 
@@ -1016,12 +1036,21 @@ public:
 
             dtFlags |= DrawTextFlags::forceSpacesColoring;
 
+
+            #if defined(TEST_DC_DRAW_PARA_MULTI)
+                #define test_drawParaColored              test_drawMultiParasColored
+                #define drawParaColoredParaColors         ,paraColors,paraBk
+            #else
+                #define drawParaColoredParaColors
+            #endif
+
+
             test_drawParaColored( pDc
                                 , paraPos
                                 , paraLimits
                                 , tabStopPositions
                                 , letterColors
-                                , letterBk
+                                , letterBk     drawParaColoredParaColors
                                 , dtFlags
                                 , HorAlign::left
                                 , frameBoxHeight
@@ -1035,7 +1064,7 @@ public:
                                 , paraLimits
                                 , tabStopPositionsEmpty
                                 , letterColors
-                                , letterBk
+                                , letterBk     drawParaColoredParaColors
                                 , dtFlags
                                 , HorAlign::center
                                 , frameBoxHeight
@@ -1049,7 +1078,7 @@ public:
                                 , paraLimits
                                 , tabStopPositionsEmpty
                                 , letterColors
-                                , letterBk
+                                , letterBk     drawParaColoredParaColors
                                 , dtFlags
                                 , HorAlign::right
                                 , frameBoxHeight
@@ -1063,7 +1092,7 @@ public:
                                 , paraLimits
                                 , tabStopPositionsEmpty
                                 , letterColors
-                                , letterBk
+                                , letterBk     drawParaColoredParaColors
                                 , dtFlags
                                 , HorAlign::width
                                 , frameBoxHeight
@@ -1091,7 +1120,7 @@ public:
                                   );
             #endif
         }
-        #endif
+        #endif // #ifdef TEST_DC_DRAW_PARA
 
 
 
