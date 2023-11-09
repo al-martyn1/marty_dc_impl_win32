@@ -1,23 +1,133 @@
 // Inline methods. Not for include itself
 
-    /*
-    bool isTextWhiteSpaceOnly(const wchar_t *text, std::size_t textSize) const
+    
+    bool hasTextWhiteSpaces(const wchar_t *text, std::size_t textSize) const
     {
         std::size_t curCharLen = getCharLen(text, textSize);
         for( ; textSize && curCharLen!=0
-             ; ++wit, curCharLen = getCharLen(text, textSize)
+             ; curCharLen = getCharLen(text, textSize)
            )
         {
+            ATLASSERT(curCharLen<=textSize);
+            if (curCharLen>textSize)
+            {
+                break;
+            }
+
+            std::uint32_t ch32 = getChar32(text, textSize);
+
             bool bAnyWhiteSpaceChar = isAnyWhiteSpaceChar(ch32);
             bool bAnyLineBreakChar  = isAnyLineBreakChar(ch32);
             bool bAnyTabChar        = isAnyTabChar(ch32);
 
-            if (bAnyWhiteSpaceChar)
+            if (bAnyWhiteSpaceChar || bAnyLineBreakChar || bAnyTabChar)
+            {
+                return true;
+            }
 
+            text            += curCharLen;
+            textSize        -= curCharLen;
         }
 
+        return false;
+
     }
-    */
+
+    bool isTextWhiteSpaceOnly(const wchar_t *text, std::size_t textSize) const
+    {
+        std::size_t curCharLen = getCharLen(text, textSize);
+        for( ; textSize && curCharLen!=0
+             ; curCharLen = getCharLen(text, textSize)
+           )
+        {
+            ATLASSERT(curCharLen<=textSize);
+            if (curCharLen>textSize)
+            {
+                break;
+            }
+
+            std::uint32_t ch32 = getChar32(text, textSize);
+
+            bool bAnyWhiteSpaceChar = isAnyWhiteSpaceChar(ch32);
+            bool bAnyLineBreakChar  = isAnyLineBreakChar(ch32);
+            bool bAnyTabChar        = isAnyTabChar(ch32);
+
+            if (!(bAnyWhiteSpaceChar || bAnyLineBreakChar || bAnyTabChar))
+            {
+                return false;
+            }
+
+            text            += curCharLen;
+            textSize        -= curCharLen;
+        }
+
+        return true;
+    }
+
+    // Версии с std::string вместо std::wstring. Требуются прежде всего для биндингов. Версии с const wchar_t* не нужны
+    // virtual std::wstring decodeString( const std::string &str ) = 0;
+    virtual bool drawTextColored( const DrawCoord                  &startPos
+                                , const DrawCoord::value_type      &widthLim
+                                , DrawTextFlags                    flags
+                                , const std::string                &text
+                                , const std::string                &stopChars
+                                , const std::vector<std::uint32_t> &colors
+                                , const std::vector<std::uint32_t> &bkColors
+                                , int                              fontId=-1
+                                , DrawCoord::value_type            *pNextPosX=0          //!< OUT, Положение вывода для символа, следующего за последним выведенным
+                                , DrawCoord::value_type            *pOverhang=0          //!< OUT, Вынос элементов символа за пределы NextPosX - актуально, как минимум, для iatalic стиля шрифта
+                                , std::uint32_t                    *pLastCharProcessed=0 //!< IN/OUT last drawn char, for kerning calculation
+                                , std::size_t                      *pCharsProcessed=0    //!< OUT Num chars, not symbols/glyphs
+                                , std::size_t                      *pSymbolsDrawn=0
+                                ) override
+    {
+        return drawTextColored( startPos, widthLim, flags, decodeString(text), decodeString(stopChars), colors, bkColors, fontId, pNextPosX, pOverhang, pLastCharProcessed, pCharsProcessed, pSymbolsDrawn );
+    }
+
+    virtual bool drawParaColored( const DrawCoord                  &startPos
+                                , const DrawCoord                  &limits       //!< Limits, vertical and horizontal, relative to start pos
+                                , const DrawCoord::value_type      &lineSpacing  //!< Extra space between lines of text
+                                , const DrawCoord::value_type      &paraIndent   //!< Indent on the first line
+                                , const DrawCoord::value_type      &tabSize      //!< Size used for tabs if tabStops are over
+                                , DrawTextFlags                    flags
+                                , HorAlign                         horAlign
+                                , VertAlign                        vertAlign
+                                , const std::string                &text
+                                , const std::vector<std::uint32_t> &colors
+                                , const std::vector<std::uint32_t> &bkColors
+                                , const std::vector<DrawCoord::value_type> &tabStopPositions
+                                , int                              fontId=-1
+                                , DrawCoord::value_type            *pNextPosY=0         //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                                , bool                             *pVerticalDone=0     //!< OUT All/not all lines drawn, 
+                                , std::size_t                      *pSymbolsDrawn=0     //!< OUT For Next para Y start calculation
+                                ) override
+    {
+        return drawParaColored( startPos, limits, lineSpacing, paraIndent, tabSize, flags, horAlign, vertAlign, decodeString(text), colors, bkColors, tabStopPositions, fontId, pNextPosY, pVerticalDone, pSymbolsDrawn );
+    }
+
+    virtual bool drawMultiParasColored( const DrawCoord            &startPos
+                                , const DrawCoord                  &limits       //!< Limits, vertical and horizontal, relative to start pos
+                                , const DrawCoord::value_type      &lineSpacing  //!< Extra space between lines of text
+                                , const DrawCoord::value_type      &paraSpacing  //!< Extra space between paras
+                                , const DrawCoord::value_type      &paraIndent   //!< Indent on the first line
+                                , const DrawCoord::value_type      &tabSize      //!< Size used for tabs if tabStops are over
+                                , DrawTextFlags                    flags
+                                , HorAlign                         horAlign
+                                , VertAlign                        vertAlign
+                                , const std::string                &text
+                                , const std::vector<std::uint32_t> &colors
+                                , const std::vector<std::uint32_t> &bkColors
+                                , const std::vector<DrawCoord::value_type> &tabStopPositions
+                                , const std::vector<std::uint32_t> &paraColors
+                                , const std::vector<std::uint32_t> &paraBkColors
+                                , int                              fontId=-1
+                                , DrawCoord::value_type            *pNextPosY=0         //!< OUT No line spacing added cause spacing between paras can be other then lineSpacing value
+                                , bool                             *pVerticalDone=0     //!< OUT All/not all lines drawn, 
+                                ) override
+    {
+        return drawMultiParasColored( startPos, limits, lineSpacing, paraSpacing, paraIndent, tabSize, flags, horAlign, vertAlign, decodeString(text), colors, bkColors, tabStopPositions, paraColors, paraBkColors, fontId, pNextPosY, pVerticalDone );
+    }
+
 
     virtual bool drawTextColored( const DrawCoord                  &startPos
                                 , const DrawCoord::value_type      &widthLim
@@ -691,6 +801,30 @@
             auto newDrawFlags = (flags | DrawTextFlags::fitWidthDisable) & ~(ellipsisFlags|stopFlags); // в лимит укладываться не нужно, и элипсисы не рисуем
 
             bool bRes = false;
+
+            if (spaceWord)
+            {
+                return true;
+            }
+
+            const bool bWsOnly = isTextWhiteSpaceOnly(pText, textSize);
+            const bool bHasWs  = hasTextWhiteSpaces(pText, textSize);
+
+            if (bWsOnly)
+            {
+                //DC_LOG()<<"drawTextHelper: isTextWhiteSpaceOnly\n";
+            }
+
+            if (bHasWs)
+            {
+                //DC_LOG()<<"drawTextHelper: hasTextWhiteSpaces\n";
+            }
+
+            if (bWsOnly)
+            {
+                return true;
+            }
+
 
             if (!coloringWords)
             {
