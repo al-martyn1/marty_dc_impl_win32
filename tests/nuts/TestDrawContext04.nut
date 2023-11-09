@@ -167,7 +167,7 @@ function Game::onPaint(dc)
     local pixelPen  = dc.createSolidPen(D.PenParams(0, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), D.Colors.Purple);
     dc.selectPen(pixelPen);
 
-    local rectLt = D.Coords(130,0);
+    local rectLt = D.Coords(102,0);
     local rectSz = D.Coords(5,5);
     dc.rect(rectLt, rectLt+rectSz);
 
@@ -185,12 +185,56 @@ function Game::onPaint(dc)
     dc.circle(pos, puckR);
 
     local genericFontParamsH20 = D.FontParams(2  , D.FontWeight.Normal, D.FontStyleFlags.Normal, "Arial");
+    local genericFontParamsH30 = D.FontParams(3  , D.FontWeight.Normal, D.FontStyleFlags.Normal, "Arial");
     local arialFontId          = dc.createFontWithFace( genericFontParamsH20 , "Arial"          );
+    local arialFont30Id        = dc.createFontWithFace( genericFontParamsH30 , "Arial"          );
 
 
-    dc.textOutWithFontAndColor( D.Coords( 120,120), arialFontId, D.Color.fromRgb(0,0,0), formatCoord(pos) + "  " + getKeyStatesStr());
+    dc.textOutWithFontAndColor( D.Coords( 102,102), arialFontId, D.Color.fromRgb(0,0,0), formatCoord(pos) + "  " + getKeyStatesStr());
 
-    dc.textOutWithFontAndColor( D.Coords(  10,120), arialFontId, D.Color.fromRgb(0,0,0), sysInfoStr);
+    dc.textOutWithFontAndColor( D.Coords(  10,102), arialFontId, D.Color.fromRgb(0,0,0), sysInfoStr);
+
+    // D.Colors.Green, D.Colors.Blue, D.Colors.Red
+    dc.drawTextColored( D.Coords(  10,106), 50, D.DrawTextFlags.EndEllipsis
+                      , "Lorem ipsum dolor sit amet, consectetur_adipiscing_elit,_sed_do eiusmod tempor incididunt ut Labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
+                      , ""
+                      , [D.Colors.GreenYellow, D.Colors.Red, D.Colors.Gray, D.Colors.Blue, D.Colors.Aqua/*Cyan*/, D.Colors.DarkCyan, D.Colors.MediumCyan] 
+                      , [D.Colors.Brown, D.Colors.DarkCyan, D.Colors.GreenYellow, D.Colors.Red, D.Colors.Gray, D.Colors.MediumCyan] 
+                      , arialFont30Id
+                      );
+
+    dc.drawParaColored( D.Coords(  10,116)
+                      , D.Coords(  70,20)
+                      , 0.1 // lineSpacing
+                      , 1.5 // paraIndent
+                      , 2.0 // tabSize
+                      , D.DrawTextFlags.FitHeightDisable | D.DrawTextFlags.ColoringWords // None
+                      , D.HorAlign.Left
+                      , D.VertAlign.Top
+                      , "Lorem\tipsum\tdolor sit amet, consectetur_adipiscing_elit,_sed_do eiusmod tempor incididunt ut Labore et dolore magna aliqua."
+                      , [D.Colors.GreenYellow, D.Colors.Red, D.Colors.Gray, D.Colors.Blue, D.Colors.Aqua/*Cyan*/, D.Colors.DarkCyan, D.Colors.MediumCyan] 
+                      , [D.Colors.Brown, D.Colors.DarkCyan, D.Colors.GreenYellow, D.Colors.Red, D.Colors.Gray, D.Colors.MediumCyan] 
+                      , [25, 45.0, 65.0]
+                      , arialFont30Id
+                      );
+
+    dc.drawMultiParasColored( D.Coords(  110,10)
+                            , D.Coords(  70,100)
+                            , 0.1 // lineSpacing
+                            , 1.5 // paraSpacing
+                            , 2.5 // paraIndent
+                            , 2.0 // tabSize
+                            , D.DrawTextFlags.FitHeightDisable | D.DrawTextFlags.ColoringWords // None
+                            , D.HorAlign.Left
+                            , D.VertAlign.Top
+                            , "Lorem\tipsum\tdolor sit amet, consectetur_adipiscing_elit,_sed_do eiusmod tempor incididunt ut Labore et dolore magna aliqua.\nUt enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+                            , [D.Colors.GreenYellow, D.Colors.Red, D.Colors.Gray, D.Colors.Blue, D.Colors.Aqua/*Cyan*/, D.Colors.DarkCyan, D.Colors.MediumCyan] 
+                            , [D.Colors.Brown, D.Colors.DarkCyan, D.Colors.GreenYellow, D.Colors.Red, D.Colors.Gray, D.Colors.MediumCyan] 
+                            , [25, 45.0, 65.0]
+                            , [D.Colors.BlueViolet, D.Colors.DarkOliveGreen, D.Colors.RebeccaPurple]
+                            , [D.Colors.GhostWhite, D.Colors.AntiqueWhite, D.Colors.FloralWhite]
+                            , arialFont30Id
+                            );
 
 }
 
