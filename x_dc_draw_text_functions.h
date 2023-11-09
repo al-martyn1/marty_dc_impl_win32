@@ -695,12 +695,17 @@
         DrawCoord   pos            = startPos;
         pos.x                     += (horAlign==HorAlign::center) ? (DrawCoord::value_type)0 : paraIndent; // Для первой строки сразу добавлям отступ параграфа
 
+        // if ((flags&DrawTextFlags::calcOnly)!=0)
+        // {
+        //     flags |= DrawTextFlags::fitHeightDisable;
+        // }
 
         const bool keepLtSpaces      = (horAlign==HorAlign::left) && ((flags&DrawTextFlags::keepLtSpaces)!=0);
         const bool noLastLineSpacing = (flags&DrawTextFlags::noLastLineSpacing)!=0;
         const auto ellipsisFlags     = DrawTextFlags::endEllipsis | DrawTextFlags::pathEllipsis | DrawTextFlags::wordEllipsis;
         const auto stopFlags         = DrawTextFlags::stopOnLineBreaks | DrawTextFlags::stopOnTabs;
         const auto fitHeightDisable  = (flags&DrawTextFlags::calcOnly)!=0 || (flags&DrawTextFlags::fitHeightDisable)!=0;
+        //const auto fitHeightDisable  = (flags&DrawTextFlags::fitHeightDisable)!=0;
         //const bool coloringParas     = (flags&DrawTextFlags::coloringParas)!=0;
         const bool coloringWords     = (flags&DrawTextFlags::coloringWords)!=0; // && !coloringParas;
 
@@ -717,7 +722,7 @@
 
         auto checkLimY = [&]()
         {
-            if (fitHeightDisable)
+            if (!fitHeightDisable)
             {
                 auto testY = pos.y + fontMetrics.height;
                 if (testY>limY)

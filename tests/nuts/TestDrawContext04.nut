@@ -204,7 +204,7 @@ function Game::onPaint(dc)
                       );
 
     dc.drawParaColored( D.Coords(  10,116)
-                      , D.Coords(  70,20)
+                      , D.Coords(  70,10)
                       , 0.1 // lineSpacing
                       , 1.5 // paraIndent
                       , 2.0 // tabSize
@@ -219,7 +219,7 @@ function Game::onPaint(dc)
                       );
 
     dc.drawMultiParasColored( D.Coords(  110,10)
-                            , D.Coords(  70,100)
+                            , D.Coords(  70 ,10)
                             , 0.1 // lineSpacing
                             , 1.5 // paraSpacing
                             , 2.5 // paraIndent

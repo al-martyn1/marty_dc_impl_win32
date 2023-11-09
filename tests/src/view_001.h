@@ -79,7 +79,7 @@ public:
     //SIZE m_size;
 
     DrawCoord paraPos      = DrawCoord(50, 42);
-    DrawCoord paraLimits   = DrawCoord(42, 80);
+    DrawCoord paraLimits   = DrawCoord(42, 10);
 
     CBitmapView()
     {
@@ -1051,7 +1051,7 @@ public:
 
             dtFlags |= DrawTextFlags::fitHeightDisable;
             dtFlags |= DrawTextFlags::forceSpacesColoring;
-            dtFlags |= DrawTextFlags::fitHeightDisable;
+            //dtFlags |= DrawTextFlags::fitHeightDisable;
 
 
             #if defined(TEST_DC_DRAW_PARA_MULTI)
