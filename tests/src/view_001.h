@@ -17,6 +17,8 @@
 
 #include "test_drawings.h"
 
+#include "localFsRcHelpers.h"
+
 #include <array>
 
 
@@ -81,8 +83,28 @@ public:
     DrawCoord paraPos      = DrawCoord(50, 42);
     DrawCoord paraLimits   = DrawCoord(42, 10);
 
+    std::vector<std::uint8_t>   emfData;
+
+
     CBitmapView()
     {
+        std::vector<std::string> cmdLineArgs;
+        LPSTR lpCmdLine = GetCommandLineA();
+        if (lpCmdLine)
+        {
+            cmdLineArgs = helpers::parseWinCommandLine(lpCmdLine);
+        }
+        
+        if (cmdLineArgs.size()>1 && !cmdLineArgs[1].empty())
+        {
+            marty_fs_adapters::SimpleFileApi<std::string> fsApi;
+            emfData = fsApi.readFileBinary(lpCmdLine);
+        }
+        else
+        {
+            std::string rcFullFileName;
+            helpers::findResource( emfData, rcFullFileName, ".emf" );
+        }
     }
 
     BOOL PreTranslateMessage(MSG* pMsg)
@@ -1140,6 +1162,11 @@ public:
         #endif // #ifdef TEST_DC_DRAW_PARA
 
 
+        if (!emfData.empty())
+        {
+
+        
+        }
 
 
     }

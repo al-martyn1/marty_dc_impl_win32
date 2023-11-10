@@ -1,5 +1,6 @@
 #pragma once
 
+#include "marty_fs_adapters/simple_file_api.h"
 
 #include "umba/umba.h"
 #include "umba/cmd_line.h"
