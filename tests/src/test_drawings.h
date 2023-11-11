@@ -644,6 +644,17 @@ void test_drawMultiParasColored( marty_draw_context::IDrawContext *pDc
 }
 
 
+inline 
+void test_drawEmf( marty_draw_context::IDrawContext *pDc
+                 , const std::uint8_t *pData
+                 , std::size_t          size
+                 )
+{
+    MARTY_ARG_USED(pDc);
+    MARTY_ARG_USED(pData);
+    MARTY_ARG_USED(size);
+}
+
 
 } // namespace underwood
 

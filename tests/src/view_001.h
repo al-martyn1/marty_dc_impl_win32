@@ -57,8 +57,8 @@ typedef marty_draw_context::GdiPlusDrawContext                GdiPlusDrawContext
 // #define TEST_DC_ROUND_SQUARE
 // #define TEST_DC_SNAKE
 
-#define TEST_DC_DRAW_PARA
-#define TEST_DC_DRAW_PARA_MULTI    /* Draw multi para instead of simple para */
+// #define TEST_DC_DRAW_PARA
+// #define TEST_DC_DRAW_PARA_MULTI    /* Draw multi para instead of simple para */
 
 // #define TEST_DC_FONTS
 // #define TEST_DC_SPIDERS
@@ -68,6 +68,8 @@ typedef marty_draw_context::GdiPlusDrawContext                GdiPlusDrawContext
 // #define TEST_DC_LINEJOINSTYLE
 // #define TEST_DC_ARCTO
 // #define TEST_DC_GRADIENTRECT_WITH_RECT_FRAME
+
+#define TEST_DC_EMF
 
 
 
@@ -1162,12 +1164,14 @@ public:
         #endif // #ifdef TEST_DC_DRAW_PARA
 
 
+        #ifdef TEST_DC_EMF
+
         if (!emfData.empty())
         {
-
-        
+            test_drawEmf( pDc, &emfData[0], emfData.size() );
         }
 
+        #endif // #ifdef TEST_DC_EMF
 
     }
 

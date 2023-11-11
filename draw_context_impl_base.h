@@ -184,6 +184,8 @@ protected:
 
 
 
+    #include "x_dc_utility_functions.h"
+
     virtual void freeAllocatedRc() override
     {
         fontsByParams.clear();
