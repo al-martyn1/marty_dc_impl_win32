@@ -2,6 +2,9 @@
 
 // #include "keyboard_geometry/keyboard_drawing.h"
 
+#include "marty_draw_context/emf.h"
+
+
 namespace underwood {
 
 
@@ -653,6 +656,17 @@ void test_drawEmf( marty_draw_context::IDrawContext *pDc
     MARTY_ARG_USED(pDc);
     MARTY_ARG_USED(pData);
     MARTY_ARG_USED(size);
+
+    using namespace marty_draw_context;
+
+    if (!emf::MetafileHeader::canExtractFromRawBytes(pData, size))
+    {
+        return;
+    }
+
+    auto metafileHeader = emf::MetafileHeader::extractFromRawBytes(pData, size);
+
+
 }
 
 

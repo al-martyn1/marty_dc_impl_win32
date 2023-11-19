@@ -1168,7 +1168,7 @@ public:
 
         if (!emfData.empty())
         {
-            test_drawEmf( pDc, &emfData[0], emfData.size() );
+            //test_drawEmf( pDc, &emfData[0], emfData.size() );
         }
 
         #endif // #ifdef TEST_DC_EMF
