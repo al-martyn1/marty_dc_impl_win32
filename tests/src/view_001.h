@@ -10,6 +10,7 @@
 #include "umba/umba.h"
 #include "umba/simple_formatter.h"
 #include "umba/time_service.h"
+#include "umba/string_plus.h"
 
 
 #include "marty_dc_impl_win32/gdi_draw_context.h"
@@ -69,7 +70,11 @@ typedef marty_draw_context::GdiPlusDrawContext                GdiPlusDrawContext
 // #define TEST_DC_ARCTO
 // #define TEST_DC_GRADIENTRECT_WITH_RECT_FRAME
 
-#define TEST_DC_EMF
+#define TEST_DC_BEZIER
+
+// #define TEST_DC_EMF
+
+// #define TEST_DC_SVG
 
 
 
@@ -86,6 +91,7 @@ public:
     DrawCoord paraLimits   = DrawCoord(42, 10);
 
     std::vector<std::uint8_t>   emfData;
+    std::vector<std::uint8_t>   svgData;
 
 
     CBitmapView()
@@ -100,12 +106,33 @@ public:
         if (cmdLineArgs.size()>1 && !cmdLineArgs[1].empty())
         {
             marty_fs_adapters::SimpleFileApi<std::string> fsApi;
-            emfData = fsApi.readFileBinary(lpCmdLine);
+
+            auto readFileText = [&](const std::string &fileName)
+            {
+                std::string strText = fsApi.readFile( fileName );
+                return std::vector<std::uint8_t>((const std::uint8_t*)strText.data(), ((const std::uint8_t*)strText.data())+strText.size() );
+            };
+
+            std::string strTakenFilename      = cmdLineArgs[1];
+            std::string strTakenFilenameUpper = umba::string_plus::toupper_copy(strTakenFilename);
+
+            if (umba::string_plus::ends_with(strTakenFilenameUpper, ".EMF"))
+            {
+                emfData = fsApi.readFileBinary(strTakenFilename);
+            }
+            else if (umba::string_plus::ends_with(strTakenFilenameUpper, ".SVG"))
+            {
+                svgData = readFileText(strTakenFilename);
+            }
         }
         else
         {
             std::string rcFullFileName;
-            helpers::findResource( emfData, rcFullFileName, ".emf" );
+            helpers::findResource( emfData, rcFullFileName, ".emf", true/*binary*/ );
+            if (emfData.empty())
+            {
+                helpers::findResource( svgData, rcFullFileName, ".svg", false/*text*/ );
+            }
         }
     }
 
@@ -1173,7 +1200,169 @@ public:
 
         #endif // #ifdef TEST_DC_EMF
 
-    }
+
+        #ifdef TEST_DC_SVG
+
+        if (!svgData.empty())
+        {
+            try
+            {
+                test_drawSvg( pDc, &svgData[0], svgData.size() );
+            }
+            catch(const std::exception &e)
+            {
+                lout << "SVG Error: " << e.what() << "\n";
+            }
+        }
+
+        #endif // #ifdef TEST_DC_SVG
+
+
+        #ifdef TEST_DC_BEZIER
+
+          auto scaleDrawCoordVector = [](const std::vector<DrawCoord> &points, DrawCoord::value_type sc, const DrawCoord &offs)
+          {
+              std::vector<DrawCoord> res; res.reserve(points.size());
+              for(auto p: points)
+              {
+                  p.x *= sc;
+                  p.y *= sc;
+                  p.x += offs.x;
+                  p.y += offs.y;
+                  res.emplace_back(p);
+              }
+  
+              return res;
+          };
+  
+          //typedef DrawCoord DC;
+
+          //polyBezier polyCubicBezier
+  
+
+          // https://www.functionx.com/bcb/gdi/curveshapes.htm
+          #if 0
+          {
+
+              std::vector<DrawCoord> points = { { 2.0,  1.2}, { 8.8, 24.6}, {36.4, 19.2}, {25.0,  4.8} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 2, DrawCoord{25 , 50}));
+          }
+          #endif
+  
+          #if 0
+          {
+              std::vector<DrawCoord> points = { { 2.0,  1.2}, { 8.8, 24.6}, {36.4, 19.2}, {25.0,  4.8}, {17.5,  3.8}, {38.8, 19.2}, {14.5, 12.5} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 2, DrawCoord{ 75, 50}));
+          }
+          #endif
+
+          #if 0
+          {
+              std::vector<DrawCoord> points = { { 0.0,  0.0}, {32.0, 12.0}, { 8.8, 24.6}, {36.4, 12.2} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 2, DrawCoord{ 50, 25}));
+          }
+          #endif
+
+
+          // https://www.w3.org/TR/SVGTiny12/paths.html#PathDataCubicBezierCommands
+
+          #if 1
+          {
+              // M100,200 C100,100 250,100 250,200 S400,300 400,200
+              // 100,200 C100,100 250,100 250,200
+              // Ищем точку - отражение 250,100 относительно 250,200. Это будет 250,300
+              // S400,300 400,200 -> C250,300 400,300 400,200
+              std::vector<DrawCoord> points = { {100,200}, {100,100}, {250,100}, {250,200}, {250,300}, {400,300}, {400,200} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 0.1, DrawCoord{  5, 10}));
+          }
+          #endif
+
+          #if 1
+          {
+              // M100,200 C100,100 400,100 400,200
+              std::vector<DrawCoord> points = { {100,200}, {100,100}, {400,100}, {400,200} };
+              // points.emplace_back(DrawCoord{100,200});
+              // points.emplace_back(DrawCoord{100,100});
+              // points.emplace_back(DrawCoord{400,100});
+              // points.emplace_back(DrawCoord{400,200});
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 0.1, DrawCoord{ 25, 10}));
+          }
+          #endif
+
+          #if 1
+          {
+              // M600,200 C675,100 975,100 900,200
+              std::vector<DrawCoord> points = { {600,200}, {675,100}, {975,100}, {900,200} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 0.1, DrawCoord{  10, 10}));
+          }
+          #endif
+
+          #if 1
+          {
+              // M100,500 C25,400 475,400 400,500
+              std::vector<DrawCoord> points = { {100,500}, {25,400}, {475,400}, {400,500} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 0.1, DrawCoord{100, -20}));
+          }
+          #endif
+
+          #if 1
+          {
+              // M600,500 C600,350 900,650 900,500
+              std::vector<DrawCoord> points = { {600,500}, {600,350}, {900,650}, {900,500} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 0.1, DrawCoord{ 90, -20}));
+          }
+          #endif
+
+          #if 1
+          {
+              // M100,800 C175,700 325,700 400,800
+              std::vector<DrawCoord> points = { {100,800}, {175,700}, {325,700}, {400,800} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 0.1, DrawCoord{ 175, -50}));
+          }
+          #endif
+
+          #if 1
+          {
+              // M600,800 C625,700 725,700 750,800  S875,900 900,800
+              // Зеркалим 725,700 отнсительно 750,800 -> 775,900
+              // Итого M600,800 C625,700 725,700 750,800  775,900 875,900 900,800
+              std::vector<DrawCoord> points = { {600,800}, {625,700}, {725,700}, {750,800}, {775,900}, {875,900}, {900,800} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 0.1, DrawCoord{ -45, -35}));
+          }
+          #endif
+
+          #if 1
+          {
+              // M200,300 Q400,50 600,300 T1000,300
+              // Квадратичный безье - полагаю, что если продублировать контрольную точку, то можно заюзать кубический безье - работает не совсем так, как должно
+              //std::vector<DrawCoord> points = { {200,300}, {400,50}, {400,50}, {600,300} };
+
+              // Просто сделал версию polyQuadraticBezier
+              std::vector<DrawCoord> points = { {200,300}, {400,50}, {600,300} };
+              pDc->polyQuadraticBezier(scaleDrawCoordVector(points, 0.1, DrawCoord{ 30, 20}));
+          }
+          #endif
+
+          #if 0
+          {
+              std::vector<DrawCoord> points = { {}, {}, {}, {} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 0.1, DrawCoord{ 20, 20}));
+          }
+          #endif
+
+          #if 0
+          {
+              std::vector<DrawCoord> points = { {}, {}, {}, {} };
+              pDc->polyCubicBezier(scaleDrawCoordVector(points, 0.1, DrawCoord{ 20, 20}));
+          }
+          #endif
+
+
+
+        #endif // #ifdef TEST_DC_BEZIER
+
+
+    } // void DoPaintImpl( marty_draw_context::IDrawContext *pDc )
 
 };
 

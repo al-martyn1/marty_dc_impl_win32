@@ -71,11 +71,14 @@ inline
 bool findResource( std::vector<std::uint8_t> &rcData
                  , std::string               &rcFullFileName
                  , std::string                rcName    // only ext allowed started with dot, exe name used
+                 , bool                       binaryResource
                  , std::string                rcRootPath      = std::string()
                  , std::vector<std::string>   subPaths  = std::vector<std::string>{ "rc", "res", "." }
             )
 {
     std::string exeFullName = umba::program_location::getExeName<std::string>();
+    //std::string exePath     = umba::filename::getPath(exeFullName);
+
 
     if (rcName.empty() || rcName[0]=='.')
     {
@@ -93,6 +96,10 @@ bool findResource( std::vector<std::uint8_t> &rcData
 
         rcName = umba::filename::appendExtention(rcName, ext);
     }
+    else // not empty and not starts with dot
+    {
+        // std::string rcPath = umba::filename::getPath(rcName);
+    }
 
     if (rcRootPath.empty())
     {
@@ -102,6 +109,12 @@ bool findResource( std::vector<std::uint8_t> &rcData
 
     marty_fs_adapters::SimpleFileApi<std::string> fsApi;
 
+    auto readFileText = [&](const std::string &fileName)
+    {
+        std::string strText = fsApi.readFile( fileName );
+        return std::vector<std::uint8_t>((const std::uint8_t*)strText.data(), ((const std::uint8_t*)strText.data())+strText.size() );
+    };
+
     while(true)
     {
         for(auto subPath : subPaths)
@@ -109,7 +122,8 @@ bool findResource( std::vector<std::uint8_t> &rcData
             std::string fullPath     = umba::filename::appendPath(rcRootPath, subPath);
             std::string fullFileName = umba::filename::appendPath(fullPath  , rcName);
 
-            std::vector<std::uint8_t> data = fsApi.readFileBinary(fullFileName);
+            std::vector<std::uint8_t> data = binaryResource ? fsApi.readFileBinary(fullFileName) : readFileText(fullFileName);
+            
             if (!data.empty())
             {
                 std::swap(rcData        , data);

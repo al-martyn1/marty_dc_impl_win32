@@ -4,6 +4,8 @@
 
 #include "marty_draw_context/emf.h"
 
+#include <pugixml/pugixml.hpp>
+
 
 namespace underwood {
 
@@ -666,9 +668,55 @@ void test_drawEmf( marty_draw_context::IDrawContext *pDc
 
     auto metafileHeader = emf::MetafileHeader::extractFromRawBytes(pData, size);
 
+}
+
+inline 
+void test_drawSvg( marty_draw_context::IDrawContext *pDc
+                 , const std::uint8_t *pData
+                 , std::size_t          size
+                 )
+{
+    MARTY_ARG_USED(pDc);
+    MARTY_ARG_USED(pData);
+    MARTY_ARG_USED(size);
+
+    using namespace marty_draw_context;
+
+    #if 0
+    	// Load document from buffer. Copies/converts the buffer, so it may be deleted or changed after the function returns.
+		xml_parse_result load_buffer(const void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
+
+		// Load document from buffer, using the buffer for in-place parsing (the buffer is modified and used for storage of document data).
+		// You should ensure that buffer data will persist throughout the document's lifetime, and free the buffer memory manually once document is destroyed.
+		xml_parse_result load_buffer_inplace(void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
+    #endif
+
+    // http://www.w3.org/2000/svg
+    // xmlns:svg="http://www.w3.org/2000/svg"
+    // xmlns="http://www.w3.org/2000/svg"
+    pugi::xml_document svgDoc;
+    pugi::xml_parse_result result = svgDoc.load_buffer((const void*)pData, size);
+
+    if (result)
+    {
+        // std::cerr << "XML [" << genresConverterXmlData << "] parsed without errors, attr value: [" << genresConverterXmlDoc.child("node").attribute("attr").value() << "]\n\n";
+    }
+    else
+    {
+        //std::cerr << "XML parsed with errors, attr value: [" + svgDoc.child("node").attribute("attr").value() << "]\n";
+        throw std::runtime_error(
+        result.description() // << std::string("\n") + 
+        //std::string("Error offset: ") + result.offset  //  + " (error at [..." << (genresConverterXmlData.c_str() + result.offset) << "]\n\n";
+        );
+    }
+
 
 }
 
 
+
+
 } // namespace underwood
+
+
 

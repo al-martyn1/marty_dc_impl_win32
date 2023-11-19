@@ -236,6 +236,8 @@ function Game::onPaint(dc)
                             , arialFont30Id
                             );
 
+    dc.polyCubicBeziers([D.Coords(10,20), D.Coords(10,10), D.Coords(25,10), D.Coords(25,20), D.Coords(25,30), D.Coords(40,30), D.Coords(40,20)]);
+
 }
 
 
