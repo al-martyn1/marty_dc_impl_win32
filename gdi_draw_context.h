@@ -344,6 +344,44 @@ public:
     {
     }
 
+    virtual bool polyCubicBezier  (const DrawCoord * pPoints, std::size_t numPoints) override
+    {
+        if (!pPoints || !checkPolyCubicBezierNumPoints(numPoints))
+            return false;
+
+        std::vector<POINT> POINTs;
+
+        for(std::size_t i=0; i!=numPoints; ++i, ++pPoints)
+        {
+            DrawCoord scaledPoint = getScaledPos( *pPoints );
+            POINTs.emplace_back(POINT{floatToInt(scaledPoint.x), floatToInt(scaledPoint.y)});
+        }
+
+        return PolyBezier( m_hdc, &POINTs[0], (DWORD)POINTs.size() ) ? true : false;;
+    }
+
+    virtual bool polyCubicBezierTo(const DrawCoord * pPoints, std::size_t numPoints) override
+    {
+        if (!pPoints || !checkPolyCubicBezierToNumPoints(numPoints))
+            return false;
+
+        std::vector<POINT> POINTs;
+
+        for(std::size_t i=0; i!=numPoints; ++i, ++pPoints)
+        {
+            DrawCoord scaledPoint = getScaledPos( *pPoints );
+            POINTs.emplace_back(POINT{floatToInt(scaledPoint.x), floatToInt(scaledPoint.y)});
+        }
+
+        auto res = PolyBezierTo( m_hdc, &POINTs[0], (DWORD)POINTs.size() ) ? true : false;;
+
+        --pPoints;
+        m_curPos = *pPoints;
+
+        return res;
+    }
+
+
     virtual int getCharWidthIntImpl(std::uint32_t ch32) const override
     {
         INT tmpW = 0;

@@ -356,6 +356,68 @@ public:
 
     }
 
+    virtual bool polyCubicBezier  (const DrawCoord * pPoints, std::size_t numPoints) override
+    {
+        if (!pPoints || !checkPolyCubicBezierNumPoints(numPoints))
+            return false;
+
+        std::vector<Gdiplus::PointF> pointFs;
+
+        for(std::size_t i=0; i!=numPoints; ++i, ++pPoints)
+        {
+            DrawCoord scaledPoint = getScaledPos( *pPoints );
+            pointFs.emplace_back(Gdiplus::PointF{floatToFloat(scaledPoint.x), floatToFloat(scaledPoint.y)});
+        }
+
+        if (!m_curPath)
+        {
+            ATLASSERT(m_curPenId>=0 && m_curPenId<(int)m_hPens.size());
+            if (Gdiplus::Ok!=m_g.DrawBeziers( m_hPens[(std::size_t)m_curPenId].get(), &pointFs[0], (INT)pointFs.size()))
+                return false;
+        }
+        else
+        {
+            if (Gdiplus::Ok!=m_curPath->AddBeziers( &pointFs[0], (INT)pointFs.size()))
+                return false;
+        }
+
+        return true;
+    }
+
+    virtual bool polyCubicBezierTo(const DrawCoord * pPoints, std::size_t numPoints) override
+    {
+        if (!pPoints || !checkPolyCubicBezierToNumPoints(numPoints))
+            return false;
+
+        std::vector<Gdiplus::PointF> pointFs;
+        auto curPosScaled = getScaledPos(getCurPos());
+        pointFs.emplace_back(Gdiplus::PointF{floatToFloat(curPosScaled.x), floatToFloat(curPosScaled.y)});
+
+        for(std::size_t i=0; i!=numPoints; ++i, ++pPoints)
+        {
+            DrawCoord scaledPoint = getScaledPos( *pPoints );
+            pointFs.emplace_back(Gdiplus::PointF{floatToFloat(scaledPoint.x), floatToFloat(scaledPoint.y)});
+        }
+
+        if (!m_curPath)
+        {
+            ATLASSERT(m_curPenId>=0 && m_curPenId<(int)m_hPens.size());
+            if (Gdiplus::Ok!=m_g.DrawBeziers( m_hPens[(std::size_t)m_curPenId].get(), &pointFs[0], (INT)pointFs.size()))
+                return false;
+        }
+        else
+        {
+            if (Gdiplus::Ok!=m_curPath->AddBeziers( &pointFs[0], (INT)pointFs.size()))
+                return false;
+        }
+
+        --pPoints;
+        m_curPos = *pPoints;
+
+        return true;
+    }
+
+
     virtual int getCharWidthIntImpl(std::uint32_t ch32) const override
     {
         INT tmpW = 0;

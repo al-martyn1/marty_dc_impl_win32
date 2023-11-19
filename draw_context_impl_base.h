@@ -246,6 +246,136 @@ protected:
         fillLogfontStruct( lf, scaledHeight, fp.escapement, fp.orientation, (int)fp.weight, fp.fontStyleFlags, fp.fontFace.c_str() );
     }
 
+    virtual bool checkPolyCubicBezierNumPoints  (std::size_t numPoints) override
+    {
+        if (numPoints<2)
+            return false;
+        return (numPoints%3)==1;
+    }
+
+    virtual bool checkPolyCubicBezierToNumPoints(std::size_t numPoints) override
+    {
+        if (numPoints<2)
+            return false;
+        return (numPoints%3)==0;
+    }
+
+    virtual bool polyCubicBezier  (const std::vector<DrawCoord> &points) override
+    {
+        if (points.empty())
+            return false;
+        return ((IDrawContext*)this)->polyCubicBezier(&points[0], points.size());
+    }
+
+    virtual bool polyCubicBezierTo(const std::vector<DrawCoord> &points) override
+    {
+        if (points.empty())
+            return false;
+        return ((IDrawContext*)this)->polyCubicBezierTo(&points[0], points.size());
+    }
+
+    // На одну кривую - три точки, на две - 5, на три - 7
+    virtual bool checkPolyQuadraticBezierNumPoints  (std::size_t numPoints) override
+    {
+        if (numPoints<2)
+            return false;
+        return (numPoints%2)==1;
+    }
+
+    // На одну кривую - две точки, на две - 4, на три - 6
+    virtual bool checkPolyQuadraticBezierToNumPoints(std::size_t numPoints) override
+    {
+        if (numPoints<2)
+            return false;
+        return (numPoints%2)==0;
+    }
+
+    bool polyQuadraticBezierImpl(const DrawCoord * pPoints, std::size_t numPoints, bool callBezierTo)
+    {
+        if (!pPoints || !numPoints)
+            return false;
+
+        DrawCoord startPoint;
+
+        if (!callBezierTo)
+        {
+            startPoint = *pPoints++;
+            --numPoints;
+        }
+        else
+        {
+            startPoint = getCurPos();
+        }
+
+        if (!checkPolyQuadraticBezierToNumPoints(numPoints))
+            return false;
+
+        std::vector<DrawCoord> cubicPoints;
+        if (!callBezierTo)
+        {
+            cubicPoints.emplace_back(startPoint);
+        }
+
+        std::size_t numCurves  = numPoints/2;
+
+        // https://stackoverflow.com/questions/3162645/convert-a-quadratic-bezier-to-a-cubic-one
+
+        // The end points of the cubic will be the same as the quadratic's.
+        // CP0 = QP0
+        // CP3 = QP2
+
+        // The two control points for the cubic are:
+        // CP1 = QP0 + 2/3 *(QP1-QP0)
+        // CP2 = QP2 + 2/3 *(QP1-QP2)
+
+        for(std::size_t i=0; i!=numCurves; ++i)
+        {
+            //const DrawCoord
+            std::size_t pntCtrlIdx = 2*i;
+            std::size_t pntEndIdx  = 2*i+1;
+
+            const DrawCoord &qp0 = startPoint;
+            const DrawCoord &qp1 = pPoints[pntCtrlIdx];
+            const DrawCoord &qp2 = pPoints[pntEndIdx];
+
+            DrawCoord cp1 = { qp0.x + ((DrawCoord::value_type)2)*(qp1.x-qp0.x)/((DrawCoord::value_type)3) , qp0.y + ((DrawCoord::value_type)2)*(qp1.y-qp0.y)/((DrawCoord::value_type)3) };
+            DrawCoord cp2 = { qp2.x + ((DrawCoord::value_type)2)*(qp1.x-qp2.x)/((DrawCoord::value_type)3) , qp2.y + ((DrawCoord::value_type)2)*(qp1.y-qp2.y)/((DrawCoord::value_type)3) };
+
+            cubicPoints.emplace_back(cp1);
+            cubicPoints.emplace_back(cp2);
+            cubicPoints.push_back(qp2); // same as cp3
+        }
+
+        return callBezierTo
+             ? ((IDrawContext*)this)->polyCubicBezierTo(&cubicPoints[0], cubicPoints.size())
+             : ((IDrawContext*)this)->polyCubicBezier  (&cubicPoints[0], cubicPoints.size())
+             ;
+    }
+
+    // polyQuadraticBezierImpl(const DrawCoord * pPoints, std::size_t numPoints, bool callBezierTo)
+    virtual bool polyQuadraticBezier  (const DrawCoord * pPoints, std::size_t numPoints) override
+    {
+        return polyQuadraticBezierImpl(pPoints, numPoints, false);
+    }
+
+    virtual bool polyQuadraticBezierTo(const DrawCoord * pPoints, std::size_t numPoints) override
+    {
+        return polyQuadraticBezierImpl(pPoints, numPoints, true);
+    }
+
+    virtual bool polyQuadraticBezier  (const std::vector<DrawCoord> &points) override
+    {
+        if (points.empty())
+            return false;
+        return polyQuadraticBezier(&points[0], points.size());
+    }
+
+    virtual bool polyQuadraticBezierTo(const std::vector<DrawCoord> &points) override
+    {
+        if (points.empty())
+            return false;
+        return polyQuadraticBezierTo(&points[0], points.size());
+    }
 
     template<typename CharType>
     std::size_t checkCalcStringSize(const CharType *pStr, std::size_t size) const
