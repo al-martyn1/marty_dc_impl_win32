@@ -748,9 +748,9 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
         if (attrParts[0]=="xmlns")
         {
             std::string nsPrefix;
-            if (attrParts>1)
+            if (attrParts.size()>1)
             {
-                nsPrefix = attrParts[0];
+                nsPrefix = attrParts[1];
             }
 
             std::string ns = svgAttr.value();
