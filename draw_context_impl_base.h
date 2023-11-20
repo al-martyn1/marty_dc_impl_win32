@@ -246,14 +246,14 @@ protected:
         fillLogfontStruct( lf, scaledHeight, fp.escapement, fp.orientation, (int)fp.weight, fp.fontStyleFlags, fp.fontFace.c_str() );
     }
 
-    virtual bool checkPolyCubicBezierNumPoints  (std::size_t numPoints) override
+    virtual bool checkPolyCubicBezierNumPoints  (std::size_t numPoints) const override
     {
         if (numPoints<2)
             return false;
         return (numPoints%3)==1;
     }
 
-    virtual bool checkPolyCubicBezierToNumPoints(std::size_t numPoints) override
+    virtual bool checkPolyCubicBezierToNumPoints(std::size_t numPoints) const override
     {
         if (numPoints<2)
             return false;
@@ -275,7 +275,7 @@ protected:
     }
 
     // На одну кривую - три точки, на две - 5, на три - 7
-    virtual bool checkPolyQuadraticBezierNumPoints  (std::size_t numPoints) override
+    virtual bool checkPolyQuadraticBezierNumPoints  (std::size_t numPoints) const override
     {
         if (numPoints<2)
             return false;
@@ -283,7 +283,7 @@ protected:
     }
 
     // На одну кривую - две точки, на две - 4, на три - 6
-    virtual bool checkPolyQuadraticBezierToNumPoints(std::size_t numPoints) override
+    virtual bool checkPolyQuadraticBezierToNumPoints(std::size_t numPoints) const override
     {
         if (numPoints<2)
             return false;

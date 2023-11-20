@@ -74,7 +74,7 @@ typedef marty_draw_context::GdiPlusDrawContext                GdiPlusDrawContext
 
 // #define TEST_DC_EMF
 
-// #define TEST_DC_SVG
+#define TEST_DC_SVG
 
 
 

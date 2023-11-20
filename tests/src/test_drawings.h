@@ -6,6 +6,9 @@
 
 #include <pugixml/pugixml.hpp>
 
+#include <unordered_set>
+#include <unordered_map>
+
 
 namespace underwood {
 
@@ -681,6 +684,9 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
     MARTY_ARG_USED(size);
 
     using namespace marty_draw_context;
+    using umba::lout;
+    using namespace umba::omanip;
+
 
     #if 0
     	// Load document from buffer. Copies/converts the buffer, so it may be deleted or changed after the function returns.
@@ -690,6 +696,9 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
 		// You should ensure that buffer data will persist throughout the document's lifetime, and free the buffer memory manually once document is destroyed.
 		xml_parse_result load_buffer_inplace(void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
     #endif
+
+    static const std::vector<std::string> svgNsNames = { {"http://www.w3.org/2000/svg"} };
+
 
     // http://www.w3.org/2000/svg
     // xmlns:svg="http://www.w3.org/2000/svg"
@@ -711,6 +720,107 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
     }
 
 
+    std::unordered_map< std::string, std::unordered_set<std::string> > nsPrefixes; // "http://www.w3.org/2000/svg" -> {"svg", ""}
+    std::unordered_map< std::string, std::string >                     nsPrefixNamespaces; // "svg" -> http://www.w3.org/2000/svg
+    
+    //auto svgNode = genresConverterXmlDoc.child("sv")
+    pugi::xml_node svgNode = svgDoc.document_element();
+    std::string svgNodeName = svgNode.name();  // svgNode.value()
+
+
+    std::unordered_set<std::string>  svgPrefixes;
+
+    lout << "SVG attrs:\n";
+
+    pugi::xml_attribute svgAttr = svgNode.first_attribute();
+    for(; svgAttr; svgAttr=svgAttr.next_attribute())
+    {
+        //lout << "  " << svgAttr.name() << ": " << svgAttr.value() << "\n";
+        // svgNsPrefixes
+        //std::vector<StringType> 
+        auto attrParts = marty_draw_context::utils::simpleStringSplit(std::string(svgAttr.name()), ':', 2 /* nSplits */ );
+
+        if (attrParts.empty())
+        {
+            continue;
+        }
+
+        if (attrParts[0]=="xmlns")
+        {
+            std::string nsPrefix;
+            if (attrParts>1)
+            {
+                nsPrefix = attrParts[0];
+            }
+
+            std::string ns = svgAttr.value();
+            nsPrefixes[ns].insert(nsPrefix);
+            nsPrefixNamespaces[nsPrefix] = ns;
+
+        }
+        else if (attrParts.back()=="width")
+        {
+        }
+        else if (attrParts.back()=="height")
+        {
+        }
+        else if (attrParts.back()=="viewBox")
+        {
+        }
+
+    }
+
+
+
+    // xmlns:dc: http://purl.org/dc/elements/1.1/
+    // xmlns:cc: http://creativecommons.org/ns#
+    // xmlns:rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+    // xmlns:svg: http://www.w3.org/2000/svg
+    // xmlns: http://www.w3.org/2000/svg
+    // xmlns:xlink: http://www.w3.org/1999/xlink
+    // xmlns:sodipodi: http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd
+    // xmlns:inkscape: http://www.inkscape.org/namespaces/inkscape
+    // width: 744.09448819
+    // height: 1052.3622047
+
+    // viewBox="0 0 100 100"
+
+    // marty_draw_context::utils::
+    // std::size_t startsWith(IteratorType b, IteratorType e, IteratorTypeCmpWith bCmpWith, IteratorTypeCmpWith eCmpWith)
+
+
+    // xml_node first_child() const;
+    // xml_node last_child() const;
+    // xml_node next_sibling() const;
+    // xml_node previous_sibling() const;
+    // xml_node next_sibling(const char_t* name) const;
+    // xml_node parent() const;
+    // xml_text text() const;
+    // const char_t* child_value() const;
+    //  
+    // xml_attribute first_attribute() const;
+    // xml_attribute last_attribute() const;
+
+    // for(pugi::xml_node descrNode=genreNode.child("genre-descr"); descrNode; descrNode=descrNode.next_sibling("genre-descr"))
+
+
+    // bool empty() const;
+    //  
+    // // Get attribute name/value, or "" if attribute is empty
+    // const char_t* name() const;
+    // const char_t* value() const;
+    //  
+    // // Get attribute value, or the default value if attribute is empty
+    // const char_t* as_string(const char_t* def = PUGIXML_TEXT("")) const;
+    //  
+    // int as_int(int def = 0) const;
+    // unsigned int as_uint(unsigned int def = 0) const;
+    // double as_double(double def = 0) const;
+    // float as_float(float def = 0) const;
+    // bool as_bool(bool def = false) const;
+    //  
+    // xml_attribute next_attribute() const;
+    // xml_attribute previous_attribute() const;
 }
 
 
