@@ -687,6 +687,25 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
     using umba::lout;
     using namespace umba::omanip;
 
+    std::size_t nextConvertPos = 0;
+    DrawCoord testCoord = DrawCoord::fromString("  100 , +200", &nextConvertPos);
+
+    SizeWithDimensions imageSize;
+    {
+        nextConvertPos = 0;
+        imageSize.width   = SizeWithDimensions::valueFromString("12cm"  , &nextConvertPos);
+        imageSize.height  = SizeWithDimensions::valueFromString("122 px", &nextConvertPos);
+        imageSize.width   = SizeWithDimensions::valueFromString("28 7"  , &nextConvertPos);
+
+        imageSize = SizeWithDimensions();
+    }
+
+    ViewBox imageViewBox;
+    {
+        imageViewBox = ViewBox::fromString("0 0 , 100,200", &nextConvertPos);
+        imageViewBox = ViewBox();
+    }
+
 
     #if 0
     	// Load document from buffer. Copies/converts the buffer, so it may be deleted or changed after the function returns.
@@ -760,12 +779,15 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
         }
         else if (attrParts.back()=="width")
         {
+            imageSize.width   = SizeWithDimensions::valueFromString(svgAttr.value(), &nextConvertPos);
         }
         else if (attrParts.back()=="height")
         {
+            imageSize.height  = SizeWithDimensions::valueFromString(svgAttr.value(), &nextConvertPos);
         }
         else if (attrParts.back()=="viewBox")
         {
+            imageViewBox = ViewBox::fromString(svgAttr.value(), &nextConvertPos);
         }
 
     }
