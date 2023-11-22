@@ -82,10 +82,16 @@ protected:
 
         return (HDC)0;
     }
+
+
+    MultiDrawContextGdi( const MultiDrawContextGdi& ) = delete;
+    MultiDrawContextGdi& operator=( const MultiDrawContextGdi& ) = delete;
+
     
 public:
 
-    
+    MultiDrawContextGdi( MultiDrawContextGdi&& ) = default;
+    MultiDrawContextGdi& operator=( MultiDrawContextGdi&& ) = default;
 
     MultiDrawContextGdi(HDC hdc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
     : MultiDrawContext()

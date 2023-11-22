@@ -673,6 +673,53 @@ void test_drawEmf( marty_draw_context::IDrawContext *pDc
 
 }
 
+
+//! Returns namespace alias
+inline
+std::string parseXmlTagName(const std::string &fullName, std::string &name)
+{
+    std::size_t pos = fullName.find(':');
+    if (pos==fullName.npos)
+    {
+        name = fullName;
+        return std::string(); // return empty ns
+    }
+
+    name = std::string(fullName, pos+1);
+
+    return std::string(fullName, 0, pos);
+}
+
+//! Returns namespace alias
+inline
+std::string parseXmlAttrName(const std::string &fullName, std::string &name)
+{
+    return parseXmlTagName(fullName, name);
+}
+
+//! Returns namespace full name
+inline
+std::string parseXmlTagName(const std::unordered_map< std::string, std::string > &nsAliasToName, const std::string &fullName, std::string &name)
+{
+    std::string nsAlias = parseXmlTagName(fullName, name);
+
+    std::unordered_map< std::string, std::string >::const_iterator it = nsAliasToName.find(nsAlias);
+    if (it==nsAliasToName.end())
+    {
+        throw std::runtime_error("parseXmlTagName: failed to find XML namespace alias");
+    }
+
+    return it->second;
+}
+
+//! Returns namespace full name
+inline
+std::string parseXmlAttrName(const std::unordered_map< std::string, std::string > &nsAliasToName, const std::string &fullName, std::string &name)
+{
+    return parseXmlTagName(nsAliasToName, fullName, name);
+}
+
+
 inline 
 void test_drawSvg( marty_draw_context::IDrawContext *pDc
                  , const std::uint8_t *pData
@@ -706,6 +753,16 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
         imageViewBox = ViewBox();
     }
 
+    {
+        std::string name;
+        std::string ns = parseXmlTagName("svg:rect", name);
+    }
+
+    {
+        std::string name;
+        std::string ns = parseXmlTagName("rect", name);
+    }
+
 
     #if 0
     	// Load document from buffer. Copies/converts the buffer, so it may be deleted or changed after the function returns.
@@ -717,6 +774,7 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
     #endif
 
     static const std::vector<std::string> svgNsNames = { {"http://www.w3.org/2000/svg"} };
+    static const std::string svgNs = "http://www.w3.org/2000/svg";
 
 
     // http://www.w3.org/2000/svg
@@ -754,9 +812,6 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
     pugi::xml_attribute svgAttr = svgNode.first_attribute();
     for(; svgAttr; svgAttr=svgAttr.next_attribute())
     {
-        //lout << "  " << svgAttr.name() << ": " << svgAttr.value() << "\n";
-        // svgNsPrefixes
-        //std::vector<StringType> 
         auto attrParts = marty_draw_context::utils::simpleStringSplit(std::string(svgAttr.name()), ':', 2 /* nSplits */ );
 
         if (attrParts.empty())
@@ -764,6 +819,7 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
             continue;
         }
 
+        
         if (attrParts[0]=="xmlns")
         {
             std::string nsPrefix;
@@ -789,9 +845,25 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
         {
             imageViewBox = ViewBox::fromString(svgAttr.value(), &nextConvertPos);
         }
-
+        
     }
 
+    pugi::xml_node node = svgNode.first_child();
+    for(; node; node=node.next_sibling())
+    {
+        std::string name;
+        std::string ns = parseXmlTagName(nsPrefixNamespaces, node.name(), name);
+        if (ns!=svgNs)
+        {
+            lout << "- Not SVG node: " << node.name() << "\n";
+        }
+        else
+        {
+            lout << "Node: " << name << "\n";
+        }
+    }
+
+    // svgNs
 
 
     // xmlns:dc: http://purl.org/dc/elements/1.1/
