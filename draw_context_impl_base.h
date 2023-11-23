@@ -10,12 +10,19 @@
 #include "marty_cpp/marty_cpp.h"
 #include "marty_draw_context//marty_mbs.h"
 
+#include <atldef.h>
+#include <atlbase.h>
+#include <atlapp.h>
+#include <atlgdi.h>
+//
 #include <vector>
 #include <map>
 #include <utility>
 #include <array>
 
 #include <cmath>
+
+//
 #include "mathHelpers.h"
 #include "dc_win32_enums.h"
 

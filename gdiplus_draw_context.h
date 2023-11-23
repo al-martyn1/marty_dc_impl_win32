@@ -9,6 +9,9 @@
 #include "marty_draw_context/i_draw_context.h"
 #include "draw_context_impl_base.h"
 
+#include <atldef.h>
+#include <atlbase.h>
+#include <atlapp.h>
 #include <atlgdi.h>
 #include <vector>
 #include <exception>
