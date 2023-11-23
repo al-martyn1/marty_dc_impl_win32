@@ -19,6 +19,9 @@
     <WTL_INC_PATH>$(WTL_ROOT)\include</WTL_INC_PATH>
   </PropertyGroup>
   <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(WTL_INC_PATH);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(WTL_INC_PATH);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>

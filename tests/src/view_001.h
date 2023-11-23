@@ -90,12 +90,16 @@ public:
     DrawCoord paraPos      = DrawCoord(50, 42);
     DrawCoord paraLimits   = DrawCoord(42, 10);
 
+    std::string                 rcFullFileName;
     std::vector<std::uint8_t>   emfData;
     std::vector<std::uint8_t>   svgData;
 
 
     CBitmapView()
     {
+        using umba::lout;
+        using namespace umba::omanip;
+
         std::vector<std::string> cmdLineArgs;
         LPSTR lpCmdLine = GetCommandLineA();
         if (lpCmdLine)
@@ -119,21 +123,36 @@ public:
             if (umba::string_plus::ends_with(strTakenFilenameUpper, ".EMF"))
             {
                 emfData = fsApi.readFileBinary(strTakenFilename);
+                if (!emfData.empty())
+                {
+                    rcFullFileName = strTakenFilename;
+                }
             }
             else if (umba::string_plus::ends_with(strTakenFilenameUpper, ".SVG"))
             {
                 svgData = readFileText(strTakenFilename);
+                if (!svgData.empty())
+                {
+                    rcFullFileName = strTakenFilename;
+                }
             }
         }
         else
         {
-            std::string rcFullFileName;
+            
             helpers::findResource( emfData, rcFullFileName, ".emf", true/*binary*/ );
             if (emfData.empty())
             {
                 helpers::findResource( svgData, rcFullFileName, ".svg", false/*text*/ );
             }
         }
+
+        if (!rcFullFileName.empty())
+        {
+            lout << "Vector image resource file: " << rcFullFileName << "\n";
+        }
+
+
     }
 
     BOOL PreTranslateMessage(MSG* pMsg)

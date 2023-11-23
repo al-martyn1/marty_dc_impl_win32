@@ -807,7 +807,7 @@ void test_drawSvg( marty_draw_context::IDrawContext *pDc
 
     std::unordered_set<std::string>  svgPrefixes;
 
-    lout << "SVG attrs:\n";
+    // lout << "SVG attrs:\n";
 
     pugi::xml_attribute svgAttr = svgNode.first_attribute();
     for(; svgAttr; svgAttr=svgAttr.next_attribute())
