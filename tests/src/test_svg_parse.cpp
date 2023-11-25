@@ -136,21 +136,67 @@ int main(int argc, char* argv[])
 
     static const std::string svgNs = "http://www.w3.org/2000/svg";
 
-    pugi::xml_node node = svgNode.first_child();
-    for(; node; node=node.next_sibling())
+    try
     {
-        std::string name;
-        std::string ns = parseXmlTagName(nsPrefixNamespaces, node.name(), name);
-        if (ns!=svgNs)
+        pugi::xml_node node = svgNode.first_child();
+        for(; node; node=node.next_sibling())
         {
-            cerr << "- Not SVG node: " << node.name() << "\n";
-        }
-        else
-        {
-            cerr << "Node: " << name << "\n";
+            std::string name;
+            std::string ns = parseXmlTagName(nsPrefixNamespaces, node.name(), name);
+            if (ns!=svgNs)
+            {
+                cerr << "- Not SVG node: " << node.name() << "\n";
+            }
+            else
+            {
+                std::string nodeValue = node.value();
+    
+                if (name=="title")
+                {
+                }
+                else if (name=="desc")
+                {
+                }
+                else if (name=="path")
+                {
+                    Shape shape = Shape::fromPathXmlNode(node, nsPrefixNamespaces);
+                }
+                else if (name=="rect")
+                {
+                    Shape shape = Shape::fromRectXmlNode(node, nsPrefixNamespaces);
+                }
+                else if (name=="circle")
+                {
+                    Shape shape = Shape::fromCircleXmlNode(node, nsPrefixNamespaces);
+                }
+                else if (name=="ellipse")
+                {
+                    Shape shape = Shape::fromEllipseXmlNode(node, nsPrefixNamespaces);
+                }
+                else if (name=="line")
+                {
+                    Shape shape = Shape::fromLineXmlNode(node, nsPrefixNamespaces);
+                }
+                else if (name=="polyline")
+                {
+                    Shape shape = Shape::fromPolylineXmlNode(node, nsPrefixNamespaces);
+                }
+                else if (name=="polygon")
+                {
+                    Shape shape = Shape::fromPolygonXmlNode(node, nsPrefixNamespaces);
+                }
+                else // if (name=="path")
+                {
+                    cerr << "!!! Unknown tag: " << name << "\n";
+                }
+                
+            }
         }
     }
-
+    catch(const std::exception &e)
+    {
+        cerr << e.what() << "\n";
+    }
 
     return 0;
 }

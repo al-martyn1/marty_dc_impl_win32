@@ -1,0 +1,30 @@
+SVG2                                                    - https://www.w3.org/TR/SVG2/
+Scalable Vector Graphics (SVG) 1.1 (Second Edition)     - https://www.w3.org/TR/SVG11/
+Scalable Vector Graphics (SVG) Tiny 1.2 Specification   - https://www.w3.org/TR/SVGTiny12/
+  1  Introduction        - https://www.w3.org/TR/SVGTiny12/intro.html
+  2  Concepts            - https://www.w3.org/TR/SVGTiny12/concepts.html
+  3  Rendering Model     - https://www.w3.org/TR/SVGTiny12/render.html
+  4  Basic Data Types    - https://www.w3.org/TR/SVGTiny12/types.html
+  5  Document Structure  - https://www.w3.org/TR/SVGTiny12/struct.html
+  6  Styling             - https://www.w3.org/TR/SVGTiny12/styling.html
+  7  Coordinate Systems, Transformations and Units - https://www.w3.org/TR/SVGTiny12/coords.html
+  8  Paths               - https://www.w3.org/TR/SVGTiny12/paths.html
+     https://ru.wikipedia.org/wiki/%D0%9A%D1%80%D0%B8%D0%B2%D0%B0%D1%8F_%D0%91%D0%B5%D0%B7%D1%8C%D0%B5
+  9  Basic Shapes        - https://www.w3.org/TR/SVGTiny12/shapes.html
+  10 Text                - https://www.w3.org/TR/SVGTiny12/text.html
+  11 Painting: Filling, Stroking, Colors and Paint Servers - https://www.w3.org/TR/SVGTiny12/painting.html
+  17 Fonts               - https://www.w3.org/TR/SVGTiny12/fonts.html
+SVG Paths                                               - https://www.w3.org/TR/svg-paths/
+SVG Markers                                             - https://www.w3.org/TR/svg-markers/
+SVG Strokes                                             - https://www.w3.org/TR/svg-strokes/
+SVG Color 1.2, Part 1: Primer                           - https://www.w3.org/TR/SVGColorPrimer12/
+SVG Color 1.2, Part 2: Language                         - https://www.w3.org/TR/SVGColor12/
+SVG Parameters 1.0, Part 1: Primer                      - https://www.w3.org/TR/SVGParamPrimer/
+SVG Parameters 1.0, Part 2: Language                    - https://www.w3.org/TR/SVGParam/
+SVG Filters 1.2, Part 1: Primer                         - https://www.w3.org/TR/SVGFilterPrimer12/
+SVG Filters 1.2, Part 2: Language                       - https://www.w3.org/TR/SVGFilter12/
+SVG Transforms 1.0, Part 2: Language                    - https://www.w3.org/TR/SVG-Transforms/
+SVG 1.1/1.2/2.0 Requirements                            - https://www.w3.org/TR/SVG2Reqs/
+
+
+SVG Integration                                         - https://www.w3.org/TR/svg-integration/
