@@ -80,8 +80,11 @@ int main(int argc, char* argv[])
     }
 
 
-    using namespace marty_draw_context::svg;
+    pugi::xml_node svgNode = svgDoc.document_element();
 
+    //using namespace marty_draw_context::svg;
+
+    #if 0
     SizeWithDimensions imageSize;
     ViewBox imageViewBox;
 
@@ -91,7 +94,7 @@ int main(int argc, char* argv[])
     std::unordered_map< std::string, std::unordered_set<std::string> > nsPrefixes; // "http://www.w3.org/2000/svg" -> {"svg", ""}
     std::unordered_map< std::string, std::string >                     nsPrefixNamespaces; // "svg" -> http://www.w3.org/2000/svg
     
-    pugi::xml_node svgNode = svgDoc.document_element();
+    
 
     {
         pugi::xml_attribute svgAttr = svgNode.first_attribute();
@@ -135,9 +138,14 @@ int main(int argc, char* argv[])
 
 
     static const std::string svgNs = "http://www.w3.org/2000/svg";
+    #endif
 
     try
     {
+        //marty_draw_context::svg::Image 
+        auto img = marty_draw_context::svg::Image::fromSvgXmlNode(svgNode);
+
+        #if 0
         pugi::xml_node node = svgNode.first_child();
         for(; node; node=node.next_sibling())
         {
@@ -145,57 +153,27 @@ int main(int argc, char* argv[])
             std::string ns = parseXmlTagName(nsPrefixNamespaces, node.name(), name);
             if (ns!=svgNs)
             {
-                cerr << "- Not SVG node: " << node.name() << "\n";
+                cerr << "- Not SVG node: " << node.name() << "\n" << std::flush;
             }
             else
             {
-                std::string nodeValue = node.value();
-    
-                if (name=="title")
+                if (Shape::isKnownShapeName(name))
                 {
+                    Shape shape = Shape::fromXmlNode(node, nsPrefixNamespaces);
                 }
-                else if (name=="desc")
+                else
                 {
-                }
-                else if (name=="path")
-                {
-                    Shape shape = Shape::fromPathXmlNode(node, nsPrefixNamespaces);
-                }
-                else if (name=="rect")
-                {
-                    Shape shape = Shape::fromRectXmlNode(node, nsPrefixNamespaces);
-                }
-                else if (name=="circle")
-                {
-                    Shape shape = Shape::fromCircleXmlNode(node, nsPrefixNamespaces);
-                }
-                else if (name=="ellipse")
-                {
-                    Shape shape = Shape::fromEllipseXmlNode(node, nsPrefixNamespaces);
-                }
-                else if (name=="line")
-                {
-                    Shape shape = Shape::fromLineXmlNode(node, nsPrefixNamespaces);
-                }
-                else if (name=="polyline")
-                {
-                    Shape shape = Shape::fromPolylineXmlNode(node, nsPrefixNamespaces);
-                }
-                else if (name=="polygon")
-                {
-                    Shape shape = Shape::fromPolygonXmlNode(node, nsPrefixNamespaces);
-                }
-                else // if (name=="path")
-                {
-                    cerr << "!!! Unknown tag: " << name << "\n";
+                    cerr << "!!! Unknown tag: " << name << "\n" << std::flush;
                 }
                 
-            }
-        }
+            } // if
+
+        } // for
+        #endif
     }
     catch(const std::exception &e)
     {
-        cerr << e.what() << "\n";
+        cerr << e.what() << "\n" << std::flush;
     }
 
     return 0;
