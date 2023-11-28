@@ -7,9 +7,6 @@
 
 #pragma once
 
-#define FILE_MENU_POSITION    0
-#define RECENT_MENU_POSITION    6
-#define POPUP_MENU_POSITION    0
 
 #include "umba/umba.h"
 #include "umba/simple_formatter.h"
@@ -36,7 +33,11 @@ public:
     CBitmapView m_view;
 
 
-    CMainFrame() // : m_bPrintPreview(false)
+    CMainFrame()
+    {
+    }
+
+    ~CMainFrame()
     {
     }
 
@@ -51,11 +52,6 @@ public:
     virtual BOOL OnIdle()
     {
         return FALSE;
-    }
-
-    virtual bool IsValidPage(UINT nPage)
-    {
-        return (nPage == 0);    // we have only one page
     }
 
     BEGIN_MSG_MAP_EX(CMainFrame)

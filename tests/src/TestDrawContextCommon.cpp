@@ -20,7 +20,12 @@
 #include "View.h"
 #include "props.h"
 #include "list.h"
-#include "MainFrm.h"
+
+#if (TESTWINDRAWCONTEXT<4)
+   #include "MainFrm.h"
+#else
+   #include "MainFrm2.h"
+#endif
 
 #include "marty_dc_impl_win32/gdiplus_inc.h"
 

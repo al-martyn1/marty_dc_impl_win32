@@ -24,6 +24,7 @@
 
 
 #include <array>
+#include <functional>
 
 #include <simplesquirrel/simplesquirrel.hpp>
 
@@ -37,6 +38,11 @@
 #include "marty_fs_adapters/simple_file_api.h"
 
 #include "nutHelpers.h"
+
+
+#define CRACK_ON_KEY_UPDOWN_FLAGS_GET_REPETITION_STATE_FLAG(nFlags) (((nFlags)>>(30-16))&0x01)
+#define CRACK_ON_KEY_UPDOWN_FLAGS_GET_PREV_DOWN_STATE_FLAG(nFlags)  CRACK_ON_KEY_UPDOWN_FLAGS_GET_REPETITION_STATE_FLAG((nFlags))
+
 
 
 // #define LOG_SQUIRREL_SOURCES
@@ -103,7 +109,9 @@ void smpPrintLn(ssq::Object val)
 }
 
 
-
+inline
+void voidDoNothing()
+{}
 
 class CBitmapView : public CScrollWindowImpl<CBitmapView>
 {
@@ -127,6 +135,9 @@ public:
     UINT_PTR           mainTimerId    = 0;
     std::uint32_t      lastTimerTick  = 0;
     bool               scriptSomethingFailed = false;
+
+    //<functional>
+    std::function<void()> toggleFullScreen = voidDoNothing; // ([]() -> int& { static int i{0x2A}; return i; }); // OK
 
 
     std::uint32_t getTickDelta()
@@ -486,7 +497,16 @@ public:
         MARTY_ARG_USED(nRepCnt);
         MARTY_ARG_USED(nFlags);
 
-        if (nChar==VK_F5)
+        if (nChar==VK_F11)
+        {
+            auto prevDown = CRACK_ON_KEY_UPDOWN_FLAGS_GET_PREV_DOWN_STATE_FLAG(nFlags);
+            if (!prevDown)
+            {
+                SetMsgHandled(TRUE);
+                toggleFullScreen();
+            }
+        }
+        else if (nChar==VK_F5)
         {
             if (nRepCnt<2)
             {
@@ -496,8 +516,11 @@ public:
 
             return;
         }
+        else
+        {
+            OnKeyEvent(true, (std::uint32_t)nChar, (std::uint32_t)nRepCnt, (std::uint32_t)nFlags);
+        }
 
-        OnKeyEvent(true, (std::uint32_t)nChar, (std::uint32_t)nRepCnt, (std::uint32_t)nFlags);
     }
 
     void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
