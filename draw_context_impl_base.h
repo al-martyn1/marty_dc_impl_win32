@@ -193,6 +193,16 @@ protected:
 
     #include "x_dc_utility_functions.h"
 
+    virtual DrawCoord::value_type distanceBetween( const DrawCoord &pos1, const DrawCoord &pos2 ) const override
+    {
+        return pos1.distanceTo(pos2);
+    }
+
+    virtual DrawCoord reflectPoint   ( const DrawCoord &pos , const DrawCoord &relativeTo ) const override
+    {
+        return pos.reflectTo(relativeTo);
+    }
+
     virtual void freeAllocatedRc() override
     {
         fontsByParams.clear();

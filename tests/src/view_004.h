@@ -116,7 +116,9 @@ void voidDoNothing()
 class CBitmapView : public CScrollWindowImpl<CBitmapView>
 {
 public:
-    DECLARE_WND_CLASS_EX(NULL, 0, -1)
+    //DECLARE_WND_CLASS_EX(NULL, 0, -1)
+    DECLARE_WND_CLASS_EX(NULL, CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS, -1)
+    
 
     //CBitmap m_bmp;
     //SIZE m_size;
@@ -135,10 +137,29 @@ public:
     UINT_PTR           mainTimerId    = 0;
     std::uint32_t      lastTimerTick  = 0;
     bool               scriptSomethingFailed = false;
+    bool               m_bMouseTracking      = false;
+    bool               m_timerUpdateDisabled = false;
+
+    CPoint             cachedBitmapSize;
+    HBITMAP            hbitmapCached = 0;
 
     //<functional>
     std::function<void()> toggleFullScreen = voidDoNothing; // ([]() -> int& { static int i{0x2A}; return i; }); // OK
 
+
+    void trackMouseEvent()
+    {
+        TRACKMOUSEEVENT trme;
+        trme.cbSize      = sizeof(trme);
+        trme.dwFlags     = TME_HOVER | TME_LEAVE;
+        trme.hwndTrack   = m_hWnd;
+        trme.dwHoverTime = (DWORD)HOVER_DEFAULT;
+
+        if (_TrackMouseEvent(&trme))
+        {
+            m_bMouseTracking = true;
+        }
+    }
 
     std::uint32_t getTickDelta()
     {
@@ -366,13 +387,18 @@ public:
                 try{
                     ssq::Function sqOnLoad = marty_simplesquirrel::findFunc(vm, "Game.onLoad");
     
-                    auto res = vm.callFunc(sqOnLoad, vm,  /* appHost, */  bFirstTime);
+                    //auto res = 
+                    vm.callFunc(sqOnLoad, vm,  /* appHost, */  bFirstTime);
     
-                    bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onLoad returned"));
-                    if (needUpdate)
-                    {
-                        invalidateClientArea();
-                    }
+                    //bool needUpdate = 
+                    //marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onLoad returned"));
+                    // if (needUpdate)
+                    // {
+                    //     invalidateClientArea();
+                    // }
+
+                    // При загрузке скрипта форсим рисование безусловно
+                    invalidateClientArea();
 
                     setStatusReady();
                 } 
@@ -401,6 +427,16 @@ public:
 
     CBitmapView(const CBitmapView& ) = delete;
 
+    ~CBitmapView()
+    {
+        if (hbitmapCached)
+        {
+            ::DeleteObject(hbitmapCached);
+        }
+    }
+
+
+
     BOOL PreTranslateMessage(MSG* pMsg)
     {
         MARTY_ARG_USED(pMsg);
@@ -412,6 +448,198 @@ public:
         MARTY_ARG_USED(hBitmap);
     }
 
+
+
+    void OnMouseMoveEvents( marty_draw_context::MouseMoveEventType    moveEventType
+                          , marty_draw_context::MouseButtonStateFlags mbStateFlags
+                          , const CPoint &point
+                          )
+    {
+        // При marty_draw_context::MouseMoveEventType::leave mbStateFlags и point не имеют валидного значения
+
+        if (scriptSomethingFailed)
+        {
+            return;
+        }
+
+        try
+        {
+            ssq::Function sqOnMouseMoveEvents = marty_simplesquirrel::findFunc(vm, "Game.onMouseMoveEvents");
+
+            auto idc = makeDcForMouseHandler();
+            marty_draw_context::IDrawContext *pDc = &idc;
+            appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
+            prepareDrawContext(pDc);
+
+            marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
+
+            CPoint clientSize = getClientSizePoint();
+
+            sqDc.ctxSizeX = (int)clientSize.x;
+            sqDc.ctxSizeY = (int)clientSize.y;
+
+            auto res = vm.callFunc(sqOnMouseMoveEvents, vm,  /* appHost,  */ &sqDc, (int)moveEventType, (int)mbStateFlags, marty_draw_context::simplesquirrel::DrawingCoords((float)point.x, (float)point.y));
+
+            marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onMouseMoveEvents returned"));
+            processCallbackResult(resultFlags);
+
+            setStatusReady();
+
+        }
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
+    }
+
+    void OnMouseButtonEvents( marty_draw_context::MouseButton           mouseButton
+                            , marty_draw_context::MouseButtonEvent      buttonEvent
+                            , marty_draw_context::MouseButtonStateFlags mbStateFlags
+                            , const CPoint &point
+                            )
+    {
+        if (scriptSomethingFailed)
+        {
+            return;
+        }
+
+        try
+        {
+            ssq::Function sqOnMouseButtonEvents = marty_simplesquirrel::findFunc(vm, "Game.onMouseButtonEvents");
+
+            auto idc = makeDcForMouseHandler();
+            marty_draw_context::IDrawContext *pDc = &idc;
+            appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
+            prepareDrawContext(pDc);
+
+            marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
+
+            CPoint clientSize = getClientSizePoint();
+
+            sqDc.ctxSizeX = (int)clientSize.x;
+            sqDc.ctxSizeY = (int)clientSize.y;
+
+            auto res = vm.callFunc(sqOnMouseButtonEvents, vm,  /* appHost,  */ &sqDc, (int)mouseButton, (int)buttonEvent, (int)mbStateFlags, marty_draw_context::simplesquirrel::DrawingCoords((float)point.x, (float)point.y));
+
+            marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onMouseButtonEvents returned"));
+            processCallbackResult(resultFlags);
+
+            setStatusReady();
+
+        }
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
+
+    }
+
+    // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel
+    // Для Wheel событий - отдельный колбэк
+    BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
+    {
+        marty_draw_context::MouseButtonStateFlags mbStateFlags = (marty_draw_context::MouseButtonStateFlags)nFlags;
+
+        if (scriptSomethingFailed)
+        {
+            return TRUE;
+        }
+
+        try
+        {
+            ssq::Function sqOnMouseWheel = marty_simplesquirrel::findFunc(vm, "Game.onMouseWheel");
+
+            auto idc = makeDcForMouseHandler();
+            marty_draw_context::IDrawContext *pDc = &idc;
+            appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
+            prepareDrawContext(pDc);
+
+            marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
+
+            CPoint clientSize = getClientSizePoint();
+
+            sqDc.ctxSizeX = (int)clientSize.x;
+            sqDc.ctxSizeY = (int)clientSize.y;
+
+            auto res = vm.callFunc(sqOnMouseWheel, vm,  /* appHost,  */ &sqDc, (int)zDelta, (int)mbStateFlags, marty_draw_context::simplesquirrel::DrawingCoords((float)point.x, (float)point.y));
+
+            marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onMouseWheel returned"));
+            processCallbackResult(resultFlags);
+
+            setStatusReady();
+
+        }
+        MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
+
+        return TRUE;
+    }
+
+
+    void OnMouseHover(WPARAM wParam /* MK_* */ , CPoint ptPos)
+    {
+        m_bMouseTracking = false;
+        OnMouseMoveEvents(marty_draw_context::MouseMoveEventType::hover, (marty_draw_context::MouseButtonStateFlags)wParam, ptPos);
+    }
+
+    void OnMouseLeave()
+    {
+        m_bMouseTracking = false;
+        OnMouseMoveEvents(marty_draw_context::MouseMoveEventType::leave, marty_draw_context::MouseButtonStateFlags::none, CPoint(0,0));
+    }
+
+    void OnMouseMove(UINT nFlags, CPoint point)
+    {
+        if (!m_bMouseTracking)
+        {
+            // OnMouseMoveEvents(marty_draw_context::MouseMoveEventType::enter, (marty_draw_context::MouseButtonStateFlags)nFlags, point);
+            trackMouseEvent();
+        }
+
+        OnMouseMoveEvents(marty_draw_context::MouseMoveEventType::move, (marty_draw_context::MouseButtonStateFlags)nFlags, point);
+    }
+
+
+    void OnLButtonDown(UINT nFlags, CPoint point)   { OnMouseButtonEvents( marty_draw_context::MouseButton::leftButton  , marty_draw_context::MouseButtonEvent::pressed    , (marty_draw_context::MouseButtonStateFlags)nFlags, point ); }
+    void OnLButtonUp(UINT nFlags, CPoint point)     { OnMouseButtonEvents( marty_draw_context::MouseButton::leftButton  , marty_draw_context::MouseButtonEvent::released   , (marty_draw_context::MouseButtonStateFlags)nFlags, point ); }
+    void OnLButtonDblClk(UINT nFlags, CPoint point) { OnMouseButtonEvents( marty_draw_context::MouseButton::leftButton  , marty_draw_context::MouseButtonEvent::doubleClick, (marty_draw_context::MouseButtonStateFlags)nFlags, point ); }
+    void OnRButtonDown(UINT nFlags, CPoint point)   { OnMouseButtonEvents( marty_draw_context::MouseButton::rightButton , marty_draw_context::MouseButtonEvent::pressed    , (marty_draw_context::MouseButtonStateFlags)nFlags, point ); }
+    void OnRButtonUp(UINT nFlags, CPoint point)     { OnMouseButtonEvents( marty_draw_context::MouseButton::rightButton , marty_draw_context::MouseButtonEvent::released   , (marty_draw_context::MouseButtonStateFlags)nFlags, point ); }
+    void OnRButtonDblClk(UINT nFlags, CPoint point) { OnMouseButtonEvents( marty_draw_context::MouseButton::rightButton , marty_draw_context::MouseButtonEvent::doubleClick, (marty_draw_context::MouseButtonStateFlags)nFlags, point ); }
+    void OnMButtonDown(UINT nFlags, CPoint point)   { OnMouseButtonEvents( marty_draw_context::MouseButton::middleButton, marty_draw_context::MouseButtonEvent::pressed    , (marty_draw_context::MouseButtonStateFlags)nFlags, point ); }
+    void OnMButtonUp(UINT nFlags, CPoint point)     { OnMouseButtonEvents( marty_draw_context::MouseButton::middleButton, marty_draw_context::MouseButtonEvent::released   , (marty_draw_context::MouseButtonStateFlags)nFlags, point ); }
+    void OnMButtonDblClk(UINT nFlags, CPoint point) { OnMouseButtonEvents( marty_draw_context::MouseButton::middleButton, marty_draw_context::MouseButtonEvent::doubleClick, (marty_draw_context::MouseButtonStateFlags)nFlags, point ); }
+
+    void OnXButtonDown(int fwButton, int dwKeys, CPoint point)
+    {
+        if (fwButton&XBUTTON1)
+        {
+            OnMouseButtonEvents( marty_draw_context::MouseButton::xButton1, marty_draw_context::MouseButtonEvent::pressed    , (marty_draw_context::MouseButtonStateFlags)dwKeys, point );
+        }
+        if (fwButton&XBUTTON2)
+        {
+            OnMouseButtonEvents( marty_draw_context::MouseButton::xButton2, marty_draw_context::MouseButtonEvent::pressed    , (marty_draw_context::MouseButtonStateFlags)dwKeys, point );
+        }
+    }
+
+    void OnXButtonUp(int fwButton, int dwKeys, CPoint point)
+    {
+        if (fwButton&XBUTTON1)
+        {
+            OnMouseButtonEvents( marty_draw_context::MouseButton::xButton1, marty_draw_context::MouseButtonEvent::released   , (marty_draw_context::MouseButtonStateFlags)dwKeys, point );
+        }
+        if (fwButton&XBUTTON2)
+        {
+            OnMouseButtonEvents( marty_draw_context::MouseButton::xButton2, marty_draw_context::MouseButtonEvent::released   , (marty_draw_context::MouseButtonStateFlags)dwKeys, point );
+        }
+    }
+
+    void OnXButtonDblClk(int fwButton, int dwKeys, CPoint point)
+    {
+        if (fwButton&XBUTTON1)
+        {
+            OnMouseButtonEvents( marty_draw_context::MouseButton::xButton1, marty_draw_context::MouseButtonEvent::doubleClick, (marty_draw_context::MouseButtonStateFlags)dwKeys, point );
+        }
+        if (fwButton&XBUTTON2)
+        {
+            OnMouseButtonEvents( marty_draw_context::MouseButton::xButton2, marty_draw_context::MouseButtonEvent::doubleClick, (marty_draw_context::MouseButtonStateFlags)dwKeys, point );
+        }
+    }
+
+
     BEGIN_MSG_MAP(CBitmapView)
         MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBackground)
         MSG_WM_CREATE(OnCreate)
@@ -420,12 +648,39 @@ public:
         MSG_WM_KEYUP(OnKeyUp)
         MSG_WM_SIZE(OnSize)
         MSG_WM_SIZING(OnSizing)
+
+        MSG_WM_MOUSEHOVER(OnMouseHover)
+        MSG_WM_MOUSELEAVE(OnMouseLeave)
+
+        MSG_WM_MOUSEWHEEL(OnMouseWheel)
+
+        MSG_WM_MOUSEMOVE(OnMouseMove)
+
+        MSG_WM_LBUTTONDOWN(OnLButtonDown)
+        MSG_WM_LBUTTONUP(OnLButtonUp)
+        MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
+
+        MSG_WM_RBUTTONDOWN(OnRButtonDown)
+        MSG_WM_RBUTTONUP(OnRButtonUp)
+        MSG_WM_RBUTTONDBLCLK(OnRButtonDblClk)
+
+        MSG_WM_MBUTTONDOWN(OnMButtonDown)
+        MSG_WM_MBUTTONUP(OnMButtonUp)
+        MSG_WM_MBUTTONDBLCLK(OnMButtonDblClk)
+
+        MSG_WM_XBUTTONDOWN(OnXButtonDown)
+        MSG_WM_XBUTTONUP(OnXButtonUp)
+        MSG_WM_XBUTTONDBLCLK(OnXButtonDblClk)
+
         CHAIN_MSG_MAP(CScrollWindowImpl<CBitmapView>);
+
     END_MSG_MAP()
 
     int OnCreate(LPCREATESTRUCT lpCreateStruct)
     {
         MARTY_ARG_USED(lpCreateStruct);
+
+        trackMouseEvent();
 
         reloadScript(true);
 
@@ -439,12 +694,45 @@ public:
         InvalidateRect(0, FALSE);
     }
 
+
+    void processCallbackResult(marty_draw_context::CallbackResultFlags resultFlags)
+    {
+        if ((resultFlags&marty_draw_context::CallbackResultFlags::repaint)!=0)
+        {
+            invalidateClientArea();
+        }
+
+        if ((resultFlags&marty_draw_context::CallbackResultFlags::captureMouse)!=0)
+        {
+            ::SetCapture(m_hWnd);
+        }
+        else if ((resultFlags&marty_draw_context::CallbackResultFlags::releaseCapture)!=0)
+        {
+            ::ReleaseCapture();
+        }
+
+        if ((resultFlags&marty_draw_context::CallbackResultFlags::disableTimerUpdate)!=0)
+        {
+            m_timerUpdateDisabled = true;
+        }
+        else if ((resultFlags&marty_draw_context::CallbackResultFlags::enableTimerUpdate)!=0)
+        {
+            m_timerUpdateDisabled = false;
+        }
+
+    }
+
     void OnTimer(UINT_PTR nIDEvent)
     {
         using umba::lout;
         using namespace umba::omanip;
 
         if (scriptSomethingFailed)
+        {
+            return;
+        }
+
+        if (m_timerUpdateDisabled)
         {
             return;
         }
@@ -463,12 +751,9 @@ public:
                     ssq::Function sqOnUpdate = marty_simplesquirrel::findFunc(vm, "Game.onUpdate");
                     auto res = vm.callFunc(sqOnUpdate, vm,  /* appHost,  */ tickDelta);
     
-                    bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onUpdate returned"));
+                    marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onUpdate returned"));
+                    processCallbackResult(resultFlags);
                     //needUpdate = true;
-                    if (needUpdate)
-                    {
-                        invalidateClientArea();
-                    }
 
                     timerHandlerFails = false;
                 }
@@ -554,11 +839,8 @@ public:
 
             auto res = vm.callFunc(sqOnKeyEvent, vm,  /* appHost,  */ bDown, nChar, nRepCnt);
 
-            bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onKeyEvent returned"));
-            if (needUpdate)
-            {
-                invalidateClientArea();
-            }
+            marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onKeyEvent returned"));
+            processCallbackResult(resultFlags);
 
             setStatusReady();
 
@@ -605,11 +887,8 @@ public:
     
                 auto res = vm.callFunc(sqOnSizeEvent, vm,  /* appHost,  */ (int)nType, sz);
     
-                bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onWindowSize returned"));
-                if (needUpdate)
-                {
-                    invalidateClientArea();
-                }
+                marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onWindowSize returned"));
+                processCallbackResult(resultFlags);
     
                 setStatusReady();
            
@@ -642,11 +921,8 @@ public:
     
                 auto res = vm.callFunc(sqOnSizeEvent, vm,  /* appHost,  */ (int)fwSide, sz);
     
-                bool needUpdate = marty_simplesquirrel::fromObjectConvertHelper<bool>(res, _SC("Game::onWindowSizing returned"));
-                if (needUpdate)
-                {
-                    invalidateClientArea();
-                }
+                marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onWindowSizing returned"));
+                processCallbackResult(resultFlags);
     
                 setStatusReady();
            
@@ -702,57 +978,38 @@ public:
         return 0;
     }
 
-    void DoPaint(CDCHandle dc)
-    {
 
+    CPoint getClientSizePoint()
+    {
         RECT clientRect{0,0};
         ::GetClientRect(m_hWnd, &clientRect);
 
         auto cx = clientRect.right  - clientRect.left; // + 1;
         auto cy = clientRect.bottom - clientRect.top ; // + 1;
 
+        return CPoint(cx,cy);
+    }
 
-        enum resolution
-        {
-            w = 800,
-            h = 600
-        };
+    void DoPaint(CDCHandle dc)
+    {
+        CPoint clientSize = getClientSizePoint();
+        cachedBitmapSize  = clientSize;
 
-
-
-        // HDC memDc = ::CreateCompatibleDC(dc.m_hDC);
         CDC memDc = ::CreateCompatibleDC(dc.m_hDC);
 
-        HBITMAP hMemBmp  = ::CreateCompatibleBitmap ( dc.m_hDC, cx, cy );
-        //HBITMAP hOldBmp = (HBITMAP)::SelectObject(memDc.m_hDC, hMemBmp);
+        HBITMAP hMemBmp  = ::CreateCompatibleBitmap ( dc.m_hDC, clientSize.x, clientSize.y );
         HBITMAP hOldBmp = memDc.SelectBitmap(hMemBmp);
 
         RECT clRect;
         clRect.left   = 0;
         clRect.top    = 0;
-        clRect.right  = cx;
-        clRect.bottom = cy;
+        clRect.right  = clientSize.x;
+        clRect.bottom = clientSize.y;
         //::FillRect(memDc, &clRect, (HBRUSH)COLOR_WINDOW);
         memDc.FillRect(&clRect, (HBRUSH)COLOR_WINDOW);
         //memDc.FillRect(&clRect, (HBRUSH)COLOR_HOTLIGHT);
         
-
-        #if 0
-        ::BitBlt( memDc     // A handle to the destination device context.
-                , 0, 0         //dstX, dstY   // The x/y-coordinates, in logical units, of the upper-left corner of the destination rectangle.
-                , cx, cy       // The width/height, in logical units, of the source and destination rectangles.
-                , dc.m_hDC        // hdcCopyFrom  // A handle to the source device context.
-                , 0, 0         // The x/y-coordinate, in logical units, of the upper-left corner of the source rectangle.
-                , SRCCOPY      // A raster-operation code - Copies the source rectangle directly to the destination rectangle.
-                );
-        #endif
-
-
-        #ifdef TEST_DC_USE_GDIPLUS
-            auto idc = marty_draw_context::makeMultiDrawContext(memDc.m_hDC, true  /* prefferGdiPlus */);
-        #else
-            auto idc = marty_draw_context::makeMultiDrawContext(memDc.m_hDC, false /* prefferGdiPlus */);
-        #endif
+        auto idc = makeMultiDc(memDc.m_hDC, marty_draw_context::HdcReleaseMode::doNothing, m_hWnd);
 
         IDrawContext *pDc = &idc;
 
@@ -762,23 +1019,76 @@ public:
 
         ::BitBlt( dc.m_hDC       // A handle to the destination device context.
                 , 0, 0           //dstX, dstY   // The x/y-coordinates, in logical units, of the upper-left corner of the destination rectangle.
-                , cx, cy         // The width/height, in logical units, of the source and destination rectangles.
+                , clientSize.x, clientSize.y         // The width/height, in logical units, of the source and destination rectangles.
                 , memDc.m_hDC    // hdcCopyFrom  // A handle to the source device context.
                 , 0, 0           // The x/y-coordinate, in logical units, of the upper-left corner of the source rectangle.
                 , SRCCOPY        // A raster-operation code - Copies the source rectangle directly to the destination rectangle.
                 );
 
         ::SelectObject(memDc, hOldBmp);
-        ::DeleteObject(hMemBmp);
-        //::DeleteDC(memDc);
+
+        if (hbitmapCached)
+        {
+            ::DeleteObject(hbitmapCached);
+        }
+
+        hbitmapCached = hMemBmp;
 
     }
 
+    // marty_draw_context::HdcReleaseMode::doNothing
+    marty_draw_context::MultiDrawContext makeMultiDc(HDC hdc, marty_draw_context::HdcReleaseMode hdcReleaseMode, HWND hwnd)
+    {
+        #ifdef TEST_DC_USE_GDIPLUS
+            return marty_draw_context::makeMultiDrawContext(hdc, true  /* prefferGdiPlus */, hdcReleaseMode, hwnd);
+        #else
+            return marty_draw_context::makeMultiDrawContext(hdc, false /* prefferGdiPlus */, hdcReleaseMode, hwnd);
+        #endif
+    }
+
+    // MultiDrawContextGdi(HDC hdc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
+    //MultiDrawContext makeMultiDrawContext(HDC hdc, bool prefferGdiPlus = false, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
+
+    void copyCachedBitmapToHdc(HDC hdc)
+    {
+        if (!hbitmapCached)
+        {
+            return;
+        }
+
+        CDC memDc       = ::CreateCompatibleDC(hdc);
+        HBITMAP hOldBmp = memDc.SelectBitmap(hbitmapCached);
+
+        ::BitBlt( hdc            // A handle to the destination device context.
+                , 0, 0           //dstX, dstY   // The x/y-coordinates, in logical units, of the upper-left corner of the destination rectangle.
+                , cachedBitmapSize.x, cachedBitmapSize.y         // The width/height, in logical units, of the source and destination rectangles.
+                , memDc.m_hDC    // hdcCopyFrom  // A handle to the source device context.
+                , 0, 0           // The x/y-coordinate, in logical units, of the upper-left corner of the source rectangle.
+                , SRCCOPY        // A raster-operation code - Copies the source rectangle directly to the destination rectangle.
+                );
+
+        ::SelectObject(memDc, hOldBmp);
+    }
+
+
+    marty_draw_context::MultiDrawContext makeDcForMouseHandler()
+    {
+        HDC hdc = ::GetDC(m_hWnd);
+        copyCachedBitmapToHdc(hdc);
+        marty_draw_context::MultiDrawContext mdc = makeMultiDc(hdc, marty_draw_context::HdcReleaseMode::releaseDc, m_hWnd);
+        return mdc;
+    }
+
+    void prepareDrawContext( marty_draw_context::IDrawContext *pDc )
+    {
+        pDc->setStringEncoding("UTF-8");
+        pDc->setBkMode( BkMode::transparent );
+        pDc->setSmoothingMode(SmoothingMode::antiAlias); // highSpeed highQuality antiAlias defMode none
+    }
+
+    
     void DoPaintImpl( marty_draw_context::IDrawContext *pDc )
     {
-        using umba::lout;
-        using namespace umba::omanip;
-
         if (scriptSomethingFailed)
         {
             return;
@@ -789,22 +1099,14 @@ public:
         try{
             ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onPaint");
 
-            pDc->setStringEncoding("UTF-8");
-            pDc->setBkMode( BkMode::transparent );
-            pDc->setSmoothingMode(SmoothingMode::antiAlias); // highSpeed highQuality antiAlias defMode none
+            prepareDrawContext(pDc);
 
-
-            //lout << "DoPaintImpl: call onPaint from script\n";
             marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
 
-            RECT clientRect{0,0};
-            ::GetClientRect(m_hWnd, &clientRect);
+            CPoint clientSize = getClientSizePoint();
 
-            auto cx = clientRect.right  - clientRect.left; // + 1;
-            auto cy = clientRect.bottom - clientRect.top ; // + 1;
-            // lout << "OnPaint: cx: " << cx << ", cy: " << cy <<"\n";
-            sqDc.ctxSizeX = (int)(cx);
-            sqDc.ctxSizeY = (int)(cy);
+            sqDc.ctxSizeX = (int)clientSize.x;
+            sqDc.ctxSizeY = (int)clientSize.y;
 
             vm.callFunc(sqOnPaint, vm,  /* appHost,  */ &sqDc);
             //vm.callFunc(sqOnPaint, vm, sqDc);

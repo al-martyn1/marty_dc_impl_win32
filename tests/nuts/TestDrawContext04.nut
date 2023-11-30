@@ -15,6 +15,10 @@ keyState[Vk.Code.Up   ] <- 0;
 keyState[Vk.Code.Down ] <- 0;
 
 
+local currentPressedMouseButton = Drawing.MouseButton.None;
+local mouseButtonPressedPos     = Drawing.Coords(0,0);
+
+
 function formatCoord(c)
 {
     return "(" + c.x.tostring() + ";" + c.y.tostring() + ")";
@@ -47,6 +51,12 @@ function keySpeed(vk)
     }
 }
 
+function prepareDc(dc)
+{
+    dc.setOffset(Drawing.Coords(10,10));
+    local scale = 5;
+    dc.setScale(Drawing.Scale(scale,scale));
+}
 
 function Game::onLoad(bFirstTime)
 {
@@ -149,12 +159,11 @@ function Game::onKeyEvent(bDown, nChar, nRepCnt)
 
 function Game::onPaint(dc)
 {
+    smpprintln("Game::onPaint");
+
     local D = Drawing;
 
-    dc.setOffset(D.Coords(10,10));
-
-    local scale = 5;
-    dc.setScale(D.Scale(scale,scale));
+    prepareDc(dc);
 
     local px1 = dc.getPixelSize();
 
@@ -240,6 +249,144 @@ function Game::onPaint(dc)
 
 }
 
+// must return on of:
+//   Drawing.CallbackResultFlags.None
+//   Drawing.CallbackResultFlags.Repaint
+//   Drawing.CallbackResultFlags.CaptureMouse
+//   Drawing.CallbackResultFlags.ReleaseCapture
+//   Drawing.CallbackResultFlags.DisableTimerUpdate
+//   Drawing.CallbackResultFlags.EnableTimerUpdate
 
+// Если moveEventType равно Leave, то mbStateFlags и point содержат мусор
+//   Drawing.MouseMoveEventType.Move
+//   Drawing.MouseMoveEventType.Hover
+//   Drawing.MouseMoveEventType.Leave
+
+// mbStateFlags
+//   Drawing.MouseButtonStateFlags.None
+//   Drawing.MouseButtonStateFlags.LeftButtonPressed
+//   Drawing.MouseButtonStateFlags.RightButtonPressed
+//   Drawing.MouseButtonStateFlags.ShiftPressed
+//   Drawing.MouseButtonStateFlags.ControlPressed
+//   Drawing.MouseButtonStateFlags.MiddleButtonPressed
+//   Drawing.MouseButtonStateFlags.XButton1Pressed
+//   Drawing.MouseButtonStateFlags.XButton2Pressed
+
+// point - точка в клиентской части, если задаётся масштаб/офсет, то надо не забыть вызвать для точки dc.mapRawToLogicPos(point)
+
+function Game::onMouseMoveEvents(dc, moveEventType, mbStateFlags, point)
+{
+    local D = Drawing;
+
+    //smpprintln("onMouseMoveEvents");
+
+    prepareDc(dc);
+    point = dc.mapRawToLogicPos(point);
+
+    if (moveEventType==D.MouseMoveEventType.Move && (currentPressedMouseButton==D.MouseButton.LeftButton || currentPressedMouseButton==D.MouseButton.RightButton))
+    {
+        smpprintln("onMouseMoveEvents while button pressed");
+
+        local px = dc.getPixelSize();
+
+        local clr = D.Colors.Green;
+        if (currentPressedMouseButton==D.MouseButton.RightButton)
+        {
+            clr = D.Colors.Blue;
+        }
+
+        local pixel3Pen  = dc.createSolidPen(D.PenParams(px.x*3, D.LineEndcapStyle.Round, D.LineJoinStyle.Round), clr);
+        dc.selectPen(pixel3Pen);
+
+        if (currentPressedMouseButton==Drawing.MouseButton.LeftButton)
+        {
+            dc.rect(mouseButtonPressedPos, point);
+        }
+
+        if (currentPressedMouseButton==Drawing.MouseButton.RightButton)
+        {
+            local distance = dc.distanceBetween(mouseButtonPressedPos, point);
+            dc.circle(mouseButtonPressedPos, distance);
+        }
+
+    }
+
+    return D.CallbackResultFlags.None;
+}
+
+// mouseButton
+//   Drawing.MouseButton.None
+//   Drawing.MouseButton.LeftButton
+//   Drawing.MouseButton.RightButton  
+//   Drawing.MouseButton.MiddleButton
+//   Drawing.MouseButton.XButton1
+//   Drawing.MouseButton.XButton2
+
+// buttonEvent
+//   Drawing.MouseButtonEvent.Released
+//   Drawing.MouseButtonEvent.Pressed
+//   Drawing.MouseButtonEvent.DoubleClick
+
+function Game::onMouseButtonEvents(dc, mouseButton, buttonEvent, mbStateFlags, point)
+{
+    local D = Drawing;
+
+    smpprint("onMouseButtonEvents ");
+
+    prepareDc(dc);
+    point = dc.mapRawToLogicPos(point);
+
+    if (buttonEvent==Drawing.MouseButtonEvent.Pressed)
+    {
+        smpprint(", pressed");
+
+        if (currentPressedMouseButton!=Drawing.MouseButton.None)
+        {
+            smpprintln(", something already pressed");
+            return Drawing.CallbackResultFlags.None; // Какая-то кнопка уже нажата, на вторую не реагируем
+        }
+
+        if (mouseButton==Drawing.MouseButton.LeftButton || mouseButton==Drawing.MouseButton.RightButton)
+        {
+            smpprintln(", pressed L/R button at {" + point.toString() + "}");
+            currentPressedMouseButton = mouseButton;
+            mouseButtonPressedPos     = point;
+            return Drawing.CallbackResultFlags.CaptureMouse | Drawing.CallbackResultFlags.DisableTimerUpdate; // Нужно сделать захват мыши, чтобы события о перемещении мыши приходили в окно даже если мышь за пределами окна
+        }
+    }
+
+    else if (buttonEvent==Drawing.MouseButtonEvent.Released)
+    {
+        smpprint(", released");
+
+        if (currentPressedMouseButton==mouseButton) // Отпущенная кнопка соответствует тому, что зафиксировано
+        {
+            smpprintln(", same as pressed");
+            currentPressedMouseButton = Drawing.MouseButton.None; // Очищаем зафиксированное нажатие
+            return Drawing.CallbackResultFlags.ReleaseCapture | Drawing.CallbackResultFlags.EnableTimerUpdate;
+        }
+    }
+
+    else
+    {
+    }
+
+    smpprintln("");
+
+    return D.CallbackResultFlags.None;
+}
+
+
+function Game::onMouseWheel(dc, zDelta, mbStateFlags, point)
+{
+    local D = Drawing;
+
+    //smpprintln("onMouseWheel");
+
+    prepareDc(dc);
+    point = dc.mapRawToLogicPos(point);
+
+    return D.CallbackResultFlags.None;
+}
 
 
