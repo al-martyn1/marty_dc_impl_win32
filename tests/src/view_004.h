@@ -581,6 +581,7 @@ public:
         OnMouseMoveEvents(marty_draw_context::MouseMoveEventType::leave, marty_draw_context::MouseButtonStateFlags::none, CPoint(0,0));
     }
 
+    // https://learn.microsoft.com/en-us/windows/win32/gdi/drawing-with-the-mouse
     void OnMouseMove(UINT nFlags, CPoint point)
     {
         if (!m_bMouseTracking)
@@ -1070,6 +1071,12 @@ public:
         ::SelectObject(memDc, hOldBmp);
     }
 
+    void prepareDrawContext( marty_draw_context::IDrawContext *pDc )
+    {
+        pDc->setStringEncoding("UTF-8");
+        pDc->setBkMode( BkMode::transparent );
+        pDc->setSmoothingMode(SmoothingMode::antiAlias); // highSpeed highQuality antiAlias defMode none
+    }
 
     marty_draw_context::MultiDrawContext makeDcForMouseHandler()
     {
@@ -1077,13 +1084,6 @@ public:
         copyCachedBitmapToHdc(hdc);
         marty_draw_context::MultiDrawContext mdc = makeMultiDc(hdc, marty_draw_context::HdcReleaseMode::releaseDc, m_hWnd);
         return mdc;
-    }
-
-    void prepareDrawContext( marty_draw_context::IDrawContext *pDc )
-    {
-        pDc->setStringEncoding("UTF-8");
-        pDc->setBkMode( BkMode::transparent );
-        pDc->setSmoothingMode(SmoothingMode::antiAlias); // highSpeed highQuality antiAlias defMode none
     }
 
     

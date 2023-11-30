@@ -19,9 +19,9 @@ struct MultiDrawContextGdi : public MultiDrawContext
 
 protected:
 
-    HDC                 m_hdc; // m_dc.m_hDC
+    HDC                 m_hdc  = 0; // m_dc.m_hDC
     HdcReleaseMode      m_hdcReleaseMode = HdcReleaseMode::doNothing;
-    HWND                m_hwnd;
+    HWND                m_hwnd = 0;
 
 
     static
@@ -90,8 +90,30 @@ protected:
     
 public:
 
-    MultiDrawContextGdi( MultiDrawContextGdi&& ) = default;
-    MultiDrawContextGdi& operator=( MultiDrawContextGdi&& ) = default;
+    //TODO: !!! Есть проблема, мне, в силу недостаточных знаний современных плюсиков, видятся тут всевозможные грабли
+    MultiDrawContextGdi( MultiDrawContextGdi&& mdcOther)
+        : MultiDrawContext(std::move(mdcOther))
+        , m_hdc           (std::move(mdcOther.m_hdc           ))
+        , m_hdcReleaseMode(std::move(mdcOther.m_hdcReleaseMode))
+        , m_hwnd          (std::move(mdcOther.m_hwnd          ))
+    {}
+
+    MultiDrawContextGdi& operator=( MultiDrawContextGdi&& mdcOther)
+    {
+        m_hdc            = std::move(mdcOther.m_hdc           );
+        m_hdcReleaseMode = std::move(mdcOther.m_hdcReleaseMode);
+        m_hwnd           = std::move(mdcOther.m_hwnd          );
+
+        MultiDrawContext::operator=(std::move(mdcOther));
+
+        return *this;
+    }
+
+
+    // HDC                 m_hdc; // m_dc.m_hDC
+    // HdcReleaseMode      m_hdcReleaseMode = HdcReleaseMode::doNothing;
+    // HWND                m_hwnd;
+    //  
 
     MultiDrawContextGdi(HDC hdc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
     : MultiDrawContext()
