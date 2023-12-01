@@ -22,7 +22,6 @@
 #include "marty_dc_impl_win32/multi_dc.h"
 
 
-
 #include <array>
 #include <functional>
 
@@ -1100,23 +1099,25 @@ public:
 
     }
 
-    // marty_draw_context::HdcReleaseMode::doNothing
-    marty_draw_context::MultiDrawContext makeMultiDc(HDC hdc, marty_draw_context::HdcReleaseMode hdcReleaseMode, HWND hwnd)
+    marty_draw_context::MultiDrawContextGdi makeMultiDc(HDC hdc, marty_draw_context::HdcReleaseMode hdcReleaseMode, HWND hwnd)
     {
         #ifdef TEST_DC_USE_GDIPLUS
-            return marty_draw_context::makeMultiDrawContext(hdc, true  /* prefferGdiPlus */, hdcReleaseMode, hwnd);
+            return marty_draw_context::makeMultiDrawContextGdi(hdc, true  /* prefferGdiPlus */, hdcReleaseMode, hwnd);
         #else
-            return marty_draw_context::makeMultiDrawContext(hdc, false /* prefferGdiPlus */, hdcReleaseMode, hwnd);
+            return marty_draw_context::makeMultiDrawContextGdi(hdc, false /* prefferGdiPlus */, hdcReleaseMode, hwnd);
         #endif
     }
-
-    // MultiDrawContextGdi(HDC hdc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
-    //MultiDrawContext makeMultiDrawContext(HDC hdc, bool prefferGdiPlus = false, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
 
     void copyCachedBitmapToHdc(HDC hdc)
     {
         if (!hbitmapCached)
         {
+            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+            using umba::lout;
+            lout << "copyCachedBitmapToHdc, hbitmapCached\n";
+            umba::lout.flush();
+            #endif
+
             return;
         }
 
@@ -1141,11 +1142,11 @@ public:
         pDc->setSmoothingMode(SmoothingMode::antiAlias); // highSpeed highQuality antiAlias defMode none
     }
 
-    marty_draw_context::MultiDrawContext makeDcForMouseHandler()
+    marty_draw_context::MultiDrawContextGdi makeDcForMouseHandler()
     {
         HDC hdc = ::GetDC(m_hWnd);
         copyCachedBitmapToHdc(hdc);
-        marty_draw_context::MultiDrawContext mdc = makeMultiDc(hdc, marty_draw_context::HdcReleaseMode::releaseDc, m_hWnd);
+        marty_draw_context::MultiDrawContextGdi mdc  = makeMultiDc(hdc, marty_draw_context::HdcReleaseMode::releaseDc, m_hWnd);
         return mdc;
     }
 
@@ -1154,6 +1155,12 @@ public:
     {
         if (scriptSomethingFailed)
         {
+            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+            using umba::lout;
+            lout << "DoPaintImpl, scriptSomethingFailed\n";
+            umba::lout.flush();
+            #endif
+
             return;
         }
 

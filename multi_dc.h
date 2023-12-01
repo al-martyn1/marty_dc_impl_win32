@@ -84,6 +84,7 @@ protected:
     }
 
 
+    MultiDrawContextGdi( ) = delete;
     MultiDrawContextGdi( const MultiDrawContextGdi& ) = delete;
     MultiDrawContextGdi& operator=( const MultiDrawContextGdi& ) = delete;
 
@@ -138,7 +139,7 @@ public:
 
 
 inline
-MultiDrawContext makeMultiDrawContext(HDC hdc, bool prefferGdiPlus = false, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
+MultiDrawContextGdi makeMultiDrawContextGdi(HDC hdc, bool prefferGdiPlus = false, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
 {
     MultiDrawContextGdi mdc = MultiDrawContextGdi(hdc, hdcReleaseMode, hwnd);
 
@@ -179,7 +180,7 @@ MultiDrawContext makeMultiDrawContext(HDC hdc, bool prefferGdiPlus = false, HdcR
 
 
 inline
-std::shared_ptr<IDrawContext> makeSharedMultiDrawContext(HDC hdc, bool prefferGdiPlus = false, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
+std::shared_ptr<IDrawContext> makeSharedMultiDrawContextGdi(HDC hdc, bool prefferGdiPlus = false, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
 {
     std::shared_ptr<MultiDrawContextGdi> mdc = std::make_shared<MultiDrawContextGdi>(hdc, hdcReleaseMode, hwnd);
 
