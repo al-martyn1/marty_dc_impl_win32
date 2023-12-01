@@ -39,6 +39,8 @@
 
 #include "nutHelpers.h"
 
+#define VIEW04_LOG_SQUIRREL_CALLS
+
 
 #define CRACK_ON_KEY_UPDOWN_FLAGS_GET_REPETITION_STATE_FLAG(nFlags) (((nFlags)>>(30-16))&0x01)
 #define CRACK_ON_KEY_UPDOWN_FLAGS_GET_PREV_DOWN_STATE_FLAG(nFlags)  CRACK_ON_KEY_UPDOWN_FLAGS_GET_REPETITION_STATE_FLAG((nFlags))
@@ -385,6 +387,12 @@ public:
             else // loaded
             {
                 try{
+                    #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+                    using umba::lout;
+                    lout << "try squirrel Game.onLoad\n";
+                    umba::lout.flush();
+                    #endif
+
                     ssq::Function sqOnLoad = marty_simplesquirrel::findFunc(vm, "Game.onLoad");
     
                     //auto res = 
@@ -420,6 +428,19 @@ public:
         {
             lout << encoding::toUtf8(str);
         };
+
+        #if 0
+        using namespace std;
+        #include "tmp.cpp"
+
+        auto res1 = Solution().solveEquation("x+5-3+x=6+x-2");
+        auto res2 = Solution().solveEquation("x=x");
+        auto res3 = Solution().solveEquation("2x=x");
+
+        lout << res1 << "\n";
+        lout << res2 << "\n";
+        lout << res3 << "\n";
+        #endif
 
         Sleep(300);
         
@@ -464,6 +485,12 @@ public:
 
         try
         {
+            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+            using umba::lout;
+            lout << "try squirrel Game.onMouseMoveEvents, moveEventType: " << enum_serialize(moveEventType) << ", mbStateFlags: " << enum_serialize_flags(mbStateFlags) << "\n";
+            umba::lout.flush();
+            #endif
+
             ssq::Function sqOnMouseMoveEvents = marty_simplesquirrel::findFunc(vm, "Game.onMouseMoveEvents");
 
             auto idc = makeDcForMouseHandler();
@@ -502,6 +529,12 @@ public:
 
         try
         {
+            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+            using umba::lout;
+            lout << "try squirrel Game.onMouseButtonEvents\n";
+            umba::lout.flush();
+            #endif
+
             ssq::Function sqOnMouseButtonEvents = marty_simplesquirrel::findFunc(vm, "Game.onMouseButtonEvents");
 
             auto idc = makeDcForMouseHandler();
@@ -541,6 +574,12 @@ public:
 
         try
         {
+            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+            using umba::lout;
+            lout << "try squirrel Game.onMouseWheel\n";
+            umba::lout.flush();
+            #endif
+
             ssq::Function sqOnMouseWheel = marty_simplesquirrel::findFunc(vm, "Game.onMouseWheel");
 
             auto idc = makeDcForMouseHandler();
@@ -749,6 +788,12 @@ public:
 
                 try
                 {
+                    #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+                    using umba::lout;
+                    lout << "try squirrel Game.onUpdate\n";
+                    umba::lout.flush();
+                    #endif
+        
                     ssq::Function sqOnUpdate = marty_simplesquirrel::findFunc(vm, "Game.onUpdate");
                     auto res = vm.callFunc(sqOnUpdate, vm,  /* appHost,  */ tickDelta);
     
@@ -836,6 +881,12 @@ public:
         }
 
         try{
+            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+            using umba::lout;
+            lout << "try squirrel Game.onKeyEvent\n";
+            umba::lout.flush();
+            #endif
+
             ssq::Function sqOnKeyEvent = marty_simplesquirrel::findFunc(vm, "Game.onKeyEvent");
 
             auto res = vm.callFunc(sqOnKeyEvent, vm,  /* appHost,  */ bDown, nChar, nRepCnt);
@@ -882,6 +933,12 @@ public:
         {
            try
            {
+                #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+                using umba::lout;
+                lout << "try squirrel Game.onWindowSize\n";
+                umba::lout.flush();
+                #endif
+    
                 ssq::Function sqOnSizeEvent = marty_simplesquirrel::findFunc(vm, "Game.onWindowSize");
 
                 marty_draw_context::simplesquirrel::DrawingCoords sz = getClientSize();
@@ -916,6 +973,12 @@ public:
         {
            try
            {
+                #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+                using umba::lout;
+                lout << "try squirrel Game.onWindowSizing\n";
+                umba::lout.flush();
+                #endif
+
                 ssq::Function sqOnSizeEvent = marty_simplesquirrel::findFunc(vm, "Game.onWindowSizing");
 
                 marty_draw_context::simplesquirrel::DrawingCoords sz = getClientSize();
@@ -1097,6 +1160,12 @@ public:
         auto startTick = umba::time_service::getCurTimeMs();
 
         try{
+            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+            using umba::lout;
+            lout << "try squirrel Game.onPaint\n";
+            umba::lout.flush();
+            #endif
+
             ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onPaint");
 
             prepareDrawContext(pDc);

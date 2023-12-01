@@ -19,7 +19,7 @@ struct MultiDrawContextGdi : public MultiDrawContext
 
 protected:
 
-    HDC                 m_hdc  = 0; // m_dc.m_hDC
+    HDC                 m_hdc  = 0;
     HdcReleaseMode      m_hdcReleaseMode = HdcReleaseMode::doNothing;
     HWND                m_hwnd = 0;
 
@@ -96,7 +96,12 @@ public:
         , m_hdc           (std::move(mdcOther.m_hdc           ))
         , m_hdcReleaseMode(std::move(mdcOther.m_hdcReleaseMode))
         , m_hwnd          (std::move(mdcOther.m_hwnd          ))
-    {}
+    {
+        // Ресетим исходник - тривиальные типы не ресетятся автоматом
+        mdcOther.m_hdc            = 0;
+        mdcOther.m_hdcReleaseMode = HdcReleaseMode::doNothing;
+        mdcOther.m_hwnd           = 0;
+    }
 
     MultiDrawContextGdi& operator=( MultiDrawContextGdi&& mdcOther)
     {
@@ -106,14 +111,13 @@ public:
 
         MultiDrawContext::operator=(std::move(mdcOther));
 
+        // Ресетим исходник - тривиальные типы не ресетятся автоматом
+        mdcOther.m_hdc            = 0;
+        mdcOther.m_hdcReleaseMode = HdcReleaseMode::doNothing;
+        mdcOther.m_hwnd           = 0;
+
         return *this;
     }
-
-
-    // HDC                 m_hdc; // m_dc.m_hDC
-    // HdcReleaseMode      m_hdcReleaseMode = HdcReleaseMode::doNothing;
-    // HWND                m_hwnd;
-    //  
 
     MultiDrawContextGdi(HDC hdc, HdcReleaseMode hdcReleaseMode=HdcReleaseMode::doNothing, HWND hwnd=(HWND)0)
     : MultiDrawContext()

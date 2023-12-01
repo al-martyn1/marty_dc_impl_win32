@@ -278,14 +278,14 @@ function Game::onMouseMoveEvents(dc, moveEventType, mbStateFlags, point)
 {
     local D = Drawing;
 
-    //smpprintln("onMouseMoveEvents");
+    // // smpprintln("onMouseMoveEvents");
 
     prepareDc(dc);
     point = dc.mapRawToLogicPos(point);
 
     if (moveEventType==D.MouseMoveEventType.Move && (currentPressedMouseButton==D.MouseButton.LeftButton || currentPressedMouseButton==D.MouseButton.RightButton))
     {
-        smpprintln("onMouseMoveEvents while button pressed");
+        // smpprintln("onMouseMoveEvents while button pressed");
 
         local px = dc.getPixelSize();
 
@@ -331,24 +331,24 @@ function Game::onMouseButtonEvents(dc, mouseButton, buttonEvent, mbStateFlags, p
 {
     local D = Drawing;
 
-    smpprint("onMouseButtonEvents ");
+    // smpprint("onMouseButtonEvents ");
 
     prepareDc(dc);
     point = dc.mapRawToLogicPos(point);
 
     if (buttonEvent==Drawing.MouseButtonEvent.Pressed)
     {
-        smpprint(", pressed");
+        // smpprint(", pressed");
 
         if (currentPressedMouseButton!=Drawing.MouseButton.None)
         {
-            smpprintln(", something already pressed");
+            // smpprintln(", something already pressed");
             return Drawing.CallbackResultFlags.None; // Какая-то кнопка уже нажата, на вторую не реагируем
         }
 
         if (mouseButton==Drawing.MouseButton.LeftButton || mouseButton==Drawing.MouseButton.RightButton)
         {
-            smpprintln(", pressed L/R button at {" + point.toString() + "}");
+            // smpprintln(", pressed L/R button at {" + point.toString() + "}");
             currentPressedMouseButton = mouseButton;
             mouseButtonPressedPos     = point;
             return Drawing.CallbackResultFlags.CaptureMouse | Drawing.CallbackResultFlags.DisableTimerUpdate; // Нужно сделать захват мыши, чтобы события о перемещении мыши приходили в окно даже если мышь за пределами окна
@@ -357,11 +357,11 @@ function Game::onMouseButtonEvents(dc, mouseButton, buttonEvent, mbStateFlags, p
 
     else if (buttonEvent==Drawing.MouseButtonEvent.Released)
     {
-        smpprint(", released");
+        // smpprint(", released");
 
         if (currentPressedMouseButton==mouseButton) // Отпущенная кнопка соответствует тому, что зафиксировано
         {
-            smpprintln(", same as pressed");
+            // smpprintln(", same as pressed");
             currentPressedMouseButton = Drawing.MouseButton.None; // Очищаем зафиксированное нажатие
             return Drawing.CallbackResultFlags.ReleaseCapture | Drawing.CallbackResultFlags.EnableTimerUpdate;
         }
@@ -371,7 +371,7 @@ function Game::onMouseButtonEvents(dc, mouseButton, buttonEvent, mbStateFlags, p
     {
     }
 
-    smpprintln("");
+    // smpprintln("");
 
     return D.CallbackResultFlags.None;
 }
