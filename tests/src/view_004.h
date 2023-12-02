@@ -225,18 +225,6 @@ public:
 
         std::string resStr;
 
-        #if 0
-        if (title)
-        {
-            resStr.append(title);
-        }
-
-        if (!resStr.empty())
-        {
-            resStr.append(": ");
-        }
-        #endif
-
         resStr.append(e.what());
 
         return resStr;

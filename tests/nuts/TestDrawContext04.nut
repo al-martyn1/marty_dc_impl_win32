@@ -1,3 +1,4 @@
+// php coloring <?php
 
 local sysInfoStr = "Uninitialized";
 
@@ -18,6 +19,58 @@ keyState[Vk.Code.Down ] <- 0;
 local currentPressedMouseButton = Drawing.MouseButton.None;
 local mouseButtonPressedPos     = Drawing.Coords(0,0);
 
+
+/*
+    Анимация бума по кнопке мыши.
+
+    Запомнить координаты нажатия
+    Запомнить время нажатия - а есть оно сейчас у ас вообще?
+    Анимировать бум - если есть доступ ко времени, то по таймеру надо проверять, сколько времени прошло от нажатия,
+      и если достаточно для нового кадра - возвращать флаг перерисовки сцены.
+      Если времени нет, то просто по каждому апдейт событию меняем фазу
+    Когда фазы дошли до нуля - стопарим анимацию.
+
+*/
+
+local boomPos = Drawing.Coords(0,0);
+local boomSize = 0.0;
+
+function boomAnimate(dc)
+{
+    if (boomSize<0.0)
+    {
+    }
+
+    local circlePen   = dc.createSolidPen  (Drawing.PenParams(1, Drawing.LineEndcapStyle.Round, Drawing.LineJoinStyle.Round), Drawing.Colors.Blue);
+    local circleBrush = dc.createSolidBrush(Drawing.Colors.Red);
+    dc.selectPen(circlePen);
+    dc.selectBrush(circleBrush);
+    dc.fillCircle(boomPos, boomSize, true);
+
+    boomSize--;
+
+    //dc.circle(pos, puckR);
+    //fillCircle
+    //bool fillCircle(DrawingCoords centerPos, ssq::Object r, bool drawFrame) const
+    //return pDc->fillCircle(centerPos, (DrawCoord::value_type)marty_simplesquirrel::fromObjectConvertHelper<float>(r, _SC("R")), drawFrame);
+
+}
+
+function boomAnimateStart(dc, pos)
+{
+    boomPos  = pos;
+    boomSize = 30;
+}
+
+function boomAnimateCheck()
+{
+    if (boomSize<0.0)
+    {
+        return false;
+    }
+
+    return true;
+}
 
 function formatCoord(c)
 {
@@ -81,10 +134,16 @@ function Game::onLoad(bFirstTime)
 
 function Game::onUpdate(tickDelta)
 {
-    local bUpdate = false;
+    //local bUpdate = false;
+    local retFlags = 0; // Drawing.CallbackResultFlags.None
 
     local xSpeed = 0;
     local ySpeed = 0;
+
+    if (boomAnimateCheck())
+    {
+        retFlags = retFlags | Drawing.CallbackResultFlags.Repaint;
+    }
 
     xSpeed = - keySpeed(Vk.Code.Left);
     if (xSpeed==0)
@@ -102,7 +161,7 @@ function Game::onUpdate(tickDelta)
     
     if (xSpeed==0 && ySpeed==0)
     {
-        return false;
+        return retFlags;
     }
 
     pos.x = pos.x + (xSpeed*tickDelta)/20.0;
@@ -128,7 +187,9 @@ function Game::onUpdate(tickDelta)
         pos.y = (100.0-puckR);
     }
 
-    return true;
+    retFlags = retFlags | Drawing.CallbackResultFlags.Repaint;
+
+    return retFlags;
 }
 
 function Game::onKeyEvent(bDown, nChar, nRepCnt)
@@ -247,9 +308,14 @@ function Game::onPaint(dc)
 
     dc.polyCubicBeziers([D.Coords(10,20), D.Coords(10,10), D.Coords(25,10), D.Coords(25,20), D.Coords(25,30), D.Coords(40,30), D.Coords(40,20)]);
 
+    boomAnimate(dc);
+
+    return 0;
 }
 
-// must return on of:
+
+
+// must return one of:
 //   Drawing.CallbackResultFlags.None
 //   Drawing.CallbackResultFlags.Repaint
 //   Drawing.CallbackResultFlags.CaptureMouse
@@ -353,6 +419,12 @@ function Game::onMouseButtonEvents(dc, mouseButton, buttonEvent, mbStateFlags, p
             mouseButtonPressedPos     = point;
             return Drawing.CallbackResultFlags.CaptureMouse | Drawing.CallbackResultFlags.DisableTimerUpdate; // Нужно сделать захват мыши, чтобы события о перемещении мыши приходили в окно даже если мышь за пределами окна
         }
+
+        if (mouseButton==Drawing.MouseButton.MiddleButton)
+        {
+            boomAnimateStart(dc, point);
+        }
+        
     }
 
     else if (buttonEvent==Drawing.MouseButtonEvent.Released)
