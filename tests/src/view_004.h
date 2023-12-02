@@ -38,7 +38,23 @@
 
 #include "nutHelpers.h"
 
-#define VIEW04_LOG_SQUIRREL_CALLS
+
+
+
+#if !defined(VIEW04_LOG_SQUIRREL_CALLS)
+    
+    // Чтобы можно было задать в свойствах проекта вне зависимости от конфигурации сборки
+
+    #if defined(DEBUG) || defined(_DEBUG)
+
+        #define VIEW04_LOG_SQUIRREL_CALLS
+
+    #endif
+
+#endif
+
+
+
 
 
 #define CRACK_ON_KEY_UPDOWN_FLAGS_GET_REPETITION_STATE_FLAG(nFlags) (((nFlags)>>(30-16))&0x01)
