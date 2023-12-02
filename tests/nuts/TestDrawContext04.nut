@@ -283,7 +283,7 @@ function Game::onMouseMoveEvents(dc, moveEventType, mbStateFlags, point)
     prepareDc(dc);
     point = dc.mapRawToLogicPos(point);
 
-    if (moveEventType==D.MouseMoveEventType.Move && (currentPressedMouseButton==D.MouseButton.LeftButton || currentPressedMouseButton==D.MouseButton.RightButton))
+    if ( /* moveEventType==D.MouseMoveEventType.Move && */  (currentPressedMouseButton==D.MouseButton.LeftButton || currentPressedMouseButton==D.MouseButton.RightButton))
     {
         // smpprintln("onMouseMoveEvents while button pressed");
 
