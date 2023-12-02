@@ -47,7 +47,8 @@
 
     #if defined(DEBUG) || defined(_DEBUG)
 
-        #define VIEW04_LOG_SQUIRREL_CALLS
+        // В принципе, сейчас даже при отладке это нах не нужно, коментим/раскоменчиваем по нужде
+        // #define VIEW04_LOG_SQUIRREL_CALLS
 
     #endif
 
@@ -288,6 +289,19 @@ public:
         setStatusText(msg);
     }
 
+    void logEventHandlerCall(const std::string &fnName)
+    {
+        #if defined(VIEW04_LOG_SQUIRREL_CALLS)
+            using umba::lout;
+            lout << "try squirrel " << fnName << "\n";
+            umba::lout.flush();
+        #else
+            MARTY_ARG_USED(fnName);
+        #endif
+    }
+
+
+
     #define MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTION_EX(exceptionType, actionFailed)       \
         catch(const exceptionType &e)                                                           \
         {                                                                                       \
@@ -323,8 +337,6 @@ public:
         {                                                                                       \
             logException();                                                                     \
         }
-
-
 
 
     void reloadScript( bool bFirstTime = false)
@@ -397,38 +409,24 @@ public:
                     ::KillTimer(m_hWnd, mainTimerId);
                     mainTimerId = 0;
                 }
-
             }
             else // loaded
             {
                 try{
-                    #if defined(VIEW04_LOG_SQUIRREL_CALLS)
-                    using umba::lout;
-                    lout << "try squirrel Game.onLoad\n";
-                    umba::lout.flush();
-                    #endif
+                    logEventHandlerCall("Game.onLoad");
 
-                    ssq::Function sqOnLoad = marty_simplesquirrel::findFunc(vm, "Game.onLoad");
-    
-                    //auto res = 
-                    vm.callFunc(sqOnLoad, vm,  /* appHost, */  bFirstTime);
-    
-                    //bool needUpdate = 
-                    //marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onLoad returned"));
-                    // if (needUpdate)
-                    // {
-                    //     invalidateClientArea();
-                    // }
-
-                    // При загрузке скрипта форсим рисование безусловно
-                    invalidateClientArea();
-
-                    setStatusReady();
+                    std::optional<ssq::Function> optFunc = marty_simplesquirrel::findFuncOptional(vm, "Game::onLoad");
+                    if (optFunc.has_value())
+                    {
+                        vm.callFunc(optFunc.value(), vm, /* appHost, */ bFirstTime);
+                        // При загрузке скрипта форсим рисование безусловно
+                        invalidateClientArea();
+                        setStatusReady();
+                    }
                 } 
                 MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
 
                 mainTimerId = ::SetTimer(m_hWnd, 1, 25 /* ms */ , 0);
-
             }
 
         }
@@ -500,32 +498,27 @@ public:
 
         try
         {
-            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
-            using umba::lout;
-            lout << "try squirrel Game.onMouseMoveEvents, moveEventType: " << enum_serialize(moveEventType) << ", mbStateFlags: " << enum_serialize_flags(mbStateFlags) << "\n";
-            umba::lout.flush();
-            #endif
+            logEventHandlerCall("Game.onMouseMoveEvents");
 
-            ssq::Function sqOnMouseMoveEvents = marty_simplesquirrel::findFunc(vm, "Game.onMouseMoveEvents");
+            std::optional<ssq::Function> optFunc = marty_simplesquirrel::findFuncOptional(vm, "Game::onMouseMoveEvents");
+            if (optFunc.has_value())
+            {
+                auto idc = makeDcForMouseHandler();
+                marty_draw_context::IDrawContext *pDc = &idc;
+                appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
+                prepareDrawContext(pDc);
+                marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
 
-            auto idc = makeDcForMouseHandler();
-            marty_draw_context::IDrawContext *pDc = &idc;
-            appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
-            prepareDrawContext(pDc);
+                CPoint clientSize = getClientSizePoint();
+                sqDc.ctxSizeX = (int)clientSize.x;
+                sqDc.ctxSizeY = (int)clientSize.y;
 
-            marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
+                auto res = vm.callFunc(optFunc.value(), vm,  /* appHost,  */ &sqDc, (int)moveEventType, (int)mbStateFlags, marty_draw_context::simplesquirrel::DrawingCoords((float)point.x, (float)point.y));
+                marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onMouseMoveEvents returned"));
+                processCallbackResult(resultFlags);
 
-            CPoint clientSize = getClientSizePoint();
-
-            sqDc.ctxSizeX = (int)clientSize.x;
-            sqDc.ctxSizeY = (int)clientSize.y;
-
-            auto res = vm.callFunc(sqOnMouseMoveEvents, vm,  /* appHost,  */ &sqDc, (int)moveEventType, (int)mbStateFlags, marty_draw_context::simplesquirrel::DrawingCoords((float)point.x, (float)point.y));
-
-            marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onMouseMoveEvents returned"));
-            processCallbackResult(resultFlags);
-
-            setStatusReady();
+                setStatusReady();
+            }
 
         }
         MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
@@ -544,32 +537,30 @@ public:
 
         try
         {
-            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
-            using umba::lout;
-            lout << "try squirrel Game.onMouseButtonEvents\n";
-            umba::lout.flush();
-            #endif
+            logEventHandlerCall("Game.onMouseButtonEvents");
 
-            ssq::Function sqOnMouseButtonEvents = marty_simplesquirrel::findFunc(vm, "Game.onMouseButtonEvents");
-
-            auto idc = makeDcForMouseHandler();
-            marty_draw_context::IDrawContext *pDc = &idc;
-            appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
-            prepareDrawContext(pDc);
-
-            marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
-
-            CPoint clientSize = getClientSizePoint();
-
-            sqDc.ctxSizeX = (int)clientSize.x;
-            sqDc.ctxSizeY = (int)clientSize.y;
-
-            auto res = vm.callFunc(sqOnMouseButtonEvents, vm,  /* appHost,  */ &sqDc, (int)mouseButton, (int)buttonEvent, (int)mbStateFlags, marty_draw_context::simplesquirrel::DrawingCoords((float)point.x, (float)point.y));
-
-            marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onMouseButtonEvents returned"));
-            processCallbackResult(resultFlags);
-
-            setStatusReady();
+            std::optional<ssq::Function> optFunc = marty_simplesquirrel::findFuncOptional(vm, "Game::onMouseButtonEvents");
+            if (optFunc.has_value())
+            {
+                auto idc = makeDcForMouseHandler();
+                marty_draw_context::IDrawContext *pDc = &idc;
+                appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
+                prepareDrawContext(pDc);
+    
+                marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
+    
+                CPoint clientSize = getClientSizePoint();
+    
+                sqDc.ctxSizeX = (int)clientSize.x;
+                sqDc.ctxSizeY = (int)clientSize.y;
+    
+                auto res = vm.callFunc(optFunc.value(), vm,  /* appHost,  */ &sqDc, (int)mouseButton, (int)buttonEvent, (int)mbStateFlags, marty_draw_context::simplesquirrel::DrawingCoords((float)point.x, (float)point.y));
+    
+                marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onMouseButtonEvents returned"));
+                processCallbackResult(resultFlags);
+    
+                setStatusReady();
+            }
 
         }
         MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
@@ -589,33 +580,31 @@ public:
 
         try
         {
-            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
-            using umba::lout;
-            lout << "try squirrel Game.onMouseWheel\n";
-            umba::lout.flush();
-            #endif
+            logEventHandlerCall("Game.onMouseWheel");
 
-            ssq::Function sqOnMouseWheel = marty_simplesquirrel::findFunc(vm, "Game.onMouseWheel");
+            std::optional<ssq::Function> optFunc = marty_simplesquirrel::findFuncOptional(vm, "Game::onMouseWheel");
+            if (optFunc.has_value())
+            {
+                auto idc = makeDcForMouseHandler();
+                marty_draw_context::IDrawContext *pDc = &idc;
+                appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
+                prepareDrawContext(pDc);
+    
+                marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
+    
+                CPoint clientSize = getClientSizePoint();
+    
+                sqDc.ctxSizeX = (int)clientSize.x;
+                sqDc.ctxSizeY = (int)clientSize.y;
+    
+                auto res = vm.callFunc(optFunc.value(), vm,  /* appHost,  */ &sqDc, (int)zDelta, (int)mbStateFlags, marty_draw_context::simplesquirrel::DrawingCoords((float)point.x, (float)point.y));
+    
+                marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onMouseWheel returned"));
+                processCallbackResult(resultFlags);
+    
+                setStatusReady();
 
-            auto idc = makeDcForMouseHandler();
-            marty_draw_context::IDrawContext *pDc = &idc;
-            appHost.sys.info.graphicsBackendInfo.name = marty_simplesquirrel::to_sqstring(pDc->getEngineName());
-            prepareDrawContext(pDc);
-
-            marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
-
-            CPoint clientSize = getClientSizePoint();
-
-            sqDc.ctxSizeX = (int)clientSize.x;
-            sqDc.ctxSizeY = (int)clientSize.y;
-
-            auto res = vm.callFunc(sqOnMouseWheel, vm,  /* appHost,  */ &sqDc, (int)zDelta, (int)mbStateFlags, marty_draw_context::simplesquirrel::DrawingCoords((float)point.x, (float)point.y));
-
-            marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onMouseWheel returned"));
-            processCallbackResult(resultFlags);
-
-            setStatusReady();
-
+            }
         }
         MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
 
@@ -640,7 +629,6 @@ public:
     {
         if (!m_bMouseTracking)
         {
-            // OnMouseMoveEvents(marty_draw_context::MouseMoveEventType::enter, (marty_draw_context::MouseButtonStateFlags)nFlags, point);
             trackMouseEvent();
         }
 
@@ -801,27 +789,25 @@ public:
 
             try{
 
-                try
-                {
-                    #if defined(VIEW04_LOG_SQUIRREL_CALLS)
-                    using umba::lout;
-                    lout << "try squirrel Game.onUpdate\n";
-                    umba::lout.flush();
-                    #endif
+                // try
+                // {
+                    logEventHandlerCall("Game.onUpdate");
+
+                    std::optional<ssq::Function> optFunc = marty_simplesquirrel::findFuncOptional(vm, "Game::onUpdate");
+                    if (optFunc.has_value())
+                    {
+                        auto res = vm.callFunc(optFunc.value(), vm,  /* appHost,  */ tickDelta);
         
-                    ssq::Function sqOnUpdate = marty_simplesquirrel::findFunc(vm, "Game.onUpdate");
-                    auto res = vm.callFunc(sqOnUpdate, vm,  /* appHost,  */ tickDelta);
+                        marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onUpdate returned"));
+                        processCallbackResult(resultFlags);
     
-                    marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onUpdate returned"));
-                    processCallbackResult(resultFlags);
-                    //needUpdate = true;
+                        timerHandlerFails = false;
 
-                    timerHandlerFails = false;
-                }
-                catch (ssq::NotFoundException&)
-                {}
-
-                setStatusReady();
+                        setStatusReady();
+                    }
+                // }
+                // catch (ssq::NotFoundException&)
+                // {}
 
             } 
             MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
@@ -896,21 +882,18 @@ public:
         }
 
         try{
-            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
-            using umba::lout;
-            lout << "try squirrel Game.onKeyEvent\n";
-            umba::lout.flush();
-            #endif
+            logEventHandlerCall("Game.onKeyEvent");
 
-            ssq::Function sqOnKeyEvent = marty_simplesquirrel::findFunc(vm, "Game.onKeyEvent");
-
-            auto res = vm.callFunc(sqOnKeyEvent, vm,  /* appHost,  */ bDown, nChar, nRepCnt);
-
-            marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onKeyEvent returned"));
-            processCallbackResult(resultFlags);
-
-            setStatusReady();
-
+            std::optional<ssq::Function> optFunc = marty_simplesquirrel::findFuncOptional(vm, "Game::onKeyEvent");
+            if (optFunc.has_value())
+            {
+                auto res = vm.callFunc(optFunc.value(), vm,  /* appHost,  */ bDown, nChar, nRepCnt);
+    
+                marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onKeyEvent returned"));
+                processCallbackResult(resultFlags);
+    
+                setStatusReady();
+            }
         } 
         MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
         
@@ -948,22 +931,20 @@ public:
         {
            try
            {
-                #if defined(VIEW04_LOG_SQUIRREL_CALLS)
-                using umba::lout;
-                lout << "try squirrel Game.onWindowSize\n";
-                umba::lout.flush();
-                #endif
+                logEventHandlerCall("Game.onWindowSize");
     
-                ssq::Function sqOnSizeEvent = marty_simplesquirrel::findFunc(vm, "Game.onWindowSize");
-
-                marty_draw_context::simplesquirrel::DrawingCoords sz = getClientSize();
-    
-                auto res = vm.callFunc(sqOnSizeEvent, vm,  /* appHost,  */ (int)nType, sz);
-    
-                marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onWindowSize returned"));
-                processCallbackResult(resultFlags);
-    
-                setStatusReady();
+                std::optional<ssq::Function> optFunc = marty_simplesquirrel::findFuncOptional(vm, "Game::onWindowSize");
+                if (optFunc.has_value())
+                {
+                    marty_draw_context::simplesquirrel::DrawingCoords sz = getClientSize();
+        
+                    auto res = vm.callFunc(optFunc.value(), vm,  /* appHost,  */ (int)nType, sz);
+        
+                    marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onWindowSize returned"));
+                    processCallbackResult(resultFlags);
+        
+                    setStatusReady();
+                }
            
            }
            catch (ssq::NotFoundException&)
@@ -988,23 +969,20 @@ public:
         {
            try
            {
-                #if defined(VIEW04_LOG_SQUIRREL_CALLS)
-                using umba::lout;
-                lout << "try squirrel Game.onWindowSizing\n";
-                umba::lout.flush();
-                #endif
-
-                ssq::Function sqOnSizeEvent = marty_simplesquirrel::findFunc(vm, "Game.onWindowSizing");
-
-                marty_draw_context::simplesquirrel::DrawingCoords sz = getClientSize();
+                logEventHandlerCall("Game.onWindowSizing");
     
-                auto res = vm.callFunc(sqOnSizeEvent, vm,  /* appHost,  */ (int)fwSide, sz);
-    
-                marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onWindowSizing returned"));
-                processCallbackResult(resultFlags);
-    
-                setStatusReady();
-           
+                std::optional<ssq::Function> optFunc = marty_simplesquirrel::findFuncOptional(vm, "Game::onWindowSizing");
+                if (optFunc.has_value())
+                {
+                    marty_draw_context::simplesquirrel::DrawingCoords sz = getClientSize();
+        
+                    auto res = vm.callFunc(optFunc.value(), vm,  /* appHost,  */ (int)fwSide, sz);
+        
+                    marty_draw_context::CallbackResultFlags resultFlags = (marty_draw_context::CallbackResultFlags)marty_simplesquirrel::fromObjectConvertHelper<int>(res, _SC("Game::onWindowSizing returned"));
+                    processCallbackResult(resultFlags);
+        
+                    setStatusReady();
+                }
            }
            catch (ssq::NotFoundException&)
            {}
@@ -1183,28 +1161,25 @@ public:
         auto startTick = umba::time_service::getCurTimeMs();
 
         try{
-            #if defined(VIEW04_LOG_SQUIRREL_CALLS)
-            using umba::lout;
-            lout << "try squirrel Game.onPaint\n";
-            umba::lout.flush();
-            #endif
+            logEventHandlerCall("Game.onPaint");
 
-            ssq::Function sqOnPaint = marty_simplesquirrel::findFunc(vm, "Game.onPaint");
-
-            prepareDrawContext(pDc);
-
-            marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
-
-            CPoint clientSize = getClientSizePoint();
-
-            sqDc.ctxSizeX = (int)clientSize.x;
-            sqDc.ctxSizeY = (int)clientSize.y;
-
-            vm.callFunc(sqOnPaint, vm,  /* appHost,  */ &sqDc);
-            //vm.callFunc(sqOnPaint, vm, sqDc);
-
-            setStatusReady();
-
+            std::optional<ssq::Function> optFunc = marty_simplesquirrel::findFuncOptional(vm, "Game::onPaint");
+            if (optFunc.has_value())
+            {
+                prepareDrawContext(pDc);
+    
+                marty_draw_context::simplesquirrel::DrawingContext sqDc = marty_draw_context::simplesquirrel::DrawingContext(vm.getHandle(), pDc);
+    
+                CPoint clientSize = getClientSizePoint();
+    
+                sqDc.ctxSizeX = (int)clientSize.x;
+                sqDc.ctxSizeY = (int)clientSize.y;
+    
+                vm.callFunc(optFunc.value(), vm,  /* appHost,  */ &sqDc);
+                //vm.callFunc(sqOnPaint, vm, sqDc);
+    
+                setStatusReady();
+            }
         } 
         MARTY_DC_IMPL_WIN32_CATCH_LOG_BULKA_EXCEPTIONS_EX(scriptSomethingFailed)
         

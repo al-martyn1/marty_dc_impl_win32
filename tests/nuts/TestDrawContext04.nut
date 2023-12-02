@@ -159,7 +159,7 @@ function Game::onKeyEvent(bDown, nChar, nRepCnt)
 
 function Game::onPaint(dc)
 {
-    smpprintln("Game::onPaint");
+    // smpprintln("Game::onPaint");
 
     local D = Drawing;
 
@@ -376,7 +376,7 @@ function Game::onMouseButtonEvents(dc, mouseButton, buttonEvent, mbStateFlags, p
     return D.CallbackResultFlags.None;
 }
 
-
+/*
 function Game::onMouseWheel(dc, zDelta, mbStateFlags, point)
 {
     local D = Drawing;
@@ -388,5 +388,5 @@ function Game::onMouseWheel(dc, zDelta, mbStateFlags, point)
 
     return D.CallbackResultFlags.None;
 }
-
+*/
 
