@@ -400,9 +400,9 @@ public:
     void DoPaint(CDCHandle dc)
     {
         #ifdef TEST_DC_USE_GDIPLUS
-            auto idc = marty_draw_context::makeMultiDrawContext(dc, true  /* prefferGdiPlus */);
+            auto idc = marty_draw_context::makeMultiDrawContextGdi(dc, true  /* prefferGdiPlus */);
         #else
-            auto idc = marty_draw_context::makeMultiDrawContext(dc, false /* prefferGdiPlus */);
+            auto idc = marty_draw_context::makeMultiDrawContextGdi(dc, false /* prefferGdiPlus */);
         #endif
 
         IDrawContext *pDc = &idc;
