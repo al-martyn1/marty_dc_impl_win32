@@ -35,13 +35,13 @@ local mouseButtonPressedPos     = Drawing.Coords(0,0);
 local boomPos = Drawing.Coords(0,0);
 local boomSize = 0.0;
 
-function boomAnimate(dc)
+function boomAnimatePaint(dc)
 {
     if (boomSize<0.0)
     {
     }
 
-    local circlePen   = dc.createSolidPen  (Drawing.PenParams(1, Drawing.LineEndcapStyle.Round, Drawing.LineJoinStyle.Round), Drawing.Colors.Blue);
+    local circlePen   = dc.createSolidPen  (Drawing.PenParams(1 /* Border thickness */, Drawing.LineEndcapStyle.Round, Drawing.LineJoinStyle.Round), Drawing.Colors.Blue);
     local circleBrush = dc.createSolidBrush(Drawing.Colors.Red);
     dc.selectPen(circlePen);
     dc.selectBrush(circleBrush);
@@ -194,6 +194,8 @@ function Game::onUpdate(tickDelta)
 
 function Game::onKeyEvent(bDown, nChar, nRepCnt)
 {
+    local retFlags = 0; // Drawing.CallbackResultFlags.None
+
     if (nChar==Vk.Code.Left || nChar==Vk.Code.Right || nChar==Vk.Code.Up || nChar==Vk.Code.Down)
     {
         if (bDown)
@@ -203,7 +205,8 @@ function Game::onKeyEvent(bDown, nChar, nRepCnt)
             //smpprint  (", nRepCnt: ");
             //smpprintln(nRepCnt);
             keyState[nChar] = nRepCnt;
-            return true;
+            retFlags = retFlags | Drawing.CallbackResultFlags.Repaint;
+            return retFlags;
         }
         else
         {
@@ -213,7 +216,7 @@ function Game::onKeyEvent(bDown, nChar, nRepCnt)
         }
     }
 
-    return false;
+    return retFlags;
 
 }
 
@@ -308,7 +311,10 @@ function Game::onPaint(dc)
 
     dc.polyCubicBeziers([D.Coords(10,20), D.Coords(10,10), D.Coords(25,10), D.Coords(25,20), D.Coords(25,30), D.Coords(40,30), D.Coords(40,20)]);
 
-    boomAnimate(dc);
+    if (boomAnimateCheck())
+    {
+        boomAnimatePaint(dc);
+    }
 
     return 0;
 }
