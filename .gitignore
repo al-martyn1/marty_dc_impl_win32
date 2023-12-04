@@ -33,3 +33,6 @@
 /tests/.vs
 /tests/_prj_msvc/*.user
 /tests/_libs/simplesquirrel
+/tests/.out
+/tests/.distr
+
