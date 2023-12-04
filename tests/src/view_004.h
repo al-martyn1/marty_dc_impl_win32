@@ -430,19 +430,6 @@ public:
             lout << encoding::toUtf8(str);
         };
 
-        #if 0
-        using namespace std;
-        #include "tmp.cpp"
-
-        auto res1 = Solution().solveEquation("x+5-3+x=6+x-2");
-        auto res2 = Solution().solveEquation("x=x");
-        auto res3 = Solution().solveEquation("2x=x");
-
-        lout << res1 << "\n";
-        lout << res2 << "\n";
-        lout << res3 << "\n";
-        #endif
-
         Sleep(300);
         
     }
