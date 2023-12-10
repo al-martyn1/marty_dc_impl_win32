@@ -43,7 +43,9 @@ int main( int argc, char* argv[] )
     UMBA_USED(argc);
     UMBA_USED(argv);
 
-    // umba::filesys::createDirectoryEx(std::string("C:/temp/aaa/bbb/cc"), true);
+    using namespace marty_virtual_fs;
+
+    umba::filesys::createDirectoryEx(std::string("C:/temp/aaa/bbb/cc"), true);
 
     // auto appPaths = marty_virtual_fs::AppPathsImpl();
 
@@ -122,6 +124,24 @@ int main( int argc, char* argv[] )
         std::cout << "\n";
     };
 
+    auto writeTextTest = [&](const std::string &fileName, const std::string &text, WriteFileFlags writeFlags)
+    {
+        auto err = pFileSystem->writeTextFile(fileName, text, writeFlags);
+        if (err!=ErrorCode::ok)
+        {
+            std::cout << "Error writting '" << fileName << "'\n";
+        }
+    };
+
+    writeTextTest("/root.txt", "someting root text\r\nsometing more root text\r\n", WriteFileFlags::normal);
+
+    writeTextTest("/C/temp/aaa/ab1.txt", "someting text\r\nsometing more text\r\n", WriteFileFlags::forceCreateDir | WriteFileFlags::forceOverwrite);
+    writeTextTest("/C/temp/bb/ab2.txt", "someting BB text\r\nsometing more BB text\r\n", WriteFileFlags::forceCreateDir | WriteFileFlags::forceOverwrite);
+    writeTextTest("/C/temp/ccc/ab3.txt", "someting CC text\r\nsometing more CC text\r\n", WriteFileFlags::forceOverwrite);
+    writeTextTest("/C/temp/ab4.txt", "someting DD text\r\nsometing more DD text\r\n", WriteFileFlags::normal);
+
+
+    // umba::filesys::createDirectoryEx(std::string("C:/temp/aaa/bbb/cc"), true);
     
     listDir("/");
     listDir("/C/Users");
