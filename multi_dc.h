@@ -106,6 +106,11 @@ public:
 
     MultiDrawContextGdi& operator=( MultiDrawContextGdi&& mdcOther)
     {
+        if (this==&mdcOther)
+        {
+            return *this;
+        }
+
         m_hdc            = std::move(mdcOther.m_hdc           );
         m_hdcReleaseMode = std::move(mdcOther.m_hdcReleaseMode);
         m_hwnd           = std::move(mdcOther.m_hwnd          );
