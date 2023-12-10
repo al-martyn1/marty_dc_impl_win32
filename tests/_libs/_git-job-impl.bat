@@ -9,6 +9,7 @@
 @call :DO_GIT_JOB %1 %~dp0\marty_virtual_fs
 @call :DO_GIT_JOB %1 %~dp0\marty_vk
 @call :DO_GIT_JOB %1 %~dp0\sfmt
+@call :DO_GIT_JOB %1 %~dp0\simplesquirrel
 @call :DO_GIT_JOB %1 %~dp0\umba
 
 
