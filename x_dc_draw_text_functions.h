@@ -1922,7 +1922,7 @@
         }
 
 
-        if ((flags&DrawTextFlags::fitHeightDisable)!=0)
+        if ((flags&DrawTextFlags::fitHeightDisable)==0)
         {
             // По вертикали вписываться не надо, нет лимита
             // Раз нет лимита по высоте - то нет и выравнивания по вертикали
