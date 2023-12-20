@@ -17,11 +17,6 @@
 #include "dotNutBase/dotNutBase.h"
 
 
-#include "marty_dc_impl_win32/gdi_draw_context.h"
-#include "marty_dc_impl_win32/gdiplus_draw_context.h"
-#include "marty_dc_impl_win32/multi_dc.h"
-
-
 #include <array>
 #include <functional>
 
@@ -32,9 +27,6 @@
 #pragma comment(lib, "_simplesquirrel.lib")
 #endif
 
-#include "marty_draw_context/bindings/simplesquirrel.h"
-#include "marty_vk/bindings/simplesquirrel.h"
-#include "marty_fs_adapters/simple_file_api.h"
 
 #include "nutHelpers.h"
 
