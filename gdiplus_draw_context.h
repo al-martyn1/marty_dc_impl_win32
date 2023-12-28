@@ -1509,8 +1509,8 @@ public:
         */
 
         //if (!bStroke)
-        if (bFill)
-            closeFigure();
+        // if (bFill)
+        //     closeFigure();
 
         if (bFill)
         {
